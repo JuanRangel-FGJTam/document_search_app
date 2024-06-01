@@ -1,0 +1,33 @@
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./stubs/nginx.conf:/etc/nginx/conf.d/default.conf
+      - .:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+  app:
+    restart: unless-stopped
+    ports:
+    - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+    build:
+      args:
+        user: intranet
+        uid: 1000
+      context: .
+    volumes:
+      - .:/var/www/html
+      - ./stubs/php.ini:/usr/local/etc/php/conf.d/uploads.ini
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
