@@ -1,19 +1,24 @@
 <?php
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Auth\Middleware\Authenticate;
-use App\Http\Controllers\Auth\LoginController;
+use Inertia\Inertia;
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', function () {
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
+});
 
-Route::get('/', [LoginController::class, 'redirectToProvider']);
-Route::get('/auth/redirect', [LoginController::class, 'redirectToProvider']);
-Route::get('/auth/callback', [LoginController::class, 'handleProviderCallback']);
-
-Route::prefix('dashboard')->middleware(['auth'])->group(function () {
-    Route::get('/', function () {
-        return 'HOLA MUNDO';
-    });
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
 });
