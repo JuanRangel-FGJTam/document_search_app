@@ -1,6 +1,23 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryLink from '@/Components/PrimaryLink.vue';
+import { defineProps } from 'vue';
+const props = defineProps({
+    misplacements: {
+        type: Object,
+    },
+});
+
+function getTypeClass(typeId) {
+    const classMap = {
+        '1': 'flex items-center justify-center px-3 py-1 text-sm font-normal rounded-full text-yellow-500 gap-x-2 bg-yellow-100/60 dark:bg-gray-800',
+        '2': 'flex items-center justify-center px-3 py-1 text-sm font-normal rounded-full text-blue-500 gap-x-2 bg-blue-100/60 dark:bg-gray-800',
+        '3': 'flex items-center justify-center px-3 py-1 text-sm font-normal rounded-full text-emerald-500 gap-x-2 bg-emerald-100/60 dark:bg-gray-800',
+        '4': 'flex items-center justify-center px-3 py-1 text-sm font-normal rounded-full text-red-500 gap-x-2 bg-red-100/60 dark:bg-gray-800',
+    };
+    return classMap[typeId] || 'bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-300';
+}
+
 </script>
 
 <template>
@@ -95,9 +112,8 @@ import PrimaryLink from '@/Components/PrimaryLink.vue';
                                             <tr class="text-center">
                                                 <th scope="col" class="px-4 py-3">Folio</th>
                                                 <th scope="col" class="px-4 py-3">Solicitante</th>
-                                                <th scope="col" class="px-4 py-3">Asignado</th>
-                                                <th scope="col" class="px-4 py-3">Creado</th>
-                                                <th scope="col" class="px-4 py-3">Departamento</th>
+                                                <th scope="col" class="px-4 py-3">Fecha de registro</th>
+                                                <th scope="col" class="px-4 py-3">Codigo</th>
                                                 <th scope="col" class="px-4 py-3">Status</th>
                                                 <th scope="col" class="px-4 py-3">
                                                     Acciones
@@ -105,7 +121,61 @@ import PrimaryLink from '@/Components/PrimaryLink.vue';
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            <template v-if="misplacements.length > 0">
+                                                <tr class="text-center border-b dark:border-gray-700"
+                                                    v-for="misplacement in misplacements" :key="misplacement.id">
+                                                    <th scope="row"
+                                                        class="px-4 py-3 font-medium text-gray-900 whitespace-wrap dark:text-white">
+                                                        {{ misplacement.document_number }}
+                                                    </th>
+                                                    <td class="text-start px-4 py-3 whitespace-nowrap">
+                                                        <div>
+                                                            <h4 class="text-gray-700 dark:text-gray-200">
+                                                                {{ misplacement.people_id  }}
+                                                            </h4>
+                                                            <p class="text-gray-500 dark:text-gray-400">
+                                                                {{ misplacement.people_id }}
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span>
+                                                            {{ misplacement.registration_date }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span>
+                                                            {{ misplacement.code }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span :class="getTypeClass(misplacement.lost_status_id)">
+                                                            {{ misplacement.lost_status.name }}
+                                                        </span>
+                                                    </td>
 
+                                                    <td class="px-4 py-3 items-center justify-center">
+                                                        <Link
+                                                            class="inline-flex items-center px-4 py-2 bg-blue-500 transition ease-in-out hover:bg-blue-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
+                                                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 -960 960 960" fill="currentColor"
+                                                            stroke="currentColor">
+                                                            <path
+                                                                d="m590-160 80 80H240q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h360l200 240v480q0 20-8.5 36.5T768-96L560-302q-17 11-37 16.5t-43 5.5q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 23-5.5 43T618-360l102 104v-356L562-800H240v640h350ZM480-360q33 0 56.5-23.5T560-440q0-33-23.5-56.5T480-520q-33 0-56.5 23.5T400-440q0 33 23.5 56.5T480-360Zm0-80Zm0 0Z" />
+                                                        </svg>
+                                                        Ver
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <template v-else>
+                                                <tr>
+                                                    <td colspan="8"
+                                                        class="px-6 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        No hay tickets.
+                                                    </td>
+                                                </tr>
+                                            </template>
 
                                         </tbody>
                                         <tfoot>
