@@ -29,6 +29,7 @@ const logout = () => {
 
 <template>
     <div>
+        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
         <Head :title="title" />
 
         <Banner />
@@ -42,14 +43,14 @@ const logout = () => {
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
                                 <Link :href="route('dashboard')">
-                                    <ApplicationMark class="block h-9 w-auto" />
+                                    <ApplicationMark class="block h-[50px] w-auto" />
                                 </Link>
                             </div>
 
                             <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                    Solicitudes de Constancias
                                 </NavLink>
                             </div>
                         </div>
