@@ -11,6 +11,10 @@ use Inertia\Inertia;
 class RequestController extends Controller
 {
     const LOST_STATUS_PENDING = 1;
+    const CATALOG_PHONE_TYPE_MOBILE = 1;
+    const CATALOG_PHONE_TYPE_HOME = 2;
+    const DOCUMENT_TYPE_INE = 1;
+
     protected  $misplacementService;
     protected $authApiService;
 
@@ -37,7 +41,7 @@ class RequestController extends Controller
         }
 
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('Requests/Index', [
             'misplacements' => $misplacements
         ]);
     }
@@ -61,9 +65,23 @@ class RequestController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $misplacement_id)
     {
         //
+        $misplacement = $this->misplacementService->getById($misplacement_id);
+        $misplacement->load('lostStatus','cancellationReason','misplacementIdentifications.identificationType');
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
+        $personAddress = $this->authApiService->getUserLastAddress($misplacement->people_id);
+        $personPhoneHome = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_HOME);
+        $personPhoneMobile = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_MOBILE);
+
+        return Inertia::render('Requests/Show',[
+            'person'=>$person,
+            'misplacement'=>$misplacement,
+            'personAddress'=>$personAddress,
+            'personPhoneHome'=>$personPhoneHome,
+            'personPhoneMobile'=>$personPhoneMobile
+        ]);
     }
 
     /**

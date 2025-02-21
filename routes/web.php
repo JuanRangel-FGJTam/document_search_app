@@ -19,5 +19,14 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    Route::get('/dashboard',[RequestController::class,'index'])->name('dashboard');
+    Route::prefix('/dashboard')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Dashboard');
+        })->name('dashboard');
+    });
+
+    Route::prefix('/admin/request')->group(function () {
+        Route::get('/', [RequestController::class, 'index'])->name('misplacement.index');
+        Route::get('/show/{misplacement_id}', [RequestController::class, 'show'])->name('misplacement.show');
+    });
 });

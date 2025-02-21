@@ -14,6 +14,12 @@ class MisplacementService
         return Misplacement::where('lost_status_id', $lost_status)->get();
     }
 
+    public function getById(string $misplacement_id){
+        return Misplacement::find($misplacement_id);
+    }
+
+
+
     public function searchByFolioAndCode(string $document_number, string $code)
     {
         return Misplacement::where('document_number', $document_number)

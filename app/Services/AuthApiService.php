@@ -31,6 +31,31 @@ class AuthApiService
         return $response->json();
     }
 
+    public static function getUserLastAddress(string $person_id)
+    {
+        $response = Http::withHeader('Authorization', self::authorizationValue())
+            ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/address/'));
+
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
+
+
+    public function getUserContactType(string $person_id, string $typeId)
+    {
+        $response = Http::withHeader('Authorization', self::authorizationValue())
+            ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/contactInformation?typeId=' . $typeId));
+
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
+
 
 
 }
