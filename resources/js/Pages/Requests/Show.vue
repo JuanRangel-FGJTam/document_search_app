@@ -80,8 +80,17 @@ function getTypeClass(typeId) {
                             <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
                         </div>
                         <div class="flex gap-4 mt-4">
-                            <a target="_blank" class="px-5 py-2 text-white bg-blue-700 rounded-lg hover:bg-blue-800">Ver documento</a>
-                            <button class="px-5 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">Cancelar Solicitud</button>
+                            <template v-if="misplacement.lost_status_id != 3">
+                                <button class="px-5 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-300"
+                                    v-if="misplacement.lost_status_id == 1">Cambiar a revisión</button>
+                                <button class="px-5 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-300"
+                                    v-if="misplacement.lost_status_id == 2">Validar Solicitud</button>
+                                <button class="px-5 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">Cancelar
+                                    Solicitud</button>
+                            </template>
+                            <template v-else>
+                                <p class="font-semibold">Esta solicitud ha sido atendida</p>
+                            </template>
                         </div>
                     </div>
 
