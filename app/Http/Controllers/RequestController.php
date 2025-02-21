@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Misplacement;
 use App\Services\AuthApiService;
+use App\Services\LostDocumentService;
 use App\Services\MisplacementService;
+use App\Services\PlaceEventService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,11 +19,15 @@ class RequestController extends Controller
 
     protected  $misplacementService;
     protected $authApiService;
+    protected $lostDocumentService;
+    protected $placeEventService;
 
-    public function __construct(MisplacementService $misplacementService, AuthApiService $authApiService)
+    public function __construct(MisplacementService $misplacementService, AuthApiService $authApiService, LostDocumentService $lostDocumentService, PlaceEventService $placeEventService)
     {
         $this->misplacementService = $misplacementService;
         $this->authApiService = $authApiService;
+        $this->placeEventService = $placeEventService;
+        $this->lostDocumentService = $lostDocumentService;
     }
     /**
      * Display a listing of the resource.
@@ -75,12 +81,30 @@ class RequestController extends Controller
         $personPhoneHome = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_HOME);
         $personPhoneMobile = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_MOBILE);
 
+        $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
+        $documents->load('documentType');
+
+        $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);
+        $placeEvent->lost_date = \Carbon\Carbon::parse($placeEvent->lost_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
+
+        $zipCodes = $this->authApiService->getZipCode($placeEvent->zipcode);
+
+        if (empty($zipCodes['municipalities']) || empty($zipCodes['colonies'])) {
+            return response()->json(['error' => 'Zip code not found'], 404);
+        }
+
+        $municipality = collect($zipCodes['municipalities'])->firstWhere('default', 1);
+        $colony = collect($zipCodes['colonies'])->firstWhere('id', $placeEvent->colony_api_id);
+        $placeEvent['municipality'] = $municipality;
+        $placeEvent['colony'] = $colony;
         return Inertia::render('Requests/Show',[
             'person'=>$person,
             'misplacement'=>$misplacement,
             'personAddress'=>$personAddress,
             'personPhoneHome'=>$personPhoneHome,
-            'personPhoneMobile'=>$personPhoneMobile
+            'personPhoneMobile'=>$personPhoneMobile,
+            'documents'=> $documents,
+            'placeEvent'=> $placeEvent,
         ]);
     }
 

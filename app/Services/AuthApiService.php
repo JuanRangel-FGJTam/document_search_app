@@ -57,5 +57,18 @@ class AuthApiService
     }
 
 
+    public function getZipCode(string $zipCode)
+    {
+        $response = Http::withHeader('Authorization', self::authorizationValue())
+            ->get(Str::finish(self::baseUrl(), '/api/zipcode/' . $zipCode));
+
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
+
+
 
 }
