@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryLink from '@/Components/PrimaryLink.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { defineProps } from 'vue';
 const props = defineProps({
     misplacements: {
@@ -121,20 +122,20 @@ function getTypeClass(typeId) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <template v-if="misplacements.length > 0">
+                                            <template v-if="misplacements.data.length > 0">
                                                 <tr class="text-center border-b dark:border-gray-700"
-                                                    v-for="misplacement in misplacements" :key="misplacement.id">
+                                                    v-for="misplacement in misplacements.data" :key="misplacement.id">
                                                     <th scope="row"
                                                         class="px-4 py-3 font-medium text-gray-900 whitespace-wrap dark:text-white">
                                                         {{ misplacement.document_number }}
                                                     </th>
-                                                    <td class="text-start px-4 py-3 whitespace-nowrap">
+                                                    <td class="text-center px-4 py-3 whitespace-nowrap">
                                                         <div>
                                                             <h4 class="text-gray-700 dark:text-gray-200">
-                                                                {{ misplacement.people_id  }}
+                                                                {{ misplacement.fullName  }}
                                                             </h4>
                                                             <p class="text-gray-500 dark:text-gray-400">
-                                                                {{ misplacement.people_id }}
+                                                                {{ misplacement.email }}
                                                             </p>
                                                         </div>
                                                     </td>
@@ -170,17 +171,17 @@ function getTypeClass(typeId) {
                                             </template>
                                             <template v-else>
                                                 <tr>
-                                                    <td colspan="8"
+                                                    <td colspan="6"
                                                         class="px-6 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                        No hay tickets.
+                                                        No hay solicitudes.
                                                     </td>
                                                 </tr>
                                             </template>
 
                                         </tbody>
                                         <tfoot>
+                                            <Pagination :colspan="6" :ObjectData="misplacements"></Pagination>
                                         </tfoot>
-
                                     </table>
                                 </div>
                             </div>

@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Misplacement;
+use App\Services\AuthApiService;
 use App\Services\MisplacementService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RequestController extends Controller
 {
-    CONST LOST_STATUS_PENDING = 1;
+    const LOST_STATUS_PENDING = 1;
     protected  $misplacementService;
+    protected $authApiService;
 
-
-    public function __construct(MisplacementService $misplacementService) {
+    public function __construct(MisplacementService $misplacementService, AuthApiService $authApiService)
+    {
         $this->misplacementService = $misplacementService;
+        $this->authApiService = $authApiService;
     }
     /**
      * Display a listing of the resource.
@@ -22,12 +25,20 @@ class RequestController extends Controller
     public function index(Request $request)
     {
         //
-        $misplacements = $this->misplacementService->getAllByStatusId(SELF::LOST_STATUS_PENDING);
-        $misplacements->load('lostStatus');
+        $totalMisplacements = $this->misplacementService->getAllByStatusId(SELF::LOST_STATUS_PENDING);
+        $totalMisplacements->load('lostStatus');
+
+        $misplacements = \App\Support\Pagination::paginate($totalMisplacements, $request);
+
+        foreach ($misplacements as $key => $value) {
+            $peopleData = $this->authApiService->getPersonById($value->people_id);
+            $misplacements[$key]->fullName = $peopleData['fullName'] ?? 'N/A';
+            $misplacements[$key]->email = $peopleData['email'] ?? 'N/A';
+        }
 
 
-        return Inertia::render('Dashboard',[
-            'misplacements'=> $misplacements
+        return Inertia::render('Dashboard', [
+            'misplacements' => $misplacements
         ]);
     }
 
