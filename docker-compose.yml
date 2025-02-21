@@ -19,7 +19,7 @@ services:
     - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
     build:
       args:
-        user: intranet
+        user: document_lost_admin
         uid: 1000
       context: .
     volumes:
