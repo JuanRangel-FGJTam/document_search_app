@@ -4,7 +4,7 @@ import BackButton from '@/Components/BackButton.vue';
 import { defineProps } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
-
+import { onMounted } from 'vue';
 const props = defineProps({
     person: Object,
     misplacement: Object,
@@ -15,7 +15,6 @@ const props = defineProps({
     placeEvent: Object
 });
 
-console.log(props.misplacement);
 
 const toast = useToast();
 
@@ -26,7 +25,6 @@ function attendMisplacement(misplacement_id) {
         }
     });
 }
-
 function getTypeClass(typeId) {
     const classMap = {
         '1': 'bg-yellow-100 text-yellow-700',
@@ -36,6 +34,8 @@ function getTypeClass(typeId) {
     };
     return `px-3 py-1 text-sm font-medium rounded-full ${classMap[typeId] || 'bg-gray-200 text-gray-700'}`;
 }
+
+onMounted(() => useToast());
 </script>
 
 <template>
@@ -98,8 +98,9 @@ function getTypeClass(typeId) {
                                 <button @click="attendMisplacement(props.misplacement.id)"
                                     class="px-5 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-300"
                                     v-if="misplacement.lost_status_id == 1">Cambiar a revisión</button>
-                                <button class="px-5 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-300"
-                                    v-if="misplacement.lost_status_id == 2">Validar Solicitud</button>
+                                <Link :href="route('misplacement.accept', misplacement.id)" class="px-5 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-300"
+                                    v-if="misplacement.lost_status_id == 2">Validar Solicitud
+                                </Link>
                                 <Link v-if="misplacement.lost_status_id != 4"
                                     :href="route('misplacement.cancel', misplacement.id)"
                                     class="px-5 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">
@@ -126,7 +127,9 @@ function getTypeClass(typeId) {
                             </div>
                             <div>
                                 <p class="font-semibold">Descripción de cancelación</p>
-                                <p class="justify">{{ misplacement.cancellation_reason_description ?? 'Sin descripción'}}</p>
+                                <p class="justify">{{ misplacement.cancellation_reason_description ??
+                                    'Sin descripción' }}
+                                </p>
                             </div>
                         </div>
                     </div>

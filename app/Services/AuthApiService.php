@@ -70,5 +70,15 @@ class AuthApiService
     }
 
 
+    public function storeProcesure(string $person_id, array $data)
+    {
+        $response = Http::withHeaders(['Accept' => 'application/json', 'Authorization' => self::authorizationValue()])
+            ->post(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/procedures'), $data);
 
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
 }

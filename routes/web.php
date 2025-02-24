@@ -31,5 +31,9 @@ Route::middleware([
         Route::get('/attend-request/{misplacement_id}',[RequestController::class,'attendRequest'])->name('misplacement.attend');
         Route::get('/cancel-request/{misplacement_id}',[RequestController::class,'cancelRequest'])->name('misplacement.cancel');
         Route::post('/store-cancel-request/{misplacement_id}',[RequestController::class,'storeCancelRequest'])->name('misplacement.store.cancel');
+
+        Route::get('/accept-request/{misplacement_id}',[RequestController::class,'acceptRequest'])->name('misplacement.accept');
+        Route::post('/store-accept-request/{misplacement_id}',[RequestController::class,'storeAcceptRequest'])->name('misplacement.store.accept');
+
     });
 });

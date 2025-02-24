@@ -17,6 +17,7 @@ class RequestController extends Controller
 {
     const LOST_STATUS_PENDING = 1;
     const LOST_STATUS_REVIEW = 2;
+    const LOST_STATUS_ACCEPT = 3;
     const LOST_STATUS_CANCELATION = 4;
     const CATALOG_PHONE_TYPE_MOBILE = 1;
     const CATALOG_PHONE_TYPE_HOME = 2;
@@ -80,7 +81,7 @@ class RequestController extends Controller
     {
         //
         $misplacement = $this->misplacementService->getById($misplacement_id);
-        $misplacement->load('lostStatus','cancellationReason','misplacementIdentifications.identificationType');
+        $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType');
         $person = $this->authApiService->getPersonById($misplacement->people_id);
         $personAddress = $this->authApiService->getUserLastAddress($misplacement->people_id);
         $personPhoneHome = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_HOME);
@@ -102,19 +103,20 @@ class RequestController extends Controller
         $colony = collect($zipCodes['colonies'])->firstWhere('id', $placeEvent->colony_api_id);
         $placeEvent['municipality'] = $municipality;
         $placeEvent['colony'] = $colony;
-        return Inertia::render('Requests/Show',[
-            'person'=>$person,
-            'misplacement'=>$misplacement,
-            'personAddress'=>$personAddress,
-            'personPhoneHome'=>$personPhoneHome,
-            'personPhoneMobile'=>$personPhoneMobile,
-            'documents'=> $documents,
-            'placeEvent'=> $placeEvent,
+        return Inertia::render('Requests/Show', [
+            'person' => $person,
+            'misplacement' => $misplacement,
+            'personAddress' => $personAddress,
+            'personPhoneHome' => $personPhoneHome,
+            'personPhoneMobile' => $personPhoneMobile,
+            'documents' => $documents,
+            'placeEvent' => $placeEvent,
         ]);
     }
 
 
-    public function attendRequest(string $misplacement_id){
+    public function attendRequest(string $misplacement_id)
+    {
         $changeState = $this->changeMisplacementState($misplacement_id, SELF::LOST_STATUS_REVIEW);
         if ($changeState) {
             Log::info('Misplacement attended by user: ' . Auth::id() . ' misplacement ID: ' . $misplacement_id);
@@ -125,19 +127,21 @@ class RequestController extends Controller
     }
 
 
-    public function cancelRequest(string $misplacement_id){
+    public function cancelRequest(string $misplacement_id)
+    {
 
         $cancellationReasons = CancellationReason::all();
         $misplacement = $this->misplacementService->getById($misplacement_id);
         $now = new \DateTime();
-        return Inertia::render('Requests/Cancel',[
-            'cancellationReasons'=> $cancellationReasons,
-            'misplacement'=>$misplacement,
-            'today'=> $now->format('Y-m-d')
+        return Inertia::render('Requests/Cancel', [
+            'cancellationReasons' => $cancellationReasons,
+            'misplacement' => $misplacement,
+            'today' => $now->format('Y-m-d')
         ]);
     }
 
-    public function storeCancelRequest(Request $request, string $misplacement_id){
+    public function storeCancelRequest(Request $request, string $misplacement_id)
+    {
 
         $request->validate([
             'deadline' => 'required|date',
@@ -151,8 +155,55 @@ class RequestController extends Controller
         $misplacement->cancellation_reason_id = $request->cancellation_reason;
         $misplacement->save();
 
-        return redirect()->route('misplacement.show',$misplacement_id);
+        $reason = CancellationReason::find($request->cancellation_reason);
+
+        $data = [
+            "folio" => (string) $misplacement->id,
+            "status" => $reason->name,
+            "area" => "Trámite en Línea",
+            "name" => "Constancia de Extravío de Documentos",
+            "observations" => $request->message ?? 'Sin observaciones'
+        ];
+
+        $this->authApiService->storeProcesure($misplacement->people_id, $data);
+        return to_route(route('misplacement.show', $misplacement_id));
     }
+
+
+
+    public function acceptRequest(string $misplacement_id)
+    {
+        $misplacement = $this->misplacementService->getById($misplacement_id);
+        $now = new \DateTime();
+        return Inertia::render('Requests/Validate', [
+            'misplacement' => $misplacement,
+            'today' => $now->format('Y-m-d')
+        ]);
+    }
+
+
+    public function storeAcceptRequest(Request $request, string $misplacement_id)
+    {
+        $request->validate([
+            'deadline' => 'required|date',
+        ]);
+
+        $misplacement = Misplacement::find($misplacement_id);
+        $misplacement->lost_status_id = SELF::LOST_STATUS_ACCEPT;
+        $misplacement->description = $request->message;
+        $misplacement->save();
+
+        $data = [
+            "folio" => (string) $misplacement->id,
+            "status" => 'VÁLIDA',
+            "area" => "Trámite en Línea",
+            "name" => "Constancia de Extravío de Documentos",
+            "observations" => $request->message ?? 'Sin observaciones'
+        ];
+
+        $this->authApiService->storeProcesure($misplacement->people_id, $data);
+    }
+
 
 
 
