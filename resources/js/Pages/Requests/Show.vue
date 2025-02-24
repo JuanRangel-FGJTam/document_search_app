@@ -2,6 +2,8 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BackButton from '@/Components/BackButton.vue';
 import { defineProps } from 'vue';
+import { router, Link } from '@inertiajs/vue3';
+import { useToast } from 'vue-toastification';
 
 const props = defineProps({
     person: Object,
@@ -12,6 +14,18 @@ const props = defineProps({
     documents: Object,
     placeEvent: Object
 });
+
+console.log(props.misplacement);
+
+const toast = useToast();
+
+function attendMisplacement(misplacement_id) {
+    router.get(route('misplacement.attend', misplacement_id), {
+        onSuccess: () => {
+            toast.info('El estado de esta solicitud se ha actualizado!');
+        }
+    });
+}
 
 function getTypeClass(typeId) {
     const classMap = {
@@ -81,19 +95,41 @@ function getTypeClass(typeId) {
                         </div>
                         <div class="flex gap-4 mt-4">
                             <template v-if="misplacement.lost_status_id != 3">
-                                <button class="px-5 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-300"
+                                <button @click="attendMisplacement(props.misplacement.id)"
+                                    class="px-5 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-300"
                                     v-if="misplacement.lost_status_id == 1">Cambiar a revisión</button>
                                 <button class="px-5 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-300"
                                     v-if="misplacement.lost_status_id == 2">Validar Solicitud</button>
-                                <button class="px-5 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">Cancelar
-                                    Solicitud</button>
+                                <Link v-if="misplacement.lost_status_id != 4"
+                                    :href="route('misplacement.cancel', misplacement.id)"
+                                    class="px-5 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">
+                                Cancelar Solicitud
+                                </Link>
+                                <p v-else class="font-semibold text-red-500">
+                                    Esta solicitud ha sido cancelada
+                                </p>
                             </template>
                             <template v-else>
                                 <p class="font-semibold">Esta solicitud ha sido atendida</p>
                             </template>
                         </div>
+                        <div class="col-span-3 grid grid-cols-3 gap-4" v-if="misplacement.lost_status_id == 4">
+                            <div>
+                                <p class="font-semibold">Fecha de cancelación</p>
+                                <p>{{ misplacement.cancellation_date }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Motivo de cancelación</p>
+                                <span :class="getTypeClass(misplacement.cancellation_reason_id)">
+                                    {{ misplacement.cancellation_reason.name }}
+                                </span>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Descripción de cancelación</p>
+                                <p class="justify">{{ misplacement.cancellation_reason_description ?? 'Sin descripción'}}</p>
+                            </div>
+                        </div>
                     </div>
-
                     <!-- DATOS DEL LUGAR DE LOS HECHOS -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Lugar de los Hechos</h3>
                     <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">

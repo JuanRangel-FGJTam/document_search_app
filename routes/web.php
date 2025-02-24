@@ -28,5 +28,8 @@ Route::middleware([
     Route::prefix('/admin/request')->group(function () {
         Route::get('/', [RequestController::class, 'index'])->name('misplacement.index');
         Route::get('/show/{misplacement_id}', [RequestController::class, 'show'])->name('misplacement.show');
+        Route::get('/attend-request/{misplacement_id}',[RequestController::class,'attendRequest'])->name('misplacement.attend');
+        Route::get('/cancel-request/{misplacement_id}',[RequestController::class,'cancelRequest'])->name('misplacement.cancel');
+        Route::post('/store-cancel-request/{misplacement_id}',[RequestController::class,'storeCancelRequest'])->name('misplacement.store.cancel');
     });
 });

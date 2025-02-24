@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CancellationReason;
 use App\Models\Misplacement;
 use App\Services\AuthApiService;
 use App\Services\LostDocumentService;
@@ -9,10 +10,14 @@ use App\Services\MisplacementService;
 use App\Services\PlaceEventService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class RequestController extends Controller
 {
     const LOST_STATUS_PENDING = 1;
+    const LOST_STATUS_REVIEW = 2;
+    const LOST_STATUS_CANCELATION = 4;
     const CATALOG_PHONE_TYPE_MOBILE = 1;
     const CATALOG_PHONE_TYPE_HOME = 2;
     const DOCUMENT_TYPE_INE = 1;
@@ -107,6 +112,68 @@ class RequestController extends Controller
             'placeEvent'=> $placeEvent,
         ]);
     }
+
+
+    public function attendRequest(string $misplacement_id){
+        $changeState = $this->changeMisplacementState($misplacement_id, SELF::LOST_STATUS_REVIEW);
+        if ($changeState) {
+            Log::info('Misplacement attended by user: ' . Auth::id() . ' misplacement ID: ' . $misplacement_id);
+            return redirect()->back()->with('success', 'Misplacement attended successfully!');
+        }
+        Log::error('Error attending misplacement by user: ' . Auth::id() . ' misplacement ID: ' . $misplacement_id);
+        return redirect()->back()->with('error', 'Misplacement not found');
+    }
+
+
+    public function cancelRequest(string $misplacement_id){
+
+        $cancellationReasons = CancellationReason::all();
+        $misplacement = $this->misplacementService->getById($misplacement_id);
+        $now = new \DateTime();
+        return Inertia::render('Requests/Cancel',[
+            'cancellationReasons'=> $cancellationReasons,
+            'misplacement'=>$misplacement,
+            'today'=> $now->format('Y-m-d')
+        ]);
+    }
+
+    public function storeCancelRequest(Request $request, string $misplacement_id){
+
+        $request->validate([
+            'deadline' => 'required|date',
+            'cancellation_reason' => 'required',
+        ]);
+
+        $misplacement = Misplacement::find($misplacement_id);
+        $misplacement->lost_status_id = SELF::LOST_STATUS_CANCELATION;
+        $misplacement->cancellation_date = $request->deadline;
+        $misplacement->cancellation_reason_description = $request->message;
+        $misplacement->cancellation_reason_id = $request->cancellation_reason;
+        $misplacement->save();
+
+        return redirect()->route('misplacement.show',$misplacement_id);
+    }
+
+
+
+    private function changeMisplacementState(string $misplacement_id, int $state_id)
+    {
+        $misplacement = Misplacement::find($misplacement_id);
+        if ($misplacement) {
+            $misplacement->lost_status_id = $state_id;
+            $misplacement->save();
+            Log::info('Misplacement state changed by user: ' . Auth::id() . ' misplacement ID: ' . $misplacement_id . ' to state: ' . $state_id);
+            return [
+                'message' => 'success',
+                'id' => $misplacement->id
+            ];
+        }
+        Log::error('Error changing ticket state by user: ' . Auth::id() . ' ticket ID: ' . $misplacement_id . ' to state: ' . $state_id);
+        return false;
+    }
+
+
+
 
     /**
      * Show the form for editing the specified resource.
