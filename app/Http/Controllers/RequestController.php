@@ -67,8 +67,9 @@ class RequestController extends Controller
             $query->where('lost_status_id', $status_id);
         }
 
+        $totalMisplacements = $query->get();
         // Paginación
-        $misplacements = \App\Support\Pagination::paginate($query->get(), $request);
+        $misplacements = \App\Support\Pagination::paginate($totalMisplacements, $request);
 
         // Obtener datos adicionales
         foreach ($misplacements as $key => $value) {
@@ -79,7 +80,8 @@ class RequestController extends Controller
 
         return Inertia::render('Requests/Index', [
             'misplacements' => $misplacements,
-            'lost_statuses' => $lostStatuses
+            'lost_statuses' => $lostStatuses,
+            'totalMisplacements'=> $totalMisplacements->count()
         ]);
     }
 

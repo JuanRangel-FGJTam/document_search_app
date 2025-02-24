@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,9 @@ Route::middleware([
 
         Route::get('/accept-request/{misplacement_id}',[RequestController::class,'acceptRequest'])->name('misplacement.accept');
         Route::post('/store-accept-request/{misplacement_id}',[RequestController::class,'storeAcceptRequest'])->name('misplacement.store.accept');
+    });
 
+    Route::prefix('/admin/reports')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('reports.index');
     });
 });

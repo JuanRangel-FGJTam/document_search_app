@@ -9,6 +9,9 @@ const props = defineProps({
     },
     lost_statuses: {
         type: Object
+    },
+    totalMisplacements:{
+        type: Number
     }
 });
 
@@ -19,7 +22,7 @@ function onChange() {
     },
         {
             preserveState: true,
-            only: ['misplacements'],
+            only: ['misplacements','totalMisplacements'],
             onSuccess: (page) => {
                 console.log(props.misplacements);
             },
@@ -55,7 +58,7 @@ function getTypeClass(typeId) {
                                 </h2>
                                 <span
                                     class="px-3 py-1 text-xs text-blue-600 bg-blue-100 rounded-full dark:bg-gray-800 dark:text-blue-400">
-                                    Total de solicitudes
+                                    Total de solicitudes: {{totalMisplacements}}
                                 </span>
                             </div>
                         </div>
@@ -83,7 +86,7 @@ function getTypeClass(typeId) {
                                                 </div>
                                                 <input type="text" id="simple-search"
                                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                                    placeholder="Busca por folio, solicitante o empleado asignado..."
+                                                    placeholder="Buscar..."
                                                     required="">
                                             </div>
                                         </div>
