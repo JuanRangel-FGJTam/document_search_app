@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AcceptRequest;
+use App\Mail\CancelRequest;
 use App\Models\CancellationReason;
 use App\Models\LostStatus;
 use App\Models\Misplacement;
@@ -13,7 +15,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Mail;
 class RequestController extends Controller
 {
     const LOST_STATUS_PENDING = 1;
@@ -111,9 +113,9 @@ class RequestController extends Controller
         $misplacement = $this->misplacementService->getById($misplacement_id);
         $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType');
         $person = $this->authApiService->getPersonById($misplacement->people_id);
-        $personAddress = $this->authApiService->getUserLastAddress($misplacement->people_id);
-        $personPhoneHome = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_HOME);
-        $personPhoneMobile = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_MOBILE);
+        //$personAddress = $this->authApiService->getUserLastAddress($misplacement->people_id);
+        //$personPhoneHome = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_HOME);
+        //$personPhoneMobile = $this->authApiService->getUserContactType($misplacement->people_id, self::CATALOG_PHONE_TYPE_MOBILE);
 
         $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
         $documents->load('documentType');
@@ -134,9 +136,9 @@ class RequestController extends Controller
         return Inertia::render('Requests/Show', [
             'person' => $person,
             'misplacement' => $misplacement,
-            'personAddress' => $personAddress,
-            'personPhoneHome' => $personPhoneHome,
-            'personPhoneMobile' => $personPhoneMobile,
+            //'personAddress' => $personAddress,
+            //'personPhoneHome' => $personPhoneHome,
+            //'personPhoneMobile' => $personPhoneMobile,
             'documents' => $documents,
             'placeEvent' => $placeEvent,
         ]);
@@ -194,7 +196,12 @@ class RequestController extends Controller
         ];
 
         $this->authApiService->storeProcesure($misplacement->people_id, $data);
-        return to_route(route('misplacement.show', $misplacement_id));
+
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
+
+        Mail::to($person['email'])->queue(new CancelRequest($data));
+
+        return to_route('misplacement.show', $misplacement_id);
     }
 
 
@@ -230,6 +237,13 @@ class RequestController extends Controller
         ];
 
         $this->authApiService->storeProcesure($misplacement->people_id, $data);
+
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
+
+        Mail::to($person['email'])->queue(new AcceptRequest($data));
+
+        return to_route('misplacement.show',$misplacement_id);
+
     }
 
 

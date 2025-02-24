@@ -28,6 +28,29 @@ services:
     networks:
       - app-network
 
+  jobs:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: jobs.dockerfile
+    volumes:
+      - .:/var/www/html
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - app-network
+
+  scheduler:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: scheduler.dockerfile
+    volumes:
+      - .:/var/www/html
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge

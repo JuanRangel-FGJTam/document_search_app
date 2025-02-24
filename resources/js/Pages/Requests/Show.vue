@@ -8,9 +8,6 @@ import { onMounted } from 'vue';
 const props = defineProps({
     person: Object,
     misplacement: Object,
-    personAddress: Object,
-    personPhoneHome: Object,
-    personPhoneMobile: Object,
     documents: Object,
     placeEvent: Object
 });
