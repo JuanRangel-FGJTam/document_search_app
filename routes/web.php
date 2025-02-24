@@ -39,5 +39,7 @@ Route::middleware([
 
     Route::prefix('/admin/reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('/getByYear', [ReportController::class, 'getByYear'])->name('reports.getByYear');
+
     });
 });

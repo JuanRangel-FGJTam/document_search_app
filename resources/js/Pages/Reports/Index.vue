@@ -8,7 +8,9 @@ import ModalConfirmation from '@/Components/ModalConfirmation.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 
+const toast = useToast();
 const props = defineProps({
+    errors: Object,
     years: Array
 });
 
@@ -18,7 +20,33 @@ const form = useForm({
 
 
 const submit = () => {
+    if(!form.year){
+        toast.warning('Ingrese un año');
+        return;
+    }
+    axios.post(route('reports.getByYear'), form, {
+        responseType: 'blob'
+    })
+        .then(response => {
+            // Crear una URL para el blob
+            const url = window.URL.createObjectURL(new Blob([response.data]));
 
+            // Crear un elemento de enlace y activar la descarga
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Solicitudes_Constancias_'+form.year+'.xlsx');  // Establecer el nombre de archivo
+
+            // Agregar al documento y activar el clic
+            document.body.appendChild(link);
+            link.click();
+
+            // Limpiar
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Error downloading the file:', error);
+        });
 }
 
 </script>
@@ -42,11 +70,11 @@ const submit = () => {
                                     <select id="year" name="year" v-model="form.year"
                                         class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
                                         <option disabled value="">Seleccione un elemento</option>
-                                        <option v-for="year in years" :key="year"
-                                            v-bind:value="year">
+                                        <option v-for="year in years" :key="year" v-bind:value="year">
                                             {{ year }}
                                         </option>
                                     </select>
+                                    <InputError v-if="errors.year" :message="errors.year" />
                                 </div>
                             </div>
                             <div class="flex items-center justify-end space-x-4">

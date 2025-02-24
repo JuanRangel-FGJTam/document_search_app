@@ -18,7 +18,7 @@ class MisplacementIdentification extends Model
 
     public function identificationType()
     {
-        return $this->belongsTo(IdentificationType::class);
+        return $this->belongsTo(IdentificationType::class, 'identification_type_id');
     }
 
 }
