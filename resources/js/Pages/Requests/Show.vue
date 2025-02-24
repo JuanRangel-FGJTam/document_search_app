@@ -111,7 +111,7 @@ onMounted(() => useToast());
                                 </p>
                             </template>
                             <template v-else>
-                                <p class="font-semibold">Esta solicitud ha sido atendida</p>
+                                <p class="font-semibold text-green-500">Esta solicitud ha sido atendida</p>
                             </template>
                         </div>
                         <div class="col-span-3 grid grid-cols-3 gap-4" v-if="misplacement.lost_status_id == 4">

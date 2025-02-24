@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CancellationReason;
+use App\Models\LostStatus;
 use App\Models\Misplacement;
 use App\Services\AuthApiService;
 use App\Services\LostDocumentService;
@@ -40,23 +41,48 @@ class RequestController extends Controller
      */
     public function index(Request $request)
     {
-        //
-        $totalMisplacements = $this->misplacementService->getAllByStatusId(SELF::LOST_STATUS_PENDING);
-        $totalMisplacements->load('lostStatus');
+        $status = $request->query('status');
+        $lostStatuses = LostStatus::all();
 
-        $misplacements = \App\Support\Pagination::paginate($totalMisplacements, $request);
+        // Si no hay status en la query, por defecto mostrar solo las solicitudes pendientes
+        if ($status === null) {
+            $status = SELF::LOST_STATUS_PENDING;
+        }
 
+        // Mapeo de los status válidos
+        $statusMap = [
+            SELF::LOST_STATUS_REVIEW => SELF::LOST_STATUS_REVIEW,
+            SELF::LOST_STATUS_ACCEPT => SELF::LOST_STATUS_ACCEPT,
+            SELF::LOST_STATUS_CANCELATION => SELF::LOST_STATUS_CANCELATION,
+            SELF::LOST_STATUS_PENDING => SELF::LOST_STATUS_PENDING,
+            5 => null // Si es 5, no se filtra por status
+        ];
+
+        $status_id = $statusMap[$status] ?? null;
+
+        // Construcción de la consulta
+        $query = Misplacement::with('lostStatus');
+
+        if ($status_id !== null) {
+            $query->where('lost_status_id', $status_id);
+        }
+
+        // Paginación
+        $misplacements = \App\Support\Pagination::paginate($query->get(), $request);
+
+        // Obtener datos adicionales
         foreach ($misplacements as $key => $value) {
             $peopleData = $this->authApiService->getPersonById($value->people_id);
             $misplacements[$key]->fullName = $peopleData['fullName'] ?? 'N/A';
             $misplacements[$key]->email = $peopleData['email'] ?? 'N/A';
         }
 
-
         return Inertia::render('Requests/Index', [
-            'misplacements' => $misplacements
+            'misplacements' => $misplacements,
+            'lost_statuses' => $lostStatuses
         ]);
     }
+
 
     /**
      * Show the form for creating a new resource.

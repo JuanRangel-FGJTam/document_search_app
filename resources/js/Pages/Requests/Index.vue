@@ -1,14 +1,33 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
-import { Link } from '@inertiajs/vue3';
-import { defineProps } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { defineProps, ref } from 'vue';
 const props = defineProps({
     misplacements: {
         type: Object,
     },
+    lost_statuses: {
+        type: Object
+    }
 });
 
+const selectedStatus = ref(1);
+function onChange() {
+    router.get(route('misplacement.index'), {
+        status: selectedStatus.value,
+    },
+        {
+            preserveState: true,
+            only: ['misplacements'],
+            onSuccess: (page) => {
+                console.log(props.misplacements);
+            },
+            onError: () => {
+                console.log('Error');
+            }
+        });
+}
 function getTypeClass(typeId) {
     const classMap = {
         '1': 'flex items-center justify-center px-3 py-1 text-sm font-normal rounded-full text-yellow-500 gap-x-2 bg-yellow-100/60 dark:bg-gray-800',
@@ -47,7 +66,7 @@ function getTypeClass(typeId) {
                             <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
                                 <div
                                     class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
-                                    <div class="w-full md:w-1/2">
+                                    <div class="w-full">
                                         <div class="flex items-center">
                                             <label for="simple-search" class="sr-only">Search</label>
                                             <div class="relative w-full">
@@ -74,21 +93,6 @@ function getTypeClass(typeId) {
                                         class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
                                         <div class="flex items-center space-x-3 w-full md:w-auto">
                                             <div>
-                                                <div class="relative inline-block w-42">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
-                                                        class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
-                                                        viewbox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd"
-                                                            d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                                                            clip-rule="evenodd" />
-                                                    </svg>
-                                                    <select
-                                                        class="appearance-none w-full bg-white border border-gray-300 text-gray-900 py-2 pl-10 pr-4 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
-                                                        <option>Todos</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div>
                                                 <div class="relative inline-block w-64">
                                                     <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
                                                         class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
@@ -97,9 +101,13 @@ function getTypeClass(typeId) {
                                                             d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
                                                             clip-rule="evenodd" />
                                                     </svg>
-                                                    <select
+                                                    <select @change="onChange()" v-model="selectedStatus"
                                                         class="appearance-none w-full bg-white border border-gray-300 text-gray-900 py-2 pl-10 pr-4 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
-                                                        <option :value="null">Departamentos</option>
+                                                        <option :value="5">TODOS</option>
+                                                        <option v-for="state in lost_statuses" :key="state.id"
+                                                            v-bind:value="state.id">
+                                                            {{ state.name }}
+                                                        </option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -132,7 +140,7 @@ function getTypeClass(typeId) {
                                                     <td class="text-center px-4 py-3 whitespace-nowrap">
                                                         <div>
                                                             <h4 class="text-gray-700 dark:text-gray-200">
-                                                                {{ misplacement.fullName  }}
+                                                                {{ misplacement.fullName }}
                                                             </h4>
                                                             <p class="text-gray-500 dark:text-gray-400">
                                                                 {{ misplacement.email }}
@@ -173,7 +181,7 @@ function getTypeClass(typeId) {
                                                 <tr>
                                                     <td colspan="6"
                                                         class="px-6 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                        No hay solicitudes.
+                                                        No hay solicitudes pendientes.
                                                     </td>
                                                 </tr>
                                             </template>
