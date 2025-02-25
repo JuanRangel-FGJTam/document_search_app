@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Laravel\Scout\Searchable;
 class Misplacement extends Model
 {
     use HasFactory;
-
+    use Searchable;
     protected $fillable = [
         'lost_status_id',
         'people_id',
@@ -45,5 +45,14 @@ class Misplacement extends Model
         return $this->hasOne(MisplacementIdentification::class);
     }
 
+    public function toSearchableArray()
+    {
+        $array = $this->toArray();
+        // Incluye las relaciones deseadas y el "folio"
+        $array['people_name'] = $this->people->name ?? '';
+        $array['people_email'] = $this->people->email ?? '';
+        $array['folio'] = $this->document_number ?? '';
+        return $array;
+    }
 
 }

@@ -86,6 +86,7 @@ class RequestController extends Controller
             $query->where('lost_status_id', $status_id);
         }
 
+        $query->orderBy('registration_date', 'desc');
         $totalMisplacements = $query->get();
         // Paginación
         $misplacements = \App\Support\Pagination::paginate($totalMisplacements, $request);
