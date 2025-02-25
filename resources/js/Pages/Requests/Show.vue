@@ -16,7 +16,7 @@ const props = defineProps({
 const toast = useToast();
 
 function attendMisplacement(misplacement_id) {
-    router.get(route('misplacement.attend', misplacement_id), {
+    router.visit(route('misplacement.attend', misplacement_id), {
         onSuccess: () => {
             toast.info('El estado de esta solicitud se ha actualizado!');
         }
@@ -110,6 +110,17 @@ onMounted(() => useToast());
                             <template v-else>
                                 <p class="font-semibold text-green-500">Esta solicitud ha sido atendida</p>
                             </template>
+                        </div>
+                        <div class="col-span-3 grid grid-cols-3 gap-4" v-if="misplacement.lost_status_id == 3">
+                            <div>
+                                <p class="font-semibold">Fecha de validación</p>
+                                <p>{{ misplacement.validation_date }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Observaciones</p>
+                                <p>{{ misplacement.observations }}</p>
+
+                            </div>
                         </div>
                         <div class="col-span-3 grid grid-cols-3 gap-4" v-if="misplacement.lost_status_id == 4">
                             <div>

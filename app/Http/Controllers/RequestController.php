@@ -224,8 +224,9 @@ class RequestController extends Controller
         ]);
 
         $misplacement = Misplacement::find($misplacement_id);
+        $misplacement->validation_date = $request->deadline;
         $misplacement->lost_status_id = SELF::LOST_STATUS_ACCEPT;
-        $misplacement->description = $request->message;
+        $misplacement->observations = $request->message;
         $misplacement->save();
 
         $data = [
