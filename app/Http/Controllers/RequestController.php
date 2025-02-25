@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+
 class RequestController extends Controller
 {
     const LOST_STATUS_PENDING = 1;
@@ -61,6 +62,8 @@ class RequestController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status');
+        $search = $request->query('search');
+        $totalMisplacements = null;
         $lostStatuses = LostStatus::all();
 
         // Si no hay status en la query, por defecto mostrar solo las solicitudes pendientes
@@ -78,32 +81,30 @@ class RequestController extends Controller
         ];
 
         $status_id = $statusMap[$status] ?? null;
+        $query = Misplacement::query();
 
-        // Construcción de la consulta
-        $query = Misplacement::with('lostStatus');
-
-        if ($status_id !== null) {
-            $query->where('lost_status_id', $status_id);
+        // Si se está buscando texto, realizar la búsqueda en Meilisearch
+        if ($search !== null) {
+            $totalMisplacements = Misplacement::search($search)->get();
+        } else {
+            // Si no hay búsqueda, aplicar el filtro de status
+            if ($status_id !== null) {
+                $query->where('lost_status_id', $status_id);
+            }
+            $totalMisplacements = $query->get();
         }
 
-        $query->orderBy('registration_date', 'desc');
-        $totalMisplacements = $query->get();
         // Paginación
+        $totalMisplacements->load('people', 'lostStatus');
         $misplacements = \App\Support\Pagination::paginate($totalMisplacements, $request);
-
-        // Obtener datos adicionales
-        foreach ($misplacements as $key => $value) {
-            $peopleData = $this->authApiService->getPersonById($value->people_id);
-            $misplacements[$key]->fullName = $peopleData['fullName'] ?? 'N/A';
-            $misplacements[$key]->email = $peopleData['email'] ?? 'N/A';
-        }
 
         return Inertia::render('Requests/Index', [
             'misplacements' => $misplacements,
             'lost_statuses' => $lostStatuses,
-            'totalMisplacements'=> $totalMisplacements->count()
+            'totalMisplacements' => $totalMisplacements->count()
         ]);
     }
+
 
 
     /**
@@ -256,7 +257,7 @@ class RequestController extends Controller
             "observations" => $request->message ?? 'Sin observaciones'
         ];
 
-       $this->authApiService->storeProcesure($misplacement->people_id, $data);
+        $this->authApiService->storeProcesure($misplacement->people_id, $data);
 
 
         $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
@@ -272,8 +273,7 @@ class RequestController extends Controller
 
         Mail::to($person['email'])->queue(new SendValidate($data, $fileURL));
 
-        return to_route('misplacement.show',$misplacement_id);
-
+        return to_route('misplacement.show', $misplacement_id);
     }
 
 

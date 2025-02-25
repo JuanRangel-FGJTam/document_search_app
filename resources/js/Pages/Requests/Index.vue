@@ -10,19 +10,37 @@ const props = defineProps({
     lost_statuses: {
         type: Object
     },
-    totalMisplacements:{
+    totalMisplacements: {
         type: Number
     }
 });
 
 const selectedStatus = ref(1);
+
+const handleChange = (event) => {
+    const search = event.target.value;
+    router.get(route('misplacement.index'), {
+        search: search,
+    },
+        {
+            preserveState: true,
+            only: ['misplacements', 'totalMisplacements'],
+            onSuccess: (page) => {
+                console.log(props.misplacements);
+            },
+            onError: () => {
+                console.log('Error');
+            }
+        });
+}
+
 function onChange() {
     router.get(route('misplacement.index'), {
         status: selectedStatus.value,
     },
         {
             preserveState: true,
-            only: ['misplacements','totalMisplacements'],
+            only: ['misplacements', 'totalMisplacements'],
             onSuccess: (page) => {
                 console.log(props.misplacements);
             },
@@ -58,7 +76,7 @@ function getTypeClass(typeId) {
                                 </h2>
                                 <span
                                     class="px-3 py-1 text-xs text-blue-600 bg-blue-100 rounded-full dark:bg-gray-800 dark:text-blue-400">
-                                    Total de solicitudes: {{totalMisplacements}}
+                                    Total de solicitudes: {{ totalMisplacements }}
                                 </span>
                             </div>
                         </div>
@@ -85,8 +103,9 @@ function getTypeClass(typeId) {
                                                     </svg>
                                                 </div>
                                                 <input type="text" id="simple-search"
+                                                    @keyup="(event) => handleChange(event)"
                                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                                    placeholder="Buscar..."
+                                                    placeholder="Buscar por folio, nombre o correo de manifestante..."
                                                     required="">
                                             </div>
                                         </div>
@@ -143,10 +162,10 @@ function getTypeClass(typeId) {
                                                     <td class="text-center px-4 py-3 whitespace-nowrap">
                                                         <div>
                                                             <h4 class="text-gray-700 dark:text-gray-200">
-                                                                {{ misplacement.fullName }}
+                                                                {{ misplacement.people.name }}
                                                             </h4>
                                                             <p class="text-gray-500 dark:text-gray-400">
-                                                                {{ misplacement.email }}
+                                                                {{ misplacement.people.email }}
                                                             </p>
                                                         </div>
                                                     </td>
