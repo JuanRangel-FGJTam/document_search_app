@@ -34,7 +34,7 @@ const closeModal = () => {
 };
 const confirmModal = () => {
     form.post(route('misplacement.store.cancel',props.misplacement.id), {
-        replace: false,
+        replace: true,
         onError: (errors) => {
             closeModal();
         },

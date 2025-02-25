@@ -32,6 +32,7 @@ const closeModal = () => {
 };
 const confirmModal = () => {
     form.post(route('misplacement.store.accept',props.misplacement.id), {
+        replace: true,
         onError: (errors) => {
             closeModal();
         },
