@@ -3,7 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Mail\AcceptRequest;
+use App\Mail\AcceptRequest2;
 use App\Mail\CancelRequest;
+use App\Mail\EmailCancel;
+use App\Mail\EmailValidate;
+use App\Mail\MailCancel;
+use App\Mail\MailValidate;
+use App\Mail\OrderShipped;
+use App\Mail\prueba;
+use App\Mail\SendValidate;
+use App\Mail\Test;
+use App\Mail\Test2;
+use App\Mail\Tester;
+use App\Mail\tester3;
+use App\Mail\Tester4;
+use App\Mail\Valid;
+use App\Mail\Validate;
 use App\Models\CancellationReason;
 use App\Models\LostStatus;
 use App\Models\Misplacement;
@@ -16,6 +31,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 class RequestController extends Controller
 {
     const LOST_STATUS_PENDING = 1;
@@ -184,10 +201,11 @@ class RequestController extends Controller
         $misplacement->cancellation_reason_description = $request->message;
         $misplacement->cancellation_reason_id = $request->cancellation_reason;
         $misplacement->save();
-
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
         $reason = CancellationReason::find($request->cancellation_reason);
 
         $data = [
+            "fullName" => $person['fullName'],
             "folio" => (string) $misplacement->id,
             "status" => $reason->name,
             "area" => "Trámite en Línea",
@@ -197,9 +215,8 @@ class RequestController extends Controller
 
         $this->authApiService->storeProcesure($misplacement->people_id, $data);
 
-        $person = $this->authApiService->getPersonById($misplacement->people_id);
 
-        Mail::to($person['email'])->queue(new CancelRequest($data));
+        Mail::to($person['email'])->queue(new EmailCancel($data));
 
         return to_route('misplacement.show', $misplacement_id);
     }
@@ -222,14 +239,15 @@ class RequestController extends Controller
         $request->validate([
             'deadline' => 'required|date',
         ]);
-
+        $fileURL = null;
         $misplacement = Misplacement::find($misplacement_id);
         $misplacement->validation_date = $request->deadline;
         $misplacement->lost_status_id = SELF::LOST_STATUS_ACCEPT;
         $misplacement->observations = $request->message;
         $misplacement->save();
-
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
         $data = [
+            "fullName" => $person['fullName'],
             "folio" => (string) $misplacement->id,
             "status" => 'VÁLIDA',
             "area" => "Trámite en Línea",
@@ -237,11 +255,21 @@ class RequestController extends Controller
             "observations" => $request->message ?? 'Sin observaciones'
         ];
 
-        $this->authApiService->storeProcesure($misplacement->people_id, $data);
+       $this->authApiService->storeProcesure($misplacement->people_id, $data);
 
-        $person = $this->authApiService->getPersonById($misplacement->people_id);
 
-        Mail::to($person['email'])->queue(new AcceptRequest($data));
+        $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
+        $url = $procedure['files'][0]['fileUrl'];
+
+        $response = Http::get($url);
+        if ($response->successful()) {
+            $filename = 'document_' . $misplacement->people_id . '.pdf';
+            $path = 'public/documents/' . $filename;
+            Storage::put($path, $response->body());
+            $fileURL =  'app/public/documents/' . $filename;
+        }
+
+        Mail::to($person['email'])->queue(new SendValidate($data, $fileURL));
 
         return to_route('misplacement.show',$misplacement_id);
 

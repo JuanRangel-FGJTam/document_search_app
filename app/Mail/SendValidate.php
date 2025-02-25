@@ -8,18 +8,19 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-
-class AcceptRequest extends Mailable implements ShouldQueue
+use Illuminate\Mail\Mailables\Attachment;
+class SendValidate extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(protected array $data)
+    public function __construct(protected array $data, protected string $url)
     {
         //
         $this->data = $data;
+        $this->url = $url;
     }
 
     /**
@@ -38,13 +39,14 @@ class AcceptRequest extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.acceptRequest',
-            with:[
+            markdown: 'emails.sendValidate',
+            with: [
+                'fullName'=> $this->data['fullName'],
                 'folio' => $this->data['folio'],
                 'status' => $this->data['status'],
                 'area' => $this->data['area'],
                 'name' => $this->data['name'],
-                'observations'=> $this->data['observations']
+                'observations' => $this->data['observations']
             ]
         );
     }
@@ -56,6 +58,10 @@ class AcceptRequest extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        return [];
+        $path = storage_path($this->url);
+
+        return [
+            Attachment::fromPath($path)
+        ];
     }
 }
