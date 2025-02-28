@@ -1,66 +1,149 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# DocumentLost App Admin
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Requirements
 
-## About Laravel
+-   PHP 8.2
+-   MySQL 8
+-   NodeJS 20
+-   npm 9.8.0
+-   [Composer](https://getcomposer.org/)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Frameworks
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+-   [Laravel 11.9](https://getcomposer.org/)
+-   [VueJS 3.3.13](https://vuejs.org/guide/introduction.html)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Composer Dependencies
 
-## Learning Laravel
+-   [InertiaJS](https://inertiajs.com/)
+-   [Sanctum](https://laravel.com/docs/11.x/sanctum)
+-   [phpspreadsheet](https://phpspreadsheet.readthedocs.io/en/latest/)
+-   [Scout]
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## NPM Dependencies
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+-   [Vue-Toastificacion](https://vue-toastification.maronato.dev/)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Setup
 
-## Laravel Sponsors
+-   Clone the project
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+    git clone https://github.com/fgjtam-dgtit-jhovan/document_lost_admin_app.git
+```
 
-### Premium Partners
+-   Go to the project directory
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+    cd document_lost_admin_app
+```
 
-## Contributing
+-   Create `.env` file
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+    cp .env.example .env
+```
 
-## Code of Conduct
+-   Create and configure database configuration file `docker-compose.override.yml`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+    nano docker-compose.override.yml
+```
 
-## Security Vulnerabilities
+-   Create Docker Image
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+    docker build --build-arg uid=1000 --build-arg user=myuser -t image_name .
+```
 
-## License
+-   Execute Docker Image
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+    docker compose up
+    docker-compose exec app php artisan key:generate
+    docker compose exec app bash
+```
+
+-   Run the migrations to create the tables in the database
+
+```bash
+    php artisan migrate
+```
+
+-   Install composer dependencies
+
+```bash
+    composer install
+```
+
+-   Install JavaScript dependencies
+
+```bash
+    npm install
+```
+
+-   Build JS assets (Production environment)
+
+```bash
+    npm run build
+```
+
+## Meilisearch
+
+If you are installing Scout into an existing project, you may already have database records you need to import into your indexes. Scout provides a scout:import Artisan command that you may use to import all of your existing records into your search indexes:
+
+```bash
+php artisan scout:import "App\Models\Misplacement"
+
+```
+
+The flush command may be used to remove all of a model's records from your search indexes:
+
+```bash
+php artisan scout:flush "App\Models\Misplacement"
+
+```
+
+If you modify the `config/scout.php` configuration file you need to update the index:
+
+```bash
+php artisan scout:sync-index-settings
+```
+
+## Variables in .env file
+
+-   Add variables in `.env` file for connection to the document_lost_app database
+
+```bash
+DB_CONNECTION=mysql
+DB_HOST=
+DB_PORT=3306
+DB_DATABASE=extravios
+DB_USERNAME=remoteusr
+DB_PASSWORD=
+
+```
+
+-   Replace value of variables in `.env` file to send emails
+
+```bash
+MAIL_MAILER=
+MAIL_HOST=
+MAIL_PORT=
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME=
+```
+
+-   Add variables in `.env` file
+
+```bash
+SCOUT_DRIVER=meilisearch
+MEILISEARCH_HOST=
+MEILISEARCH_KEY=
+```
+
+
+
