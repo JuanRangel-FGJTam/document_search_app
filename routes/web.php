@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use Illuminate\Foundation\Application;
@@ -18,26 +19,22 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    Route::prefix('/dashboard')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Dashboard');
-        })->name('dashboard');
-    });
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     Route::prefix('/admin/request')->group(function () {
         Route::get('/', [RequestController::class, 'index'])->name('misplacement.index');
         Route::get('/show/{misplacement_id}', [RequestController::class, 'show'])->name('misplacement.show');
-        Route::get('/attend-request/{misplacement_id}',[RequestController::class,'attendRequest'])->name('misplacement.attend');
-        Route::get('/cancel-request/{misplacement_id}',[RequestController::class,'cancelRequest'])->name('misplacement.cancel');
-        Route::post('/store-cancel-request/{misplacement_id}',[RequestController::class,'storeCancelRequest'])->name('misplacement.store.cancel');
+        Route::get('/attend-request/{misplacement_id}', [RequestController::class, 'attendRequest'])->name('misplacement.attend');
+        Route::get('/cancel-request/{misplacement_id}', [RequestController::class, 'cancelRequest'])->name('misplacement.cancel');
+        Route::post('/store-cancel-request/{misplacement_id}', [RequestController::class, 'storeCancelRequest'])->name('misplacement.store.cancel');
 
-        Route::get('/accept-request/{misplacement_id}',[RequestController::class,'acceptRequest'])->name('misplacement.accept');
-        Route::post('/store-accept-request/{misplacement_id}',[RequestController::class,'storeAcceptRequest'])->name('misplacement.store.accept');
+        Route::get('/accept-request/{misplacement_id}', [RequestController::class, 'acceptRequest'])->name('misplacement.accept');
+        Route::post('/store-accept-request/{misplacement_id}', [RequestController::class, 'storeAcceptRequest'])->name('misplacement.store.accept');
     });
 
     Route::prefix('/admin/reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
         Route::post('/getByYear', [ReportController::class, 'getByYear'])->name('reports.getByYear');
-
     });
 });
