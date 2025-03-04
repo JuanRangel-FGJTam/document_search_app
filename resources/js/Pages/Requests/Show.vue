@@ -9,8 +9,11 @@ const props = defineProps({
     person: Object,
     misplacement: Object,
     documents: Object,
-    placeEvent: Object
+    placeEvent: Object,
+    identification: Object
 });
+
+console.log(props.identification);
 
 
 const toast = useToast();
@@ -67,7 +70,7 @@ onMounted(() => useToast());
 
                     <!-- DATOS DE LA SOLICITUD -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la Solicitud</h3>
-                    <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
+                    <div class="grid grid-cols-5 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Folio</p>
                             <p>{{ misplacement.document_number }}</p>
@@ -82,21 +85,15 @@ onMounted(() => useToast());
                             <p class="font-semibold">Fecha de Registro</p>
                             <p>{{ misplacement.registration_date }}</p>
                         </div>
-                        <div>
-                            <p class="font-semibold">Tipo de Identificación</p>
-                            <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
-                        </div>
-                        <div class="flex gap-4 mt-4">
+                        <div class="flex gap-4 col-span-2">
                             <template v-if="misplacement.lost_status_id != 3">
-                                <button @click="attendMisplacement(props.misplacement.id)"
-                                    class="px-5 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-300"
-                                    v-if="misplacement.lost_status_id == 1">Cambiar a revisión</button>
-                                <Link :href="route('misplacement.accept', misplacement.id)" class="px-5 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-300"
-                                    v-if="misplacement.lost_status_id == 2">Validar Solicitud
+                                <Link :href="route('misplacement.accept', misplacement.id)"
+                                    class="px-5 py-4 text-green-700 bg-green-100 rounded-lg hover:bg-green-300">
+                                Validar Solicitud
                                 </Link>
                                 <Link v-if="misplacement.lost_status_id != 4"
                                     :href="route('misplacement.cancel', misplacement.id)"
-                                    class="px-5 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">
+                                    class="px-5 py-4 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">
                                 Cancelar Solicitud
                                 </Link>
                                 <p v-else class="font-semibold text-red-500">
@@ -135,6 +132,26 @@ onMounted(() => useToast());
                                     'Sin descripción' }}
                                 </p>
                             </div>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la identificación</h3>
+                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
+                        <div>
+                            <p class="font-semibold">Tipo de Identificación</p>
+                            <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Folio de Identificación</p>
+                            <p>{{ identification.folio ?? 'No disponible' }}</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Fecha de vencimiento</p>
+                            <p>{{ identification.valid ?? 'No disponible' }}</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold">Identificación</p>
+                            <img :src="identification.fileUrl" alt="Identificacion"
+                                class="h-32 object-cover rounded-lg">
                         </div>
                     </div>
                     <!-- DATOS DEL LUGAR DE LOS HECHOS -->

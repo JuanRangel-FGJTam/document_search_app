@@ -93,4 +93,16 @@ class AuthApiService
         }
         return $response->json();
     }
+
+    public function getDocumentById(string $person_id, string $documentTypeId)
+    {
+        $response = Http::withHeader('Authorization', self::authorizationValue())
+            ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/document/' . $documentTypeId));
+
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
 }

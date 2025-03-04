@@ -134,6 +134,9 @@ class RequestController extends Controller
         $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);
         $placeEvent->lost_date = \Carbon\Carbon::parse($placeEvent->lost_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
 
+        $identification = $this->authApiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
+
+
         $zipCodes = $this->authApiService->getZipCode($placeEvent->zipcode);
 
         if (isset($zipCodes['municipalities'])) {
@@ -149,6 +152,7 @@ class RequestController extends Controller
             'misplacement' => $misplacement,
             'documents' => $documents,
             'placeEvent' => $placeEvent,
+            'identification'=> $identification
         ]);
     }
 
