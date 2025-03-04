@@ -144,7 +144,6 @@ function getTypeClass(typeId) {
                                                 <th scope="col" class="px-4 py-3">Folio</th>
                                                 <th scope="col" class="px-4 py-3">Solicitante</th>
                                                 <th scope="col" class="px-4 py-3">Fecha de registro</th>
-                                                <th scope="col" class="px-4 py-3">Codigo</th>
                                                 <th scope="col" class="px-4 py-3">Status</th>
                                                 <th scope="col" class="px-4 py-3">
                                                     Acciones
@@ -172,11 +171,6 @@ function getTypeClass(typeId) {
                                                     <td class="px-4 py-3">
                                                         <span>
                                                             {{ misplacement.registration_date }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        <span>
-                                                            {{ misplacement.code }}
                                                         </span>
                                                     </td>
                                                     <td class="px-4 py-3">

@@ -37,6 +37,7 @@ const confirmModal = () => {
         replace: true,
         onError: (errors) => {
             closeModal();
+            toast.error(errors.message);
         },
         onSuccess: () => {
             toast.success('Solicitud cancelada correctamente');

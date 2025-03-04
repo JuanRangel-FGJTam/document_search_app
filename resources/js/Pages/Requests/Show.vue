@@ -83,10 +83,6 @@ onMounted(() => useToast());
                             <p>{{ misplacement.registration_date }}</p>
                         </div>
                         <div>
-                            <p class="font-semibold">Código de Solicitud</p>
-                            <p>{{ misplacement.code }}</p>
-                        </div>
-                        <div>
                             <p class="font-semibold">Tipo de Identificación</p>
                             <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
                         </div>
@@ -118,7 +114,7 @@ onMounted(() => useToast());
                             </div>
                             <div>
                                 <p class="font-semibold">Observaciones</p>
-                                <p>{{ misplacement.observations }}</p>
+                                <p>{{ misplacement.observations ?? 'Sin observaciones' }}</p>
 
                             </div>
                         </div>
@@ -145,8 +141,8 @@ onMounted(() => useToast());
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Lugar de los Hechos</h3>
                     <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
                         <div v-for="(value, key) in {
-                            'Municipio': placeEvent.municipality.name,
-                            'Colonia': placeEvent.colony.name,
+                            'Municipio': placeEvent?.municipality?.name ?? 'No proporcionada',
+                            'Colonia': placeEvent?.colony?.name ?? 'No proporcionada',
                             'Calle': placeEvent.street,
                             'Fecha de los Hechos': placeEvent.lost_date
                         }" :key="key">
