@@ -18,6 +18,7 @@ class DashboardController extends Controller
             self::PENDING_STATUS,
             self::IN_PROGRESS_STATUS,
         ])->count();
+
         return Inertia::render('Dashboard', [
             'totalRequest' => $totalRequest
         ]);

@@ -8,6 +8,7 @@ Nos complace informarte que tu **Constancia de Extravío de Documentos** ha sido
 ### 📌 Detalles de tu solicitud
 - **Folio:** {{ $folio }}
 - **Estatus:** {{ $status }}
+- **Observaciones:** {{$observations}}
 
 ### 📌 Opciones para acceder a tu documento:
 1. **Desde nuestro portal**: Puedes acceder y descargar tu constancia en cualquier momento desde el siguiente enlace:

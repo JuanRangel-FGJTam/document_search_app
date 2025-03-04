@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
-    totalRequets: String,
+    totalRequest: String,
 });
 </script>
 
@@ -31,7 +31,7 @@ const props = defineProps({
                         Solicitudes de constancias
                     </p>
                     <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                        {{ props.totalRequets }}
+                        {{ props.totalRequest }}
                     </p>
                 </div>
                 </Link>

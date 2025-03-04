@@ -84,7 +84,7 @@ class RequestController extends Controller
             if ($status_id !== null) {
                 $query->where('lost_status_id', $status_id);
             }
-            $totalMisplacements = $query->get();
+            $totalMisplacements = $query->orderBy('registration_date', 'desc')->get();
         }
 
         // Paginación
