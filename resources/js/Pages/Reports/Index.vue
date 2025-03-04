@@ -11,16 +11,18 @@ import InputError from '@/Components/InputError.vue';
 const toast = useToast();
 const props = defineProps({
     errors: Object,
-    years: Array
+    years: Array,
+    lost_statuses: Object
 });
 
 const form = useForm({
     year: '',
+    status: ''
 });
 
 
 const submit = () => {
-    if(!form.year){
+    if (!form.year) {
         toast.warning('Ingrese un año');
         return;
     }
@@ -34,7 +36,7 @@ const submit = () => {
             // Crear un elemento de enlace y activar la descarga
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'Solicitudes_Constancias_'+form.year+'.xlsx');  // Establecer el nombre de archivo
+            link.setAttribute('download', 'Solicitudes_Constancias_' + form.year + '.xlsx');  // Establecer el nombre de archivo
 
             // Agregar al documento y activar el clic
             document.body.appendChild(link);
@@ -61,7 +63,7 @@ const submit = () => {
                             Reportes de solicitudes de constancias
                         </h2>
                         <form @submit.prevent="submit">
-                            <div class="grid gap-4 mb-4 sm:grid-cols-1 sm:gap-6 sm:mb-5">
+                            <div class="grid gap-4 mb-4 sm:grid-cols-2 sm:gap-6 sm:mb-5">
                                 <div class="col-span-1">
                                     <label for="deadline"
                                         class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -75,6 +77,21 @@ const submit = () => {
                                         </option>
                                     </select>
                                     <InputError v-if="errors.year" :message="errors.year" />
+                                </div>
+                                <div class="col-span-1">
+                                    <label for="deadline"
+                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                        Seleccione status de solicitudes
+                                    </label>
+                                    <select id="status" name="status" v-model="form.status"
+                                        class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                        <option disabled value="">Seleccione un elemento</option>
+                                        <option :value="null">TODOS</option>
+                                        <option v-for="lost_status in lost_statuses" :key="lost_status.id" v-bind:value="lost_status.id">
+                                            {{ lost_status.name }}
+                                        </option>
+                                    </select>
+                                    <InputError v-if="errors.status" :message="errors.status" />
                                 </div>
                             </div>
                             <div class="flex items-center justify-end space-x-4">

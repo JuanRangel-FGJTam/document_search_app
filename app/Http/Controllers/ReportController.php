@@ -9,6 +9,8 @@ use Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
+use App\Models\LostStatus;
+
 class ReportController extends Controller
 {
     /**
@@ -38,9 +40,13 @@ class ReportController extends Controller
         if ($request->query('year') == $currentYear) {
             $months = array_slice($months, 0, $currentMonth, true);
         }
+
+        $lost_statuses = LostStatus::all();
+
         return Inertia::render('Reports/Index', [
             'years' => $years,
-            'months' => $months
+            'months' => $months,
+            'lost_statuses' => $lost_statuses
         ]);
     }
 
@@ -58,18 +64,36 @@ class ReportController extends Controller
     public function getByYear(Request $request)
     {
         $request->validate([
-            'year' => 'required|numeric'
+            'year' => 'required|numeric',
         ]);
 
-        // Obtener las solicitudes del año seleccionado con las identificaciones y los nombres de los tipos de identificación
+        $status_name =  null;
+        $lost_status = LostStatus::find($request->status);
+
+        if($request->status){
+            $status_name = $lost_status->name;
+        }
+
         $misplacements = Misplacement::with('misplacementIdentifications.identificationType')
+            ->when(!is_null($request->status), function ($query) use ($request) {
+                return $query->where('lost_status_id', $request->status);
+            })
             ->whereYear('registration_date', $request->year)
             ->get();
 
         // Agrupar las solicitudes por mes
         $misplacementsGroupedByMonth = $misplacements->groupBy(function ($misplacement) {
-            return Carbon\Carbon::parse($misplacement->registration_date)->format('F'); // Agrupar por nombre del mes
+            return Carbon\Carbon::parse($misplacement->registration_date)->translatedFormat('F'); // Agrupar por nombre del mes
         });
+
+        // Crear un array con todos los meses del año
+        $allMonths = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $allMonths[Carbon\Carbon::create()->month($month)->translatedFormat('F')] = [
+                'total_solicitudes' => 0,
+                'identifications_count' => []
+            ];
+        }
 
         // Contar los tipos de identificación por mes con nombres
         $report = $misplacementsGroupedByMonth->map(function ($items) {
@@ -83,9 +107,6 @@ class ReportController extends Controller
                 return []; // Retornar un array vacío si no hay identificaciones
             });
 
-            // Depuración para ver los resultados
-
-            // Contar los tipos de identificación agrupados por nombre
             return [
                 'total_solicitudes' => $items->count(),
                 'identifications_count' => $identifications->groupBy(function ($name) {
@@ -97,15 +118,17 @@ class ReportController extends Controller
             ];
         });
 
+        // Combinar los meses con registros y los meses sin registros
+        $report = array_merge($allMonths, $report->toArray());
         $data = [
-            'year'=> $request->year,
-            'data'=> $report
+            'year' => $request->year,
+            'data' => $report,
+            'status_name' => $status_name
         ];
 
         $excel = new ExcelRequest();
         Log::info('Emails exported by user: ' . Auth::id());
         return $excel->create($data);
-
     }
     /**
      * Display the specified resource.

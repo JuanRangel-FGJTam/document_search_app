@@ -1,9 +1,12 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 use Carbon\Carbon;
 
 class ExcelRequest
@@ -16,65 +19,91 @@ class ExcelRequest
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $row = 5;
-        $index = 0;
 
         // Encabezado de la empresa y dirección
         $sheet->mergeCells('A1:J1');
         $sheet->mergeCells('A2:J2');
         $sheet->mergeCells('A3:J3');
-        $sheet->getRowDimension(1)->setRowHeight(23);
-        $sheet->getRowDimension(2)->setRowHeight(20);
-        $sheet->getRowDimension(3)->setRowHeight(18);
 
         $sheet->setCellValue('A1', 'Fiscalía General de Justicia del Estado de Tamaulipas');
-        $sheet->setCellValue('A2', 'Dirección General de Tecnología, Información y Telecomunicaciones');
+        $sheet->setCellValue('A2', 'Reporte de Solicitudes - Estado: ' . ($data['status_name'] ?? 'Todos'));
 
         // Alineación del encabezado
-        $sheet->getStyle('A1:J3')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A1:J3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:J3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A1:J3')->getFont()->setBold(true);
 
-        // Establecer encabezados de columnas (mes, total solicitudes, y tipo de identificación)
-        $headers = ['Mes', 'Total Solicitudes', 'Tipo de Identificación', 'Cantidad'];
-        $column = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($column . $row, $header);
-            $sheet->getStyle($column . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF020255');
-            $sheet->getStyle($column . $row)->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE));
-            $sheet->getStyle($column . $row)->getAlignment()->setWrapText(true);
-            $sheet->getStyle($column . $row)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-            $sheet->getStyle($column . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getColumnDimension($column)->setWidth(20); // Ajustar el ancho de las columnas
-            $column++;
+        // Definir los meses en inglés y traducirlos al español
+        $englishMonths = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        $spanishMonths = array_map(function ($month) {
+            return Carbon::parse("2023-{$month}-01")->locale('es')->translatedFormat('F');
+        }, $englishMonths);
+
+        // Primera columna con los tipos de identificación
+        $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
+        $col = 'B';
+        foreach ($spanishMonths as $month) {
+            $sheet->setCellValue($col . $row, $month);
+            $col++;
         }
+
+        // Aplicar estilos a la cabecera
+        $sheet->getStyle('A' . $row . ':' . $col . $row)
+            ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9D9D9');
+        $sheet->getStyle('A' . $row . ':' . $col . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':' . $col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getRowDimension($row)->setRowHeight(20);
         $row++;
 
-        // Agregar los datos con meses en español
-        foreach ($this->data['data'] as $month => $monthData) {
-            // Convertir el mes a español con Carbon
-            $monthName = Carbon::parse($month)->locale('es')->isoFormat('MMMM');
+        // Obtener todos los tipos de identificación únicos
+        $identifications = collect();
+        foreach ($data['data'] as $monthData) {
+            // Convertir el array 'identifications_count' en una colección
+            $identifications = $identifications->merge(collect($monthData['identifications_count'])->keys());
+        }
+        $identifications = $identifications->unique();
 
-            // Agregar mes y total de solicitudes
-            $sheet->setCellValue('A' . $row, ucfirst($monthName)); // Usamos ucfirst para que el mes empiece con mayúscula
-            $sheet->setCellValue('B' . $row, $monthData['total_solicitudes']);
-            $sheet->getStyle('A' . $row . ':D' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-            $row++;
-
-            // Agregar tipo de identificación y su cantidad
-            foreach ($monthData['identifications_count'] as $identificationType => $count) {
-                $sheet->setCellValue('C' . $row, $identificationType);
-                $sheet->setCellValue('D' . $row, $count);
-                $sheet->getStyle('A' . $row . ':D' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-                $row++;
+        // Llenar la tabla con los datos agrupados
+        $dataRows = [];
+        foreach ($identifications as $identificationType) {
+            $dataRow = ['identification' => $identificationType];
+            foreach ($englishMonths as $month) {
+                // Traducir el mes al español para acceder a los datos
+                $spanishMonth = Carbon::parse("2023-{$month}-01")->locale('es')->translatedFormat('F');
+                $dataRow[$spanishMonth] = $data['data'][$month]['identifications_count'][$identificationType] ?? 0;
             }
+            $dataRows[] = $dataRow;
         }
 
-        // Agregar mensaje final
-        $row++;
-        $sheet->mergeCells('A' . $row . ':J' . $row);
-        $sheet->setCellValue('A' . $row, 'Toda la información contenida en este reporte está protegida por las leyes de privacidad y confidencialidad aplicables. Cualquier divulgación no autorizada, uso indebido o reproducción de esta información está estrictamente prohibida y puede estar sujeta a sanciones administrativas y/o legales.');
-        $sheet->getStyle('A' . $row)->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A' . $row)->getFont()->setItalic(true);
+        // Escribir los datos en el Excel
+        foreach ($dataRows as $rowData) {
+            $sheet->setCellValue('A' . $row, $rowData['identification']);
+            $col = 'B';
+            foreach ($spanishMonths as $month) {
+                $sheet->setCellValue($col . $row, $rowData[$month]);
+                $col++;
+            }
+            $row++;
+        }
+
+        // Agregar la fila de totales
+        $sheet->setCellValue('A' . $row, 'TOTAL');
+        $col = 'B';
+        foreach ($spanishMonths as $month) {
+            $totalMonth = array_sum(array_column($dataRows, $month));
+            $sheet->setCellValue($col . $row, $totalMonth);
+            $col++;
+        }
+
+        // Aplicar estilos a la fila de totales
+        $sheet->getStyle('A' . $row . ':' . $col . $row)
+            ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF666666');
+        $sheet->getStyle('A' . $row . ':' . $col . $row)->getFont()->setBold(true)->getColor()->setARGB(Color::COLOR_WHITE);
+        $sheet->getStyle('A' . $row . ':' . $col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getRowDimension($row)->setRowHeight(20);
 
         $writer = new Xlsx($spreadsheet);
 
