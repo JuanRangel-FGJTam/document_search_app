@@ -70,7 +70,7 @@ class ReportController extends Controller
         $status_name =  null;
         $lost_status = LostStatus::find($request->status);
 
-        if($request->status){
+        if ($request->status) {
             $status_name = $lost_status->name;
         }
 
@@ -86,9 +86,14 @@ class ReportController extends Controller
             return Carbon\Carbon::parse($misplacement->registration_date)->translatedFormat('F'); // Agrupar por nombre del mes
         });
 
-        // Crear un array con todos los meses del año
+        $currentYear = Carbon\Carbon::now()->year;
+        $currentMonth = Carbon\Carbon::now()->month;
+
+        // Determinar el número de meses a incluir
+        $maxMonths = ($request->year == $currentYear) ? $currentMonth : 12;
+        // Crear un array con los meses hasta el actual si es el año en curso
         $allMonths = [];
-        for ($month = 1; $month <= 12; $month++) {
+        for ($month = 1; $month <= $maxMonths; $month++) {
             $allMonths[Carbon\Carbon::create()->month($month)->translatedFormat('F')] = [
                 'total_solicitudes' => 0,
                 'identifications_count' => []

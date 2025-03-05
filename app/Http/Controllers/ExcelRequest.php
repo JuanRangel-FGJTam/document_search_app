@@ -32,20 +32,28 @@ class ExcelRequest
         $sheet->getStyle('A1:J3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A1:J3')->getFont()->setBold(true);
 
-        // Definir los meses en inglés y traducirlos al español
+        // Obtener el año actual y el mes actual
+        $currentYear = Carbon::now()->year;
+        $currentMonth = Carbon::now()->month;
+        $maxMonths = ($data['year'] == $currentYear) ? $currentMonth : 12;
+
+        // Definir los meses hasta el mes actual si es el año en curso
         $englishMonths = [
             'January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
 
-        $spanishMonths = array_map(function ($month) {
-            return Carbon::parse("2023-{$month}-01")->locale('es')->translatedFormat('F');
-        }, $englishMonths);
+        $spanishMonths = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        $selectedMonths = array_slice($englishMonths, 0, $maxMonths);
 
         // Primera columna con los tipos de identificación
         $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
         $col = 'B';
-        foreach ($spanishMonths as $month) {
+        foreach ($selectedMonths as $month) {
             $sheet->setCellValue($col . $row, $month);
             $col++;
         }
@@ -61,7 +69,6 @@ class ExcelRequest
         // Obtener todos los tipos de identificación únicos
         $identifications = collect();
         foreach ($data['data'] as $monthData) {
-            // Convertir el array 'identifications_count' en una colección
             $identifications = $identifications->merge(collect($monthData['identifications_count'])->keys());
         }
         $identifications = $identifications->unique();
@@ -70,10 +77,8 @@ class ExcelRequest
         $dataRows = [];
         foreach ($identifications as $identificationType) {
             $dataRow = ['identification' => $identificationType];
-            foreach ($englishMonths as $month) {
-                // Traducir el mes al español para acceder a los datos
-                $spanishMonth = Carbon::parse("2023-{$month}-01")->locale('es')->translatedFormat('F');
-                $dataRow[$spanishMonth] = $data['data'][$month]['identifications_count'][$identificationType] ?? 0;
+            foreach ($selectedMonths as $month) {
+                $dataRow[$month] = $data['data'][$month]['identifications_count'][$identificationType] ?? 0;
             }
             $dataRows[] = $dataRow;
         }
@@ -82,7 +87,7 @@ class ExcelRequest
         foreach ($dataRows as $rowData) {
             $sheet->setCellValue('A' . $row, $rowData['identification']);
             $col = 'B';
-            foreach ($spanishMonths as $month) {
+            foreach ($selectedMonths as $month) {
                 $sheet->setCellValue($col . $row, $rowData[$month]);
                 $col++;
             }
@@ -92,9 +97,16 @@ class ExcelRequest
         // Agregar la fila de totales
         $sheet->setCellValue('A' . $row, 'TOTAL');
         $col = 'B';
-        foreach ($spanishMonths as $month) {
+        foreach ($selectedMonths as $month) {
             $totalMonth = array_sum(array_column($dataRows, $month));
             $sheet->setCellValue($col . $row, $totalMonth);
+            $col++;
+        }
+
+        // Traducir los títulos de los meses al español
+        $col = 'B';
+        foreach ($selectedMonths as $index => $month) {
+            $sheet->setCellValue($col . '5', $spanishMonths[$index]);
             $col++;
         }
 
