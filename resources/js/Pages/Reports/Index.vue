@@ -16,8 +16,8 @@ const props = defineProps({
 });
 
 const form = useForm({
-    year: '',
-    status: ''
+    year: 2025,
+    status: null
 });
 
 

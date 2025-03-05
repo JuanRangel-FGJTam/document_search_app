@@ -9,6 +9,7 @@ use Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
+use App\Models\IdentificationType;
 use App\Models\LostStatus;
 
 class ReportController extends Controller
@@ -21,7 +22,7 @@ class ReportController extends Controller
         //
         $currentYear = date('Y');
         $currentMonth = date('n');
-        $years = range(2022, $currentYear);
+        $years = range($currentYear, 2022);
         $months = [
             1 => 'Enero',
             2 => 'Febrero',
@@ -74,6 +75,8 @@ class ReportController extends Controller
             $status_name = $lost_status->name;
         }
 
+        $identifications = IdentificationType::all();
+
         $misplacements = Misplacement::with('misplacementIdentifications.identificationType')
             ->when(!is_null($request->status), function ($query) use ($request) {
                 return $query->where('lost_status_id', $request->status);
@@ -83,7 +86,7 @@ class ReportController extends Controller
 
         // Agrupar las solicitudes por mes
         $misplacementsGroupedByMonth = $misplacements->groupBy(function ($misplacement) {
-            return Carbon\Carbon::parse($misplacement->registration_date)->translatedFormat('F'); // Agrupar por nombre del mes
+            return Carbon\Carbon::parse($misplacement->registration_date)->format('F'); // Agrupar por nombre del mes
         });
 
         $currentYear = Carbon\Carbon::now()->year;
@@ -94,32 +97,32 @@ class ReportController extends Controller
         // Crear un array con los meses hasta el actual si es el año en curso
         $allMonths = [];
         for ($month = 1; $month <= $maxMonths; $month++) {
-            $allMonths[Carbon\Carbon::create()->month($month)->translatedFormat('F')] = [
+            $monthName = Carbon\Carbon::create()->month($month)->format('F');
+            $allMonths[$monthName] = [
                 'total_solicitudes' => 0,
-                'identifications_count' => []
+                'identifications_count' => $identifications->pluck('name')->mapWithKeys(function ($name) {
+                    return [$name => 0]; // Inicializar todas las identificaciones con 0
+                })->toArray()
             ];
         }
 
         // Contar los tipos de identificación por mes con nombres
-        $report = $misplacementsGroupedByMonth->map(function ($items) {
+        $report = $misplacementsGroupedByMonth->map(function ($items) use ($identifications) {
             // Obtener todos los tipos de identificación relacionados
-            $identifications = $items->flatMap(function ($misplacement) {
-                // Verificar si 'misplacementIdentifications' tiene algún valor
+            $identificationsCount = $identifications->pluck('name')->mapWithKeys(function ($name) {
+                return [$name => 0]; // Inicializar todas las identificaciones con 0
+            })->toArray();
+
+            $items->each(function ($misplacement) use (&$identificationsCount) {
                 if ($misplacement->misplacementIdentifications) {
-                    // Acceder a 'identificationType' directamente, ya que la relación es HasOne
-                    return [$misplacement->misplacementIdentifications->identificationType->name ?? 'Desconocido'];
+                    $identificationName = $misplacement->misplacementIdentifications->identificationType->name ?? 'Desconocido';
+                    $identificationsCount[$identificationName] = ($identificationsCount[$identificationName] ?? 0) + 1;
                 }
-                return []; // Retornar un array vacío si no hay identificaciones
             });
 
             return [
                 'total_solicitudes' => $items->count(),
-                'identifications_count' => $identifications->groupBy(function ($name) {
-                    return $name; // Agrupar por nombre del tipo de identificación
-                })
-                    ->map(function ($group) {
-                        return $group->count(); // Contar la cantidad de cada tipo de identificación
-                    })
+                'identifications_count' => $identificationsCount
             ];
         });
 
@@ -128,7 +131,7 @@ class ReportController extends Controller
         $data = [
             'year' => $request->year,
             'data' => $report,
-            'status_name' => $status_name
+            'status_name' => $status_name,
         ];
 
         $excel = new ExcelRequest();
