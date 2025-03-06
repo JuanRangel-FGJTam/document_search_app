@@ -135,7 +135,7 @@ onMounted(() => useToast());
                         </div>
                     </div>
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la identificación</h3>
-                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
+                    <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Tipo de Identificación</p>
                             <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
@@ -151,6 +151,11 @@ onMounted(() => useToast());
                         <div>
                             <p class="font-semibold">Identificación</p>
                             <img :src="identification.fileUrl" alt="Identificacion"
+                                class="h-32 object-cover rounded-lg">
+                        </div>
+                        <div v-if="identification.fileUrlBack">
+                            <p class="font-semibold">Identificación (reversa)</p>
+                            <img :src="identification.fileUrlBack" alt="Identificacion"
                                 class="h-32 object-cover rounded-lg">
                         </div>
                     </div>
