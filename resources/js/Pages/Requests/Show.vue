@@ -32,7 +32,7 @@ function getTypeClass(typeId) {
         '3': 'bg-emerald-100 text-emerald-700',
         '4': 'bg-red-100 text-red-700'
     };
-    return `px-3 py-1 text-sm font-medium rounded-full ${classMap[typeId] || 'bg-gray-200 text-gray-700'}`;
+    return `flex text-center justify-center px-3 py-1 text-sm font-medium rounded-full ${classMap[typeId] || 'bg-gray-200 text-gray-700'}`;
 }
 
 onMounted(() => useToast());
@@ -70,7 +70,7 @@ onMounted(() => useToast());
 
                     <!-- DATOS DE LA SOLICITUD -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la Solicitud</h3>
-                    <div class="grid grid-cols-5 gap-4 border p-4 rounded-lg">
+                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Folio</p>
                             <p>{{ misplacement.document_number }}</p>
@@ -85,35 +85,18 @@ onMounted(() => useToast());
                             <p class="font-semibold">Fecha de Registro</p>
                             <p>{{ misplacement.registration_date }}</p>
                         </div>
-                        <div class="flex gap-4 col-span-2">
-                            <template v-if="misplacement.lost_status_id != 3">
-                                <Link :href="route('misplacement.accept', misplacement.id)"
-                                    class="px-5 py-4 text-green-700 bg-green-100 rounded-lg hover:bg-green-300">
-                                Validar Solicitud
-                                </Link>
-                                <Link v-if="misplacement.lost_status_id != 4"
-                                    :href="route('misplacement.cancel', misplacement.id)"
-                                    class="px-5 py-4 text-red-700 bg-red-100 rounded-lg hover:bg-red-300">
-                                Cancelar Solicitud
-                                </Link>
-                                <p v-else class="font-semibold text-red-500">
-                                    Esta solicitud ha sido cancelada
-                                </p>
+                        <div class="flex gap-4 col-span-1 items-center">
+                            <template v-if="misplacement.lost_status_id == 3">
+                                <p class="text-center font-semibold text-green-600">Esta solicitud ha sido atendida</p>
                             </template>
-                            <template v-else>
-                                <p class="font-semibold text-green-500">Esta solicitud ha sido atendida</p>
-                            </template>
-                        </div>
-                        <div class="col-span-3 grid grid-cols-3 gap-4" v-if="misplacement.lost_status_id == 3">
-                            <div>
-                                <p class="font-semibold">Fecha de validación</p>
-                                <p>{{ misplacement.validation_date }}</p>
-                            </div>
-                            <div>
-                                <p class="font-semibold">Observaciones</p>
-                                <p>{{ misplacement.observations ?? 'Sin observaciones' }}</p>
-
-                            </div>
+                            <Link v-if="misplacement.lost_status_id != 4"
+                                :href="route('misplacement.cancel', misplacement.id)"
+                                class="text-center px-4 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors duration-200 shadow-md">
+                                Cancelar Constancia
+                            </Link>
+                            <p v-else class="font-semibold text-red-600">
+                                Esta solicitud ha sido cancelada
+                            </p>
                         </div>
                         <div class="col-span-3 grid grid-cols-3 gap-4" v-if="misplacement.lost_status_id == 4">
                             <div>
@@ -182,7 +165,7 @@ onMounted(() => useToast());
                         </div>
                         <div>
                             <p class="font-semibold">Folio</p>
-                            <p>{{ doc.document_number }}</p>
+                            <p>{{ doc.document_number ?? 'No proporcionado' }}</p>
                         </div>
                         <div>
                             <p class="font-semibold">Titular</p>

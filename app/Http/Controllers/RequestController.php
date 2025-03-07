@@ -59,11 +59,6 @@ class RequestController extends Controller
         $totalMisplacements = null;
         $lostStatuses = LostStatus::all();
 
-        // Si no hay status en la query, por defecto mostrar solo las solicitudes pendientes
-        if ($status === null) {
-            $status = SELF::LOST_STATUS_PENDING;
-        }
-
         // Mapeo de los status válidos
         $statusMap = [
             SELF::LOST_STATUS_REVIEW => SELF::LOST_STATUS_REVIEW,

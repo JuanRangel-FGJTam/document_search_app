@@ -15,7 +15,7 @@ const props = defineProps({
     }
 });
 
-const selectedStatus = ref(1);
+const selectedStatus = ref(5);
 
 const handleChange = (event) => {
     const search = event.target.value;
