@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
+use App\Http\Controllers\SurveyController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -36,5 +37,10 @@ Route::middleware([
     Route::prefix('/admin/reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
         Route::post('/getByYear', [ReportController::class, 'getByYear'])->name('reports.getByYear');
+    });
+
+    Route::prefix('/admin/surveys')->group(function () {
+        Route::get('/', [SurveyController::class, 'index'])->name('surveys.index');
+        Route::get('/show/{survey_id}', [SurveyController::class, 'show'])->name('surveys.show');
     });
 });
