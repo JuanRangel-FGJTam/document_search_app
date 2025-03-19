@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Misplacement;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
 use App\Models\IdentificationType;
 use App\Models\Legacy\Extravio;
+use App\Models\Legacy\Identificacion;
 use App\Models\LostStatus;
 
 class ReportController extends Controller
@@ -69,77 +70,76 @@ class ReportController extends Controller
             'year' => 'required|numeric',
         ]);
 
-        $status_name =  null;
-        $lost_status = LostStatus::find($request->status);
-
+        $status_name = null;
         if ($request->status) {
-            $status_name = $lost_status->name;
+            $lost_status = LostStatus::find($request->status);
+            $status_name = $lost_status->name ?? null;
         }
-        dd(Extravio::all());
 
-        $identifications = IdentificationType::all();
+        // Obtener datos del sistema legacy
+        $extravios = Extravio::with('identificacion')
+            ->when($request->status, fn($query) => $query->where('ID_ESTADO_EXTRAVIO', $request->status))
+            ->whereYear('FECHA_REGISTRO', $request->year)
+            ->get();
 
         $misplacements = Misplacement::with('misplacementIdentifications.identificationType')
-            ->when(!is_null($request->status), function ($query) use ($request) {
-                return $query->where('lost_status_id', $request->status);
-            })
+            ->when($request->status, fn($query) => $query->where('lost_status_id', $request->status))
             ->whereYear('registration_date', $request->year)
             ->get();
 
-        // Agrupar las solicitudes por mes
-        $misplacementsGroupedByMonth = $misplacements->groupBy(function ($misplacement) {
-            return Carbon\Carbon::parse($misplacement->registration_date)->format('F'); // Agrupar por nombre del mes
-        });
+        $identifications = IdentificationType::all();
 
-        $currentYear = Carbon\Carbon::now()->year;
-        $currentMonth = Carbon\Carbon::now()->month;
+        // Agrupar datos por mes
+        $groupedLegacy = $extravios->groupBy(fn($item) => Carbon::parse($item->FECHA_REGISTRO)->format('F'));
+        $groupedNew = $misplacements->groupBy(fn($item) => Carbon::parse($item->registration_date)->format('F'));
 
-        // Determinar el número de meses a incluir
-        $maxMonths = ($request->year == $currentYear) ? $currentMonth : 12;
-        // Crear un array con los meses hasta el actual si es el año en curso
-        $allMonths = [];
-        for ($month = 1; $month <= $maxMonths; $month++) {
-            $monthName = Carbon\Carbon::create()->month($month)->format('F');
-            $allMonths[$monthName] = [
+        $currentYear = Carbon::now()->year;
+        $maxMonths = ($request->year == $currentYear) ? Carbon::now()->month : 12;
+        $allMonths = collect(range(1, $maxMonths))->mapWithKeys(fn($m) => [
+            Carbon::create()->month($m)->format('F') => [
                 'total_solicitudes' => 0,
-                'identifications_count' => $identifications->pluck('name')->mapWithKeys(function ($name) {
-                    return [$name => 0]; // Inicializar todas las identificaciones con 0
-                })->toArray()
-            ];
+                'identifications_count' => $identifications->pluck('name')->mapWithKeys(fn($name) => [$name => 0])->toArray()
+            ]
+        ]);
+
+        // Clonar la colección a un array mutable
+        $report = $allMonths->toArray();
+
+        foreach ($groupedNew as $month => $items) {
+            $monthData = $report[$month] ?? ['total_solicitudes' => 0, 'identifications_count' => []];
+            $monthData['total_solicitudes'] += $items->count();
+            foreach ($items as $misplacement) {
+                if ($misplacement->misplacementIdentifications) {
+                    $identificationType = $misplacement->misplacementIdentifications->identificationType;
+                    $name = $identificationType ? $identificationType->name : 'Desconocido';
+                    $monthData['identifications_count'][$name] = ($monthData['identifications_count'][$name] ?? 0) + 1;
+                }
+            }
+            $report[$month] = $monthData;
         }
 
-        // Contar los tipos de identificación por mes con nombres
-        $report = $misplacementsGroupedByMonth->map(function ($items) use ($identifications) {
-            // Obtener todos los tipos de identificación relacionados
-            $identificationsCount = $identifications->pluck('name')->mapWithKeys(function ($name) {
-                return [$name => 0]; // Inicializar todas las identificaciones con 0
-            })->toArray();
-
-            $items->each(function ($misplacement) use (&$identificationsCount) {
-                if ($misplacement->misplacementIdentifications) {
-                    $identificationName = $misplacement->misplacementIdentifications->identificationType->name ?? 'Desconocido';
-                    $identificationsCount[$identificationName] = ($identificationsCount[$identificationName] ?? 0) + 1;
+        foreach ($groupedLegacy as $month => $items) {
+            $monthData = $report[$month] ?? ['total_solicitudes' => 0, 'identifications_count' => []];
+            $monthData['total_solicitudes'] += $items->count();
+            foreach ($items as $extravio) {
+                if ($extravio->identificacion) {
+                    $name = $extravio->identificacion->IDENTIFICACION ?? 'Desconocido';
+                    $monthData['identifications_count'][$name] = ($monthData['identifications_count'][$name] ?? 0) + 1;
                 }
-            });
+            }
+            $report[$month] = $monthData;
+        }
 
-            return [
-                'total_solicitudes' => $items->count(),
-                'identifications_count' => $identificationsCount
-            ];
-        });
-
-        // Combinar los meses con registros y los meses sin registros
-        $report = array_merge($allMonths, $report->toArray());
         $data = [
             'year' => $request->year,
             'data' => $report,
             'status_name' => $status_name,
         ];
 
-        $excel = new ExcelRequest();
         Log::info('Emails exported by user: ' . Auth::id());
-        return $excel->create($data);
+        return (new ExcelRequest())->create($data);
     }
+
     /**
      * Display the specified resource.
      */
