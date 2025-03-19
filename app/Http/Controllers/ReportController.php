@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
 use App\Models\IdentificationType;
+use App\Models\Legacy\Extravio;
 use App\Models\LostStatus;
 
 class ReportController extends Controller
@@ -74,6 +75,7 @@ class ReportController extends Controller
         if ($request->status) {
             $status_name = $lost_status->name;
         }
+        dd(Extravio::all());
 
         $identifications = IdentificationType::all();
 
