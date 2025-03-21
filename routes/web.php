@@ -32,6 +32,9 @@ Route::middleware([
 
         Route::get('/accept-request/{misplacement_id}', [RequestController::class, 'acceptRequest'])->name('misplacement.accept');
         Route::post('/store-accept-request/{misplacement_id}', [RequestController::class, 'storeAcceptRequest'])->name('misplacement.store.accept');
+
+        Route::get('/resend-request/{misplacement_id}', [RequestController::class, 'reSendDocument'])->name('misplacement.reSendDocument');
+
     });
 
     Route::prefix('/admin/reports')->group(function () {

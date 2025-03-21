@@ -147,8 +147,38 @@ class RequestController extends Controller
             'misplacement' => $misplacement,
             'documents' => $documents,
             'placeEvent' => $placeEvent,
-            'identification'=> $identification
+            'identification' => $identification
         ]);
+    }
+
+    public function reSendDocument(string $misplacement_id)
+    {
+        $misplacement = Misplacement::find($misplacement_id);
+        $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
+        if (!$procedure) {
+            return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de comunicarle al usuario que realice de nuevo el trámite.');
+        }
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
+        $url = $procedure['files'][0]['fileUrl'];
+        $response = Http::get($url);
+        if ($response->successful()) {
+            $filename = 'document_' . $misplacement->people_id . '.pdf';
+            $path = 'public/documents/' . $filename;
+            Storage::put($path, $response->body());
+            $fileURL =  'app/public/documents/' . $filename;
+        }
+
+        $data = [
+            "fullName" => $person['fullName'],
+            "folio" => (string) $misplacement->id,
+            "status" => 'Constancia Generada',
+            "area" => "Fiscalía Digital",
+            "name" => "Constancia de Extravío de Documentos",
+            "observations" => 'Reenvio de Constancia'
+        ];
+
+        Mail::to($person['email'])->queue(new SendValidate($data, $fileURL));
+        return redirect()->back()->with('success', 'Constancia Reenviada Correctamente!');
     }
 
 
@@ -209,7 +239,7 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir transacción en caso de error
             Log::error("Error en storeData: " . $e->getMessage());
-            return back()->withErrors(['message'=>'Ocurrió un error al procesar la solicitud.']);
+            return back()->withErrors(['message' => 'Ocurrió un error al procesar la solicitud.']);
         }
     }
 
@@ -268,7 +298,7 @@ class RequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir transacción en caso de error
             Log::error("Error en storeData: " . $e->getMessage());
-            return back()->withErrors(['message'=>'Ocurrió un error al procesar la solicitud.']);
+            return back()->withErrors(['message' => 'Ocurrió un error al procesar la solicitud.']);
         }
     }
 
