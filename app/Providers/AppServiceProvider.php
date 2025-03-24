@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CustomTransport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,5 +39,9 @@ class AppServiceProvider extends ServiceProvider
         {
             $url->forceScheme('https');
         }
+
+        Mail::extend('dgtitAPI', function () {
+            return new CustomTransport();
+        });
     }
 }

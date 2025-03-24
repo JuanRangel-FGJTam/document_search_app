@@ -95,6 +95,12 @@ return [
             ],
         ],
 
+        'dgtitAPI' => [
+            'transport' => 'dgtitAPI',
+            'jwt' => env('MAIL_JWT'),
+            'host' => env('MAIL_HOST', 'https://api-email.fgjtam.gob.mx'),
+        ],
+
     ],
 
     /*
