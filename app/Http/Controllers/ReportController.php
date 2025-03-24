@@ -9,9 +9,12 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
+use App\Models\DocumentType;
 use App\Models\IdentificationType;
 use App\Models\Legacy\Extravio;
 use App\Models\Legacy\Identificacion;
+use App\Models\Legacy\Objeto;
+use App\Models\Legacy\TipoDocumento;
 use App\Models\LostStatus;
 
 class ReportController extends Controller
@@ -77,18 +80,20 @@ class ReportController extends Controller
         }
 
         // Obtener tipos de identificación
-        $identifications = IdentificationType::pluck('name', 'id');
-        $identifications_legacy = Identificacion::pluck('IDENTIFICACION', 'ID_IDENTIFICACION')->mapWithKeys(function ($item, $key) {
+        $identifications = DocumentType::pluck('name', 'id');
+        $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(function ($item, $key) {
             return [
                 $key => match (strtolower($item)) {
-                    'credencial de lector' => 'Credencial de Lector',
+                    'credencial de elector' => 'Credencial de Elector',
                     'pasaporte' => 'Pasaporte',
                     'visa' => 'Visa',
                     'licencia de conducir' => 'Licencia de Conducir',
+                    'otro documento' => 'Otro Documento',
                     default => 'Otro',
                 }
             ];
         });
+
         // Inicializar estructura de la tabla
         $currentYear = Carbon::now()->year;
         $maxMonths = ($request->year == $currentYear) ? Carbon::now()->month : 12;
@@ -99,28 +104,29 @@ class ReportController extends Controller
             ]
         ])->toArray();
 
-
         // Se obtiene mes, id de identificacion y el total
-        $extravios = Extravio::selectRaw('MONTH(FECHA_REGISTRO) as mes, ID_IDENTIFICACION, COUNT(*) as total')
+        $extravios = Objeto::selectRaw('MONTH(FECHA_REGISTRO) as mes, ID_TIPO_DOCUMENTO, COUNT(*) as total')
             ->whereYear('FECHA_REGISTRO', $request->year)
             ->when($request->status, fn($query) => $query->where('ID_ESTADO_EXTRAVIO', $request->status))
-            ->groupByRaw('MONTH(FECHA_REGISTRO), ID_IDENTIFICACION')
+            ->groupByRaw('MONTH(FECHA_REGISTRO), ID_TIPO_DOCUMENTO')
             ->get();
 
-
-
-        // Se obtiene mes, id de identificacion y el total
-        $misplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, mi.identification_type_id, COUNT(*) as total')
-            ->join('misplacement_identifications as mi', 'misplacements.id', '=', 'mi.misplacement_id')
+        // Se obtiene mes, id de tipo de documento y el total
+        $misplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, ld.document_type_id, COUNT(*) as total')
+            ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id')
             ->whereYear('misplacements.registration_date', $request->year)
             ->when($request->status, fn($query) => $query->where('misplacements.lost_status_id', $request->status))
-            ->groupByRaw('MONTH(misplacements.registration_date), mi.identification_type_id')
+            ->groupByRaw('MONTH(misplacements.registration_date), ld.document_type_id')
             ->get();
+
 
         // Se coloca el nombre del id guardado anteriormente
         foreach ($extravios as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications_legacy[$item->ID_IDENTIFICACION] ?? 'Desconocido';
+            $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'Otro';
+            if ($identification_name === 'Otro') {
+                $identification_name = 'Otro Documento';
+            }
             $report[$mes]['identifications_count'][$identification_name] += $item->total;
             $report[$mes]['total_solicitudes'] += $item->total;
         }
@@ -128,7 +134,10 @@ class ReportController extends Controller
         // Se coloca el nombre del id guardado anteriormente
         foreach ($misplacements as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications[$item->identification_type_id] ?? 'Desconocido';
+            $identification_name = $identifications[$item->document_type_id] ?? 'Otro';
+            if ($identification_name === 'Otro') {
+                $identification_name = 'Otro Documento';
+            }
             $report[$mes]['identifications_count'][$identification_name] += $item->total;
             $report[$mes]['total_solicitudes'] += $item->total;
         }
