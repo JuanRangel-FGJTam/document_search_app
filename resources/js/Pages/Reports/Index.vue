@@ -26,6 +26,7 @@ const submit = () => {
         toast.warning('Ingrese un año');
         return;
     }
+    toast.info('Generando reporte...');
     axios.post(route('reports.getByYear'), form, {
         responseType: 'blob'
     })
@@ -45,9 +46,11 @@ const submit = () => {
             // Limpiar
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
+            toast.success('Reporte generado con éxito');
         })
         .catch(error => {
             console.error('Error downloading the file:', error);
+            toast.error('Error al obtener los datos');
         });
 }
 
