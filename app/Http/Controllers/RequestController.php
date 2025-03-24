@@ -79,7 +79,7 @@ class RequestController extends Controller
             if ($status_id !== null) {
                 $query->where('lost_status_id', $status_id);
             }
-            $totalMisplacements = $query->orderBy('id', 'desc')->get();
+            $totalMisplacements = $query->orderBy('document_number', 'desc')->get();
         }
 
         // Paginación
@@ -178,6 +178,7 @@ class RequestController extends Controller
         ];
 
         Mail::to($person['email'])->queue(new SendValidate($data, $fileURL));
+        Log::debug("Success: Email Resend");
         return redirect()->back()->with('success', 'Constancia Reenviada Correctamente!');
     }
 
@@ -225,8 +226,8 @@ class RequestController extends Controller
             $reason = CancellationReason::find($request->cancellation_reason);
 
             $data = [
-                "fullName" => $person['fullName'],
-                "folio" => (string) $misplacement->id,
+                "fullName" => $person['fullName'] ?? 'Usuario',
+                "folio" => (string) $misplacement->document_number,
                 "status" => $reason->name,
                 "area" => "Trámite en Línea",
                 "name" => "Constancia de Extravío de Documentos",
@@ -235,6 +236,7 @@ class RequestController extends Controller
 
             $this->authApiService->storeProcesure($misplacement->people_id, $data);
             Mail::to($person['email'])->queue(new EmailCancel($data));
+            Log::info("Store Request Cancelation To Folio:".$misplacement->document_number);
             return to_route('misplacement.show', $misplacement_id);
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir transacción en caso de error
@@ -270,8 +272,8 @@ class RequestController extends Controller
             $misplacement->save();
             $person = $this->authApiService->getPersonById($misplacement->people_id);
             $data = [
-                "fullName" => $person['fullName'],
-                "folio" => (string) $misplacement->id,
+                "fullName" => $person['fullName'] ?? 'Usuario',
+                "folio" => (string) $misplacement->document_number,
                 "status" => 'VÁLIDA',
                 "area" => "Trámite en Línea",
                 "name" => "Constancia de Extravío de Documentos",

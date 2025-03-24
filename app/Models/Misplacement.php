@@ -48,10 +48,9 @@ class Misplacement extends Model
     public function toSearchableArray()
     {
         $array = $this->toArray();
-        // Incluye las relaciones deseadas y el "folio"
+        $array['folio'] = $this->document_number;
         $array['people_name'] = $this->people->name ?? '';
         $array['people_email'] = $this->people->email ?? '';
-        $array['folio'] = $this->document_number ?? '';
         return $array;
     }
 
