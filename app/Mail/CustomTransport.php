@@ -24,24 +24,30 @@ class CustomTransport extends AbstractTransport
             $host = config('mail.mailers.dgtitAPI.host');
 
             // Construir la solicitud con los campos del correo
-            $requestData = [
-                ['name' => 'from', 'contents' => $email->getFrom()[0]->getAddress()],
-                ['name' => 'to', 'contents' => $email->getTo()[0]->getAddress()],
-                ['name' => 'subject', 'contents' => $email->getSubject()],
-                ['name' => 'message', 'contents' => $email->getHtmlBody()],
+            // Prepare the email data
+            $emailData = [
+                'from' => $email->getFrom()[0]->getAddress(),
+                'to' => $email->getTo()[0]->getAddress(),
+                'email' => $email->getFrom()[0]->getAddress(),  // Assuming the sender's email
+                'subject' => $email->getSubject(),
+                'message' => $email->getHtmlBody(),
             ];
 
-            // Adjuntar archivos si existen
-            foreach ($email->getAttachments() as $attachment) {
-                $requestData[] = [
-                    'name'     => 'attachments[]',
+            // Attach files if there are any
+            $attachments = $email->getAttachments();
+            foreach ($attachments as $attachment) {
+                $emailData['documents'][] = [
+                    'name' => $attachment->getFilename(),
                     'contents' => $attachment->getBody(),
-                    'filename' => $attachment->getFilename(),
+                    'content_type' => $attachment->getContentType(),
                 ];
             }
 
             // Enviar la solicitud con archivos adjuntos
-            $response = Http::withToken($jwt)->attach($requestData)->post($host);
+            $response = Http::withToken($jwt)->post($host, $emailData);
+
+            // Enviar la solicitud con archivos adjuntos
+            //$response = Http::withToken($jwt)->attach($emailData)->post($host);
 
             if (!$response->successful()) {
                 Log::error('Failed to send email API status code: ' . $response->status());
