@@ -76,11 +76,29 @@ class ReportController extends Controller
             $status_name = $lost_status->name ?? null;
         }
 
+        $month = 12;
+
+        for ($i=1; $i <= $month; $i++) { 
+            $extraviosINE = Extravio::select('ID_EXTRAVIO')
+                ->where('ID_IDENTIFICACION', 1)
+                // ->when($request->status, fn($query) => $query->where('ID_ESTADO_EXTRAVIO', $request->status))
+                ->where('ID_ESTADO_EXTRAVIO', $request->status)
+                ->whereYear('FECHA_REGISTRO', $request->year)
+                ->whereMonth('FECHA_REGISTRO', $i)
+                ->count();
+
+            $extraviosVisa = Extravio::select('ID_EXTRAVIO')
+                ->where('ID_IDENTIFICACION', 2)
+                // ->when($request->status, fn($query) => $query->where('ID_ESTADO_EXTRAVIO', $request->status))
+                ->where('ID_ESTADO_EXTRAVIO', $request->status)
+                ->whereYear('FECHA_REGISTRO', $request->year)
+                ->whereMonth('FECHA_REGISTRO', $i)
+                ->count();
+        }
+
         // Obtener datos del sistema legacy
-        $extravios = Extravio::with('identificacion')
-            ->when($request->status, fn($query) => $query->where('ID_ESTADO_EXTRAVIO', $request->status))
-            ->whereYear('FECHA_REGISTRO', $request->year)
-            ->get();
+
+        // dd($extravios);
 
         $misplacements = Misplacement::with('misplacementIdentifications.identificationType')
             ->when($request->status, fn($query) => $query->where('lost_status_id', $request->status))
