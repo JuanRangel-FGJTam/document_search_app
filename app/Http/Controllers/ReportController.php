@@ -84,7 +84,7 @@ class ReportController extends Controller
         $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(function ($item, $key) {
             return [
                 $key => match (strtolower($item)) {
-                    'credencial de elector' => 'Credencial de Elector',
+                    'credencial de elector' => 'Credencial de elector',
                     'pasaporte' => 'Pasaporte',
                     'visa' => 'Visa',
                     'licencia de conducir' => 'Licencia de Conducir',
@@ -105,10 +105,11 @@ class ReportController extends Controller
         ])->toArray();
 
         // Se obtiene mes, id de identificacion y el total
-        $extravios = Objeto::selectRaw('MONTH(FECHA_REGISTRO) as mes, ID_TIPO_DOCUMENTO, COUNT(*) as total')
-            ->whereYear('FECHA_REGISTRO', $request->year)
-            ->when($request->status, fn($query) => $query->where('ID_ESTADO_EXTRAVIO', $request->status))
-            ->groupByRaw('MONTH(FECHA_REGISTRO), ID_TIPO_DOCUMENTO')
+        $extravios = Extravio::selectRaw('MONTH(PGJ_EXTRAVIOS.FECHA_REGISTRO) as mes, PGJ_OBJETOS.ID_TIPO_DOCUMENTO, COUNT(*) as total')
+            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
+            ->whereYear('PGJ_EXTRAVIOS.FECHA_REGISTRO', $request->year)
+            ->when($request->status, fn($query) => $query->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $request->status))
+            ->groupByRaw('MONTH(PGJ_EXTRAVIOS.FECHA_REGISTRO), PGJ_OBJETOS.ID_TIPO_DOCUMENTO')
             ->get();
 
         // Se obtiene mes, id de tipo de documento y el total
@@ -124,6 +125,7 @@ class ReportController extends Controller
         foreach ($extravios as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
             $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'Otro';
+            //dd($identification_name);
             if ($identification_name === 'Otro') {
                 $identification_name = 'Otro Documento';
             }
