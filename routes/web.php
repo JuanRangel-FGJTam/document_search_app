@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -45,5 +46,15 @@ Route::middleware([
     Route::prefix('/admin/surveys')->group(function () {
         Route::get('/', [SurveyController::class, 'index'])->name('surveys.index');
         Route::get('/show/{survey_id}', [SurveyController::class, 'show'])->name('surveys.show');
+    });
+
+    Route::prefix('/admin/usuarios')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('users.index');
+        Route::get('/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/store', [UserController::class, 'store'])->name('users.store');
+        Route::get('/edit/{user_id}', [UserController::class, 'edit'])->name('users.edit');
+        Route::post('/update/{user_id}', [UserController::class, 'update'])->name('users.update');
+        Route::get('/delete/{user_id}', [UserController::class, 'delete'])->name('users.delete');
+        Route::get('/reintegrar/{user_id}', [UserController::class, 'refund'])->name('users.refund');
     });
 });
