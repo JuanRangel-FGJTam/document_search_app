@@ -14,10 +14,7 @@ class DashboardController extends Controller
 
     public function index()
     {
-        $totalRequest = Misplacement::whereIn('lost_status_id', [
-            self::PENDING_STATUS,
-            self::IN_PROGRESS_STATUS,
-        ])->count();
+        $totalRequest = Misplacement::whereDate('registration_date', now())->count();
 
         return Inertia::render('Dashboard', [
             'totalRequest' => $totalRequest

@@ -1,31 +1,40 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { Link, router,useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 const toast = useToast();
 const props = defineProps({
-    errors:Object,
-    user:Object,
+    errors: Object,
+    user: Object,
 })
 
+const isAdminChecked = ref(props.user.is_admin == 1);
+
+
+
 const form = useForm({
-    name:props.user.name,
-    email:props.user.email,
+    name: props.user.name,
+    email: props.user.email,
     password: null,
+    is_admin: isAdminChecked.value ? 1 : 0
 });
 
+// Sincronizar el estado del checkbox con el formulario
+watch(isAdminChecked, (newValue) => {
+    form.is_admin = newValue ? 1 : 0;
+});
 
 const submit = () => {
-        form.post(route('users.update',props.user.id), {
-            preserveScroll: true,
-            preserveState: true,
-            replace: true,
-            onSuccess() {
-                toast.success('Usuario actualizado exitosamente');
-            }
-        });
+    form.post(route('users.update', props.user.id), {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+        onSuccess() {
+            toast.success('Usuario actualizado exitosamente');
+        }
+    });
 };
 
 </script>
@@ -39,7 +48,7 @@ const submit = () => {
                         <div class="p-6">
                             <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Actualizar usuario</h2>
                             <form @submit.prevent="submit">
-                                <div class="grid gap-4 sm:grid-cols-3 sm:gap-6">
+                                <div class="grid gap-4 sm:grid-cols-4 sm:gap-6">
                                     <div class="sm:col-span-1">
                                         <label for="name"
                                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -48,7 +57,7 @@ const submit = () => {
                                         <input type="text" name="name" id="name"
                                             class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                                             placeholder="Ingrese nombre de usuario" v-model="form.name">
-                                            <InputError v-if="errors.name" :message="errors.name" />
+                                        <InputError v-if="errors.name" :message="errors.name" />
                                     </div>
                                     <div class="w-full">
                                         <label for="email"
@@ -56,21 +65,29 @@ const submit = () => {
                                         <input type="email" name="email" id="email"
                                             class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                                             placeholder="Ingrese email" v-model="form.email">
-                                            <InputError v-if="errors.email" :message="errors.email" />
+                                        <InputError v-if="errors.email" :message="errors.email" />
                                     </div>
                                     <div class="w-full">
                                         <label for="password"
                                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
                                         <input type="password" name="password" id="password"
                                             class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                            placeholder="Deja en blanco si no quieres cambiar la contraseña" v-model="form.password">
-                                            <InputError v-if="errors.password" :message="errors.password" />
+                                            placeholder="Deja en blanco si no quieres cambiar la contraseña"
+                                            v-model="form.password">
+                                        <InputError v-if="errors.password" :message="errors.password" />
+                                    </div>
+                                    <div class="w-full">
+                                        <label for="is_admin"
+                                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Administrador</label>
+                                        <input type="checkbox" name="is_admin" id="is_admin"
+                                            class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                                            v-model="isAdminChecked">
                                     </div>
                                 </div>
                                 <div class="flex justify-between">
                                     <Link :href="route('users.index')"
                                         class="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-red-700 rounded-lg focus:ring-4 focus:ring-blue-200 dark:focus:ring-primary-900 hover:bg-red-800">
-                                        Cancelar
+                                    Cancelar
                                     </Link>
                                     <button type="submit"
                                         class="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-blue-700 rounded-lg focus:ring-4 focus:ring-blue-200 dark:focus:ring-primary-900 hover:bg-blue-800">

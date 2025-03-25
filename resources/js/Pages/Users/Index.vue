@@ -8,7 +8,10 @@ import PrimaryLink from '@/Components/PrimaryLink.vue';
 import Pagination from '@/Components/Pagination.vue';
 const props = defineProps({
     users: Object,
-})
+});
+
+console.log(props.users);
+
 const DELETE_TYPE = 1;
 const REFUND_TYPE = 2;
 
@@ -102,6 +105,7 @@ function getTypeClass(typeId) {
                                             class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                             <tr class="text-center">
                                                 <th scope="col" class="px-4 py-3">Usuario</th>
+                                                <th scope="col" class="px-4 py-3">Rol</th>
                                                 <th scope="col" class="px-4 py-3">
                                                     Acciones
                                                 </th>
@@ -119,6 +123,13 @@ function getTypeClass(typeId) {
                                                             <p class="text-gray-500 dark:text-gray-400">
                                                                 {{ user.email }}
                                                             </p>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-start px-4 py-3 whitespace-nowrap">
+                                                        <div class="text-center">
+                                                            <h4 class="text-gray-700 dark:text-gray-200">
+                                                                {{ user.is_admin === 1 ? 'Administrador' : 'Usuario' }}
+                                                            </h4>
                                                         </div>
                                                     </td>
                                                     <td class="px-4 py-3 flex items-center justify-center space-x-2">

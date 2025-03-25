@@ -36,15 +36,16 @@ class UserService
             'name' => $RequestData['name'],
             'email' => $RequestData['email'],
             'password' => Hash::make($RequestData['password']),
+            'is_admin' => $RequestData['is_admin'] ? 1 : 0
         ]);
     }
 
     public function update(array $RequestData, string $user_id)
     {
-
         return User::where('id', $user_id)->update([
             'name' => $RequestData['name'],
             'email' => $RequestData['email'],
+            'is_admin' => $RequestData['is_admin'] ? 1 : 0
         ]);
     }
 

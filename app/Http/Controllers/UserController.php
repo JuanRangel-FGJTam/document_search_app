@@ -28,7 +28,7 @@ class UserController extends Controller
     {
         $search = $request->search;
         $totalUsers = $this->userService->getAll(
-            ['id', 'name', 'email'],
+            ['id', 'name', 'email','is_admin'],
         );
         $users = \App\Support\Pagination::paginate($totalUsers, $request);
         return Inertia::render('Users/Index', [
@@ -73,7 +73,7 @@ class UserController extends Controller
     {
         $user = $this->userService->getById(
             $user_id,
-            ['id', 'name', 'email'],
+            ['id', 'name', 'email','is_admin'],
         );
 
         return Inertia::render('Users/Edit', [
@@ -92,7 +92,7 @@ class UserController extends Controller
         $user = $this->userService->update($request->all(), $user_id);
         $user = $this->userService->getById(
             $user_id,
-            ['id', 'name', 'email']
+            ['id', 'name', 'email','is_admin']
         );
 
         if (!empty($request['password'])) {
