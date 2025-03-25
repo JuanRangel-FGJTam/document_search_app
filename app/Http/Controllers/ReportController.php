@@ -80,18 +80,22 @@ class ReportController extends Controller
         }
 
         // Obtener tipos de identificación
-        $identifications = DocumentType::pluck('name', 'id');
+        $identifications = DocumentType::pluck('name', 'id')->map(function ($item) {
+            return strtolower($item);
+        });
         $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(function ($item, $key) {
             return [
                 $key => match (strtolower($item)) {
-                    'credencial de elector' => 'Credencial de elector',
-                    'pasaporte' => 'Pasaporte',
-                    'visa' => 'Visa',
-                    'licencia de conducir' => 'Licencia de Conducir',
-                    'otro documento' => 'Otro Documento',
-                    default => 'Otro',
+                    'credencial de elector' => 'credencial de elector',
+                    'pasaporte' => 'pasaporte',
+                    'visa' => 'visa',
+                    'licencia de conducir' => 'licencia de conducir',
+                    'otro documento' => 'otro documento',
+                    default => 'otro',
                 }
             ];
+        })->map(function ($item) {
+            return strtolower($item);
         });
 
         // Inicializar estructura de la tabla
@@ -124,10 +128,10 @@ class ReportController extends Controller
         // Se coloca el nombre del id guardado anteriormente
         foreach ($extravios as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'Otro';
+            $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'otro';
             //dd($identification_name);
-            if ($identification_name === 'Otro') {
-                $identification_name = 'Otro Documento';
+            if ($identification_name === 'otro') {
+                $identification_name = 'otro documento';
             }
             $report[$mes]['identifications_count'][$identification_name] += $item->total;
             $report[$mes]['total_solicitudes'] += $item->total;
@@ -136,9 +140,9 @@ class ReportController extends Controller
         // Se coloca el nombre del id guardado anteriormente
         foreach ($misplacements as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications[$item->document_type_id] ?? 'Otro';
-            if ($identification_name === 'Otro') {
-                $identification_name = 'Otro Documento';
+            $identification_name = $identifications[$item->document_type_id] ?? 'otro';
+            if ($identification_name === 'otro') {
+                $identification_name = 'otro documento';
             }
             $report[$mes]['identifications_count'][$identification_name] += $item->total;
             $report[$mes]['total_solicitudes'] += $item->total;
