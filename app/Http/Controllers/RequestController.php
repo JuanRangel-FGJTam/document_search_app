@@ -122,6 +122,9 @@ class RequestController extends Controller
         $misplacement = $this->misplacementService->getById($misplacement_id);
         $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType');
         $person = $this->authApiService->getPersonById($misplacement->people_id);
+        if (isset($person)) {
+            $person = null;
+        }
         $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
         $documents->load('documentType');
 

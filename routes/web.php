@@ -12,7 +12,6 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
         'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
     ]);
 });
 
@@ -57,4 +56,10 @@ Route::middleware([
         Route::get('/delete/{user_id}', [UserController::class, 'delete'])->name('users.delete');
         Route::get('/reintegrar/{user_id}', [UserController::class, 'refund'])->name('users.refund');
     });
+
 });
+
+Route::get('/register', function () {
+    abort(404);
+});
+
