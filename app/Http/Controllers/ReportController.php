@@ -16,13 +16,25 @@ use App\Models\Legacy\Identificacion;
 use App\Models\Legacy\Objeto;
 use App\Models\Legacy\TipoDocumento;
 use App\Models\LostStatus;
+use App\Models\ReportType;
 
 class ReportController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request) {
+        $report_types = ReportType::all();
+
+        return Inertia::render('Reports/Index',[
+            'report_types'=>$report_types
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function createByYear(Request $request)
     {
         //
         $currentYear = date('Y');
@@ -49,19 +61,11 @@ class ReportController extends Controller
 
         $lost_statuses = LostStatus::all();
 
-        return Inertia::render('Reports/Index', [
+        return Inertia::render('Reports/CreateByYear', [
             'years' => $years,
             'months' => $months,
             'lost_statuses' => $lost_statuses
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -130,6 +134,7 @@ class ReportController extends Controller
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
             $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'otro';
             //dd($identification_name);
+
             if ($identification_name === 'otro') {
                 $identification_name = 'otro documento';
             }
@@ -156,6 +161,15 @@ class ReportController extends Controller
 
         Log::info('Reporte exportado por usuario: ' . Auth::id());
         return (new ExcelRequest())->create($data);
+    }
+
+    public function createSurveys(Request $request){
+        return Inertia::render('Reports/CreateSurveys');
+    }
+
+
+    public function getSurveys(Request $request){
+
     }
 
     /**
