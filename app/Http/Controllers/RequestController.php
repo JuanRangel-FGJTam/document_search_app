@@ -117,11 +117,13 @@ class RequestController extends Controller
     public function show(string $misplacement_id)
     {
         //
+        $person = null;
         $municipality = null;
         $colony = null;
         $misplacement = $this->misplacementService->getById($misplacement_id);
+        $personData = $this->authApiService->getPersonById($misplacement->people_id);
+        $person = !empty($personData) ? $personData : null;
         $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType');
-        $person = $this->authApiService->getPersonById($misplacement->people_id);
         $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
         $documents->load('documentType');
         $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);

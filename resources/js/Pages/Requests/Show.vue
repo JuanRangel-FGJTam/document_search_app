@@ -13,13 +13,6 @@ const props = defineProps({
     identification: Object
 });
 
-if (props.person && Object.keys(props.person).length === 0) {
-  console.log("El objeto person está vacío");
-} else {
-  console.log("El objeto person no está vacío", props.person);
-}
-
-
 const toast = useToast();
 
 function reSendDocument() {
@@ -57,7 +50,7 @@ onMounted(() => useToast());
                 <div class="bg-white shadow-lg rounded-lg p-6">
                     <!-- DATOS DEL MANIFESTANTE -->
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Datos del Manifestante</h3>
-                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
+                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg" v-if="person != null">
                         <div v-for="(value, key) in {
                             'Manifestante': person.fullName ?? 'No proporcionado',
                             'CURP': person.curp ?? 'No proporcionado',
@@ -70,6 +63,10 @@ onMounted(() => useToast());
                             <p class="font-semibold">{{ key }}</p>
                             <p>{{ value }}</p>
                         </div>
+                    </div>
+                    <div v-else>
+                        <p class="text-red-600 font-semibold">ESTA PERSONA NO EXISTE EN FISCALIA DIGITAL</p>
+                        <p class="text-gray-600">Por favor, verifique los datos ingresados o contacte al soporte técnico para más información.</p>
                     </div>
                     <!-- DATOS DE LA SOLICITUD -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la Solicitud</h3>

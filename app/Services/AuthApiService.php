@@ -6,6 +6,7 @@ use App\Models\People;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Models\Misplacement;
+use Illuminate\Support\Facades\Log;
 
 class AuthApiService
 {
@@ -26,6 +27,7 @@ class AuthApiService
 
         // * Validate response
         if (!$response->successful()) {
+            Log::warning("Error al obtener los datos de la persona:{type}:{message} ",['type'=>$person_id, 'message'=>$response->getBody()]);
             return [];
         }
         return $response->json();
