@@ -88,7 +88,7 @@ const submit = () => {
                     <a href="https://www.fgjtam.gob.mx" target="_blank" class="block mb-4">
                         <AuthenticationCardLogo class="mx-auto" />
                     </a>
-                    <h2 class="text-2xl text-gray-300 dark:text-gray-100 font-semibold">Constancia de Extravíos de
+                    <h2 class="text-2xl text-gray-300 dark:text-gray-100 font-semibold">Constancia de Extravío de
                         Documentos</h2>
                     <p class="text-sm text-gray-400 mt-2">Accede a la plataforma para gestionar tus reportes de manera
                         rápida y segura.</p>
