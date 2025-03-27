@@ -13,6 +13,11 @@ const props = defineProps({
     identification: Object
 });
 
+if (props.person && Object.keys(props.person).length === 0) {
+  console.log("El objeto person está vacío");
+} else {
+  console.log("El objeto person no está vacío", props.person);
+}
 
 
 const toast = useToast();
@@ -52,7 +57,7 @@ onMounted(() => useToast());
                 <div class="bg-white shadow-lg rounded-lg p-6">
                     <!-- DATOS DEL MANIFESTANTE -->
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Datos del Manifestante</h3>
-                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg" v-if="person">
+                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg" v-if="props.person && Object.keys(props.person).length > 0">
                         <div v-for="(value, key) in {
                             'Manifestante': person.fullName,
                             'CURP': person.curp ?? 'No proporcionado',

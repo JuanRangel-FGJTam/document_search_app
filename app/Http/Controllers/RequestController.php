@@ -122,12 +122,8 @@ class RequestController extends Controller
         $misplacement = $this->misplacementService->getById($misplacement_id);
         $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType');
         $person = $this->authApiService->getPersonById($misplacement->people_id);
-        if (isset($person)) {
-            $person = null;
-        }
         $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
         $documents->load('documentType');
-
         $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);
         $placeEvent->lost_date = \Carbon\Carbon::parse($placeEvent->lost_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
 
