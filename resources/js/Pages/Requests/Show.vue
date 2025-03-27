@@ -57,25 +57,20 @@ onMounted(() => useToast());
                 <div class="bg-white shadow-lg rounded-lg p-6">
                     <!-- DATOS DEL MANIFESTANTE -->
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Datos del Manifestante</h3>
-                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg" v-if="props.person && Object.keys(props.person).length > 0">
+                    <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
                         <div v-for="(value, key) in {
-                            'Manifestante': person.fullName,
+                            'Manifestante': person.fullName ?? 'No proporcionado',
                             'CURP': person.curp ?? 'No proporcionado',
                             'RFC': person.rfc ?? 'No proporcionado',
-                            'Género': person.genderName,
-                            'Fecha de Nacimiento': person.birthdateFormated,
+                            'Género': person.genderName ?? 'No proporcionado',
+                            'Fecha de Nacimiento': person.birthdateFormated ?? 'No proporcionado',
                             'Edad': `${person.age} años`,
-                            'Correo Electrónico': person.email
+                            'Correo Electrónico': person.email ?? 'No proporcionado'
                         }" :key="key">
                             <p class="font-semibold">{{ key }}</p>
                             <p>{{ value }}</p>
                         </div>
                     </div>
-                    <div v-else>
-                        <p class="text-red-600 font-semibold">ESTA PERSONA NO EXISTE EN FISCALIA DIGITAL</p>
-                        <p class="text-gray-600">Por favor, verifique los datos ingresados o contacte al soporte técnico para más información.</p>
-                    </div>
-
                     <!-- DATOS DE LA SOLICITUD -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la Solicitud</h3>
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
