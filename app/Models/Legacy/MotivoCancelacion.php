@@ -7,16 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // use Laravel\Scout\Searchable;
 
-class Objeto extends Model
+class MotivoCancelacion extends Model
 {
     use HasFactory;
 
     protected $connection = 'sqlsrv';
-    protected $table = 'PGJ_OBJETOS';
-    protected $primaryKey = 'ID_OBJETO';
+    protected $table = 'CAT_MOTIVO_CANCELACION';
+    protected $primaryKey = 'idMotivo';
 
-    public function tipoDocumento(){
-        return $this->belongsTo(TipoDocumento::class,'ID_TIPO_DOCUMENTO','ID_TIPO_DOCUMENTO');
-    }
+
 
 }

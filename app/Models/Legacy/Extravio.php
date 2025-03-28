@@ -24,4 +24,24 @@ class Extravio extends Model
         return $this->belongsTo(Identificacion::class, 'ID_IDENTIFICACION','ID_IDENTIFICACION');
     }
 
+    public function tipoDocumento(){
+        return $this->belongsTo(TipoDocumento::class, 'ID_TIPO_DOCUMENTO','ID_TIPO_DOCUMENTO');
+    }
+
+    public function motivoCancelacion(){
+        return $this->belongsTo(MotivoCancelacion::class, 'ID_MOTIVO_CANCELACION','idMotivo');
+    }
+
+    public function usuario(){
+        return $this->belongsTo(UsuarioApi::class, 'idUsuario','idUsuario');
+    }
+
+    public function hechos(){
+        return $this->belongsTo(Hechos::class, 'ID_EXTRAVIO','ID_EXTRAVIO');
+    }
+
+    public function hechosCP(){
+        return $this->belongsTo(HechosCP::class, 'ID_EXTRAVIO','ID_EXTRAVIO');
+    }
+
 }
