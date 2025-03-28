@@ -10,11 +10,38 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Extravio extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
     protected $connection = 'sqlsrv';
     protected $table = 'PGJ_EXTRAVIOS';
     protected $primaryKey = 'ID_EXTRAVIO';
 
+    protected $fillable = [
+        "ID_EXTRAVIO",
+        "ID_ESTADO_EXTRAVIO",
+        "ID_IDENTIFICACION",
+        "CODIGO",
+        "CODIGO_CORTO",
+        "CODIGO_COMPLETO",
+        "IDENTIFICACION",
+        "IDENTIFICACION_DESC",
+        "ID_TIPO_DOCUMENTO",
+        "NUMERO_DOCUMENTO",
+        "NOMBRE",
+        "PATERNO",
+        "MATERNO",
+        "ESPECIFIQUE",
+        "DESCRIPCION",
+        "FECHA_EXTRAVIO",
+        "FECHA_REGISTRO",
+        "ACTIVO",
+        "OBSERVACIONES_CANCELACION",
+        "ID_MOTIVO_CANCELACION",
+        "FECHA_CANCELACION",
+        "idUsuario",
+        "ExtravioPlaca",
+    ];
 
     public function estadoExtravio(){
         return $this->belongsTo(EstadoExtravio::class,'ID_ESTADO_EXTRAVIO','ID_ESTADO_EXTRAVIO');
