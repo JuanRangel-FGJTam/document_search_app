@@ -1,10 +1,13 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
+import { watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import BackButton from '@/Components/BackButton.vue';
+
 const toast = useToast();
+
 const props = defineProps({
     errors: Object,
     years: Array,
@@ -13,33 +16,39 @@ const props = defineProps({
 
 const form = useForm({
     year: 2025,
-    status: null
+    status: null,
+    start_date: '',
+    end_date: ''
 });
 
+// Observa cambios en las fechas para validar
+watch([() => form.start_date, () => form.end_date], ([start, end]) => {
+    if (start && end && start > end) {
+        toast.warning('La fecha de inicio no puede ser mayor a la fecha de fin');
+        form.start_date = '';
+    }
+});
 
 const submit = () => {
     if (!form.year) {
         toast.warning('Ingrese un año');
         return;
     }
+    if (!form.start_date || !form.end_date) {
+        toast.warning('Debe seleccionar ambas fechas');
+        return;
+    }
     toast.info('Generando reporte...');
-    axios.post(route('reports.getByYear'), form, {
+    axios.post(route('reports.getSurveys'), form, {
         responseType: 'blob'
     })
         .then(response => {
-            // Crear una URL para el blob
             const url = window.URL.createObjectURL(new Blob([response.data]));
-
-            // Crear un elemento de enlace y activar la descarga
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'Solicitudes_Constancias_' + form.year + '.xlsx');  // Establecer el nombre de archivo
-
-            // Agregar al documento y activar el clic
+            link.setAttribute('download', `Reporte de encuestas de ${form.start_date} al ${form.end_date}.xlsx`);
             document.body.appendChild(link);
             link.click();
-
-            // Limpiar
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             toast.success('Reporte generado con éxito');
@@ -48,9 +57,9 @@ const submit = () => {
             console.error('Error downloading the file:', error);
             toast.error('Error al obtener los datos');
         });
-}
-
+};
 </script>
+
 
 <template>
     <AppLayout title="Reportes de constancias">

@@ -17,17 +17,19 @@ use App\Models\Legacy\Objeto;
 use App\Models\Legacy\TipoDocumento;
 use App\Models\LostStatus;
 use App\Models\ReportType;
+use App\Models\Survey;
 
 class ReportController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         $report_types = ReportType::all();
 
-        return Inertia::render('Reports/Index',[
-            'report_types'=>$report_types
+        return Inertia::render('Reports/Index', [
+            'report_types' => $report_types
         ]);
     }
 
@@ -163,13 +165,51 @@ class ReportController extends Controller
         return (new ExcelRequest())->create($data);
     }
 
-    public function createSurveys(Request $request){
+    public function createSurveys(Request $request)
+    {
         return Inertia::render('Reports/CreateSurveys');
     }
 
 
-    public function getSurveys(Request $request){
+    public function getSurveys(Request $request)
+    {
+        // Validar fechas
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
+        // Obtener encuestas en el rango de fechas
+        $surveys = Survey::whereBetween('register_date', [$request->start_date, $request->end_date])->get();
+
+        // Definir preguntas y sus claves en la base de datos
+        $surveyQuestions = [
+            'rating_1' => '¿Qué tan difícil fue ingresar al rubro de Extravío de Documentos?',
+            'rating_2' => '¿Qué tan difícil le fue generar su Constancia?',
+            'rating_3' => '¿Qué tan satisfecho se encuentra con el servicio?',
+            'question_1' => '¿Fue útil la información brindada al inicio para el llenado de la Constancia?',
+            'question_2' => '¿Solicitó ayuda telefónica?',
+            'question_3' => '¿El servidor público le solicitó algún pago a cambio?',
+            'question_4' => '¿Sintió discriminación en algún momento?',
+        ];
+
+        // Formatear datos para el Excel
+        $formattedData = [];
+        foreach ($surveyQuestions as $key => $question) {
+            $responses = [];
+            foreach ($surveys as $survey) {
+                $responses[] = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : 'No') : 'N/A';
+            }
+
+            $formattedData[] = [
+                'question' => $question,
+                'responses' => $responses
+            ];
+        }
+
+        // Pasar los datos a la clase que genera el Excel
+        $excelRequest = new ExcelSurvey();
+        return $excelRequest->create($formattedData, $request->start_date, $request->end_date);
     }
 
     /**
