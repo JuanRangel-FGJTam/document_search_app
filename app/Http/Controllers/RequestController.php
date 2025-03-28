@@ -57,7 +57,7 @@ class RequestController extends Controller
         $status = $request->query('status');
         $search = $request->query('search');
         $totalMisplacements = null;
-        $lostStatuses = LostStatus::all();
+        $lostStatuses = LostStatus::whereNotIn('id', [1, 2])->get();
 
         // Mapeo de los status válidos
         $statusMap = [
@@ -131,6 +131,15 @@ class RequestController extends Controller
 
         $identification = $this->authApiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
 
+        $imageContent = Http::get($identification['fileUrl'])->body();
+        $base64Image = base64_encode($imageContent);
+        $identification['image'] = 'data:image/jpeg;base64,' . $base64Image;
+
+        if ($identification['fileUrlBack']) {
+            $imageContent = Http::get($identification['fileUrlBack'])->body();
+            $base64Image = base64_encode($imageContent);
+            $identification['imageBack'] = 'data:image/jpeg;base64,' . $base64Image;
+        }
 
         $zipCodes = $this->authApiService->getZipCode($placeEvent->zipcode);
 
