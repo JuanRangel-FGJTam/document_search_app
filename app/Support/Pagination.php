@@ -13,8 +13,18 @@ class Pagination
         $currentPageItems = $items->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
         // Detectar correctamente el esquema HTTP/HTTPS
-        $scheme = $request->getScheme(); // Detecta si es http o https
-        $url = $scheme . '://' . $request->getHttpHost() . $request->getPathInfo();
+        $url = $request->url();
+        if (!app()->environment(['local', 'testing'])) {
+            // Verificar si es una IP o un dominio
+            $host = $request->getHost();
+            if (filter_var($host, FILTER_VALIDATE_IP)) {
+                // Si es una IP, usar http
+                $url = preg_replace("/^https:/i", "http:", $url);
+            } else {
+                // Si es un dominio, usar https
+                $url = preg_replace("/^http:/i", "https:", $url);
+            }
+        }
 
         return new LengthAwarePaginator(
             $currentPageItems,
