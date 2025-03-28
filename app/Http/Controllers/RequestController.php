@@ -131,6 +131,15 @@ class RequestController extends Controller
 
         $identification = $this->authApiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
 
+        $imageContent = Http::get($identification['fileUrl'])->body();
+        $base64Image = base64_encode($imageContent);
+        $identification['image'] = 'data:image/jpeg;base64,' . $base64Image;
+
+        if ($identification['fileUrlBack']) {
+            $imageContent = Http::get($identification['fileUrlBack'])->body();
+            $base64Image = base64_encode($imageContent);
+            $identification['imageBack'] = 'data:image/jpeg;base64,' . $base64Image;
+        }
 
         $zipCodes = $this->authApiService->getZipCode($placeEvent->zipcode);
 
@@ -236,7 +245,7 @@ class RequestController extends Controller
 
             $this->authApiService->storeProcesure($misplacement->people_id, $data);
             Mail::to($person['email'])->queue(new EmailCancel($data));
-            Log::info("Store Request Cancelation To Folio:".$misplacement->document_number);
+            Log::info("Store Request Cancelation To Folio:" . $misplacement->document_number);
             return to_route('misplacement.show', $misplacement_id);
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir transacción en caso de error

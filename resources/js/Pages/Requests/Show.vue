@@ -139,12 +139,12 @@ onMounted(() => useToast());
                         </div>
                         <div>
                             <p class="font-semibold">Identificación</p>
-                            <img :src="identification.fileUrl" alt="Identificacion"
+                            <img :src="identification.image" alt="Identificacion"
                                 class="h-32 object-cover rounded-lg">
                         </div>
                         <div v-if="identification.fileUrlBack">
                             <p class="font-semibold">Identificación (reversa)</p>
-                            <img :src="identification.fileUrlBack" alt="Identificacion"
+                            <img :src="identification.imageBack" alt="Identificacion"
                                 class="h-32 object-cover rounded-lg">
                         </div>
                     </div>
