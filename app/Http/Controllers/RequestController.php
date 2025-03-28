@@ -57,7 +57,7 @@ class RequestController extends Controller
         $status = $request->query('status');
         $search = $request->query('search');
         $totalMisplacements = null;
-        $lostStatuses = LostStatus::all();
+        $lostStatuses = LostStatus::whereNotIn('id', [1, 2])->get();
 
         // Mapeo de los status válidos
         $statusMap = [

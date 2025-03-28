@@ -43,7 +43,7 @@ onMounted(() => useToast());
                     <div class="flex items-center justify-between">
                         <BackButton class="mr-2" :href="route('misplacement.index')" />
                         <h2 class="text-2xl font-bold text-gray-800">
-                            Solicitud de Constancia - {{ misplacement.document_number }}
+                            Constancia de extravío - Folio {{ misplacement.document_number }}
                         </h2>
                     </div>
                 </div>
