@@ -26,7 +26,11 @@ class ExcelRequest
         $sheet->mergeCells('A3:J3');
 
         $sheet->setCellValue('A1', 'Fiscalía General de Justicia del Estado de Tamaulipas');
-        $sheet->setCellValue('A2', 'Reporte de Solicitudes - Estado: ' . ($data['status_name'] ?? 'Todos'));
+        $sheet->setCellValue(
+            'A2',
+            'Reporte de Solicitudes - Estado: ' . ($data['status_name'] ?? 'Todos') .
+            (isset($data['municipality_name']) ? ' - Municipio ' . $data['municipality_name'] : '')
+        );
 
         // Alineación del encabezado
         $sheet->getStyle('A1:J3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
