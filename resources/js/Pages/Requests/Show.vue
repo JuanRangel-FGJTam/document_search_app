@@ -18,10 +18,39 @@ const toast = useToast();
 function reSendDocument() {
     router.visit(route('misplacement.reSendDocument', props.misplacement.id), {
         onSuccess: () => {
-            toast.info('La constancia se reenviado al correo '+props.person.email+ ' correctamente!');
+            toast.info('La constancia se reenviado al correo ' + props.person.email + ' correctamente!');
         }
     });
 }
+
+
+function downloadPDF() {
+    axios.get(route('downloadPDF', props.misplacement.id), {
+        responseType: 'blob',  // Esto indica que la respuesta será un archivo binario
+    })
+        .then(response => {
+            console.log(response);
+            // Crear un objeto URL para la respuesta binaria
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+
+            // Crear un enlace de descarga y simular el clic para descargar el archivo
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = props.misplacement.people_id+'.pdf';  // Puedes usar otro nombre aquí si prefieres
+            document.body.appendChild(a);
+            a.click();
+
+            // Limpiar el objeto URL después de la descarga
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Error al descargar el documento:', error);
+        });
+}
+
+
+
+
 function getTypeClass(typeId) {
     const classMap = {
         '1': 'bg-yellow-100 text-yellow-700',
@@ -66,7 +95,8 @@ onMounted(() => useToast());
                     </div>
                     <div v-else>
                         <p class="text-red-600 font-semibold">ESTA PERSONA NO EXISTE EN FISCALIA DIGITAL</p>
-                        <p class="text-gray-600">Por favor, verifique los datos ingresados o contacte al soporte técnico para más información.</p>
+                        <p class="text-gray-600">Por favor, verifique los datos ingresados o contacte al soporte técnico
+                            para más información.</p>
                     </div>
                     <!-- DATOS DE LA SOLICITUD -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la Solicitud</h3>
@@ -86,23 +116,32 @@ onMounted(() => useToast());
                             <p>{{ misplacement.registration_date }}</p>
                         </div>
                         <template v-if="misplacement.lost_status_id == 3">
-                            <div class="flex items-center">
-                                <p class="text-center font-semibold text-green-600">Esta solicitud ha sido atendida</p>
+                            <div class="col-span-3 flex justify-center">
+                                <p class="text-center font-semibold text-green-600">
+                                    Esta solicitud ha sido atendida
+                                </p>
                             </div>
                         </template>
-                        <button @click="reSendDocument()"
-                            v-if="misplacement.lost_status_id == 3 && person"
-                            class="text-center px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors duration-200 shadow-md">
-                        Reenviar Constancia
-                        </button>
-                        <Link v-if="misplacement.lost_status_id != 4 && person"
-                            :href="route('misplacement.cancel', misplacement.id)"
-                            class="text-center px-4 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors duration-200 shadow-md">
-                        Cancelar Constancia
-                        </Link>
-                        <p v-if="misplacement.lost_status_id== 4" class="font-semibold text-red-600">
-                            Esta solicitud ha sido cancelada
-                        </p>
+                        <div class="col-span-3 flex justify-center gap-4 mt-4">
+                            <button v-if="misplacement.lost_status_id == 3 && person" @click="downloadPDF()"
+                                class="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors duration-200 shadow-md">
+                                Descargar Constancia
+                            </button>
+                            <button v-if="misplacement.lost_status_id == 3 && person" @click="reSendDocument()"
+                                class="px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors duration-200 shadow-md">
+                                Reenviar Constancia
+                            </button>
+                            <Link v-if="misplacement.lost_status_id != 4 && person"
+                                :href="route('misplacement.cancel', misplacement.id)"
+                                class="px-4 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors duration-200 shadow-md">
+                            Cancelar Constancia
+                            </Link>
+                        </div>
+                        <div v-if="misplacement.lost_status_id == 4" class="col-span-3">
+                            <p class="text-center font-semibold text-red-600">
+                                Esta solicitud ha sido cancelada
+                            </p>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg mt-4"

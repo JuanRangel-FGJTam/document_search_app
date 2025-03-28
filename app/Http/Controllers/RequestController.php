@@ -236,7 +236,7 @@ class RequestController extends Controller
 
             $this->authApiService->storeProcesure($misplacement->people_id, $data);
             Mail::to($person['email'])->queue(new EmailCancel($data));
-            Log::info("Store Request Cancelation To Folio:".$misplacement->document_number);
+            Log::info("Store Request Cancelation To Folio:" . $misplacement->document_number);
             return to_route('misplacement.show', $misplacement_id);
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir transacción en caso de error
@@ -302,6 +302,35 @@ class RequestController extends Controller
             Log::error("Error en storeData: " . $e->getMessage());
             return back()->withErrors(['message' => 'Ocurrió un error al procesar la solicitud.']);
         }
+    }
+
+
+    public function downloadPDF(string $misplacement_id)
+    {
+        $misplacement = Misplacement::find($misplacement_id);
+        $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
+        if (!$procedure) {
+            return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de comunicarle al usuario que realice de nuevo el trámite.');
+        }
+        $url = $procedure['files'][0]['fileUrl'];
+        $response = Http::get($url);
+        if ($response->successful()) {
+            $filename = 'document_' . $misplacement->people_id . '.pdf';
+            $path = 'public/documents/' . $filename;
+            Storage::put($path, $response->body());
+            $fileURL =  'app/public/documents/' . $filename;
+        } else {
+            return redirect()->back()->with('error', 'Error al descargar el archivo. Intente nuevamente.');
+        }
+
+        // Construir la ruta completa del archivo en el disco 'public'
+        $path = storage_path($fileURL);
+        // Verificar si el archivo existe
+        if (!file_exists($path)) {
+            abort(404, 'File not found.');
+        }
+        // Descargar el archivo
+        return response()->download($path);
     }
 
 

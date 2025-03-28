@@ -57,6 +57,9 @@ Route::middleware([
         Route::get('/reintegrar/{user_id}', [UserController::class, 'refund'])->name('users.refund');
     });
 
+    Route::get('/download/{id}', [RequestController::class, 'downloadPDF'])->name('downloadPDF');
+
+
 });
 
 Route::get('/register', function () {
