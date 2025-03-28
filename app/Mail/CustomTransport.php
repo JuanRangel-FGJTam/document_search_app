@@ -23,36 +23,34 @@ class CustomTransport extends AbstractTransport
             $jwt = config('mail.mailers.dgtitAPI.jwt');
             $host = config('mail.mailers.dgtitAPI.host');
 
-            // Construir la solicitud con los campos del correo
-            // Prepare the email data
-            $emailData = [
-                'from' => $email->getFrom()[0]->getAddress(),
-                'to' => $email->getTo()[0]->getAddress(),
-                'email' => $email->getFrom()[0]->getAddress(),  // Assuming the sender's email
-                'subject' => $email->getSubject(),
-                'message' => $email->getHtmlBody(),
-            ];
+            // Create multipart form request
+            $request = Http::withToken($jwt)->asMultipart();
 
-            // Attach files if there are any
-            $attachments = $email->getAttachments();
-            foreach ($attachments as $attachment) {
-                $emailData['documents'][] = [
-                    'name' => $attachment->getFilename(),
-                    'contents' => $attachment->getBody(),
-                    'content_type' => $attachment->getContentType(),
-                ];
+            // Attach basic fields
+            $request->attach('from', $email->getFrom()[0]->getAddress(), null, ['Content-Type' => 'text/plain']);
+            $request->attach('to', $email->getTo()[0]->getAddress(), null, ['Content-Type' => 'text/plain']);
+            $request->attach('subject', $email->getSubject(), null, ['Content-Type' => 'text/plain']);
+            $request->attach('message', $email->getHtmlBody(), null, ['Content-Type' => 'text/html']);
+
+            foreach ($email->getAttachments() as $attachment) {
+                $content = (string) $attachment->getBody(); // ensure content is string
+                $friendlyFilename = 'constancia_de_extravio.pdf';
+
+                $request->attach(
+                    'documents', // field name expected by the API
+                    $content,
+                    $friendlyFilename,
+                    ['Content-Type' => 'application/pdf']
+                );
             }
 
-            // Enviar la solicitud con archivos adjuntos
-            $response = Http::withToken($jwt)->post($host, $emailData);
-
-            // Enviar la solicitud con archivos adjuntos
-            //$response = Http::withToken($jwt)->attach($emailData)->post($host);
+            // Send the request
+            $response = $request->post($host);
 
             if (!$response->successful()) {
                 Log::error('Failed to send email API status code: ' . $response->status());
-                Log::error('Failed to send email API: ' . $response);
-                throw new TransportException('Failed to send email: ' . $response);
+                Log::error('Failed to send email API: ' . $response->json());
+                throw new TransportException('Failed to send email: ' . $response->json());
             }
         } catch (TransportExceptionInterface $e) {
             Log::error('Failed to send email TransportExceptionInterface: ' . $e->getMessage());
@@ -62,7 +60,6 @@ class CustomTransport extends AbstractTransport
             throw $e;
         }
     }
-
 
     /**
      * Get the string representation of the transport.
