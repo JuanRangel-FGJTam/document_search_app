@@ -1,28 +1,33 @@
 <x-mail::message>
-# ¡Tu Constancia de Extravío de Documentos ha sido validada!
+# ¡Constancia de Extravío de Documentos generada!
 
-Estimado/a {{ $fullName }},
+Estimado/a {{ $fullName }}.
 
-Nos complace informarte que tu **Constancia de Extravío de Documentos** ha sido validada exitosamente. Ahora puedes descargarla y consultarla cuando lo necesites.
+Nos complace informarle que su **Constancia de Extravío de Documentos** ha sido generada. Ahora puede descargarla y consultarla cuando lo necesite.
 
-### 📌 Detalles de tu solicitud
+### Detalles de su solicitud
+
 - **Folio:** {{ $folio }}
 - **Estatus:** {{ $status }}
-- **Observaciones:** {{$observations}}
 
-### 📌 Opciones para acceder a tu documento:
-1. **Desde nuestro portal**: Puedes acceder y descargar tu constancia en cualquier momento desde el siguiente enlace:
-   <x-mail::button :url="'https://fiscaliadigital.fgjtam.gob.mx'">
-   Consultar en Fiscalía Digital
-   </x-mail::button>
+### Opciones para acceder a su documento:
 
-2. **Adjunta en este correo**: También hemos incluido la constancia como archivo adjunto para tu comodidad.
+- **Desde nuestro portal**: Puede acceder y descargar su constancia en cualquier momento desde su perfil de Fiscalía Digital en la sección **Mis trámites**.
 
-### ℹ️ Información adicional
-Si necesitas más información o tienes alguna duda, no dudes en contactarnos a través de nuestro portal.
+<x-mail::button :url="'https://fiscaliadigital.fgjtam.gob.mx'">
+Consultar en Fiscalía Digital
+</x-mail::button>
+
+- **Adjunta en este correo**: También hemos incluido la constancia como archivo adjunto para su comodidad.
+
+### Información adicional
+
+Si necesita más información o tiene alguna duda, no dude en contactarnos a través del número **83431861151** extensión **51010**
 
 Gracias por confiar en nosotros.
 
-Atentamente,
-**{{ config('app.name') }}**
+<div style="text-align: center;">
+    Atentamente,<br>
+    <strong>Fiscalía General de Justicia del Estado de Tamaulipas</strong>
+</div>
 </x-mail::message>
