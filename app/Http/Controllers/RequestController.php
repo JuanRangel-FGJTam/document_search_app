@@ -78,22 +78,29 @@ class RequestController extends Controller
         if ($search !== null) {
             $totalMisplacements = Misplacement::search($search)->get();
             if ($totalMisplacements->isEmpty()) {
-                $legacyMisplacements = Extravio::with('estadoExtravio')->where('ID_EXTRAVIO', $search)->get();
-                if ($legacyMisplacements->isNotEmpty()) {
-                    $totalMisplacements = $legacyMisplacements->map(function ($legacy) {
-                        return [
-                            'id' => $legacy->ID_EXTRAVIO,
-                            'document_number' => $legacy->ID_EXTRAVIO,
-                            'lost_status_id' => $legacy->ID_ESTADO_EXTRAVIO, // Ajustar según sea necesario
-                            'lost_status' => [
-                                'name' => $legacy->estadoExtravio->ESTADO_EXTRAVIO,
-                            ],
-                            'people' => [
-                                'name' => trim(($legacy->NOMBRE ?? '') . ' ' . ($legacy->PATERNO ?? '') . ' ' . ($legacy->MATERNO ?? '')),
-                            ],
-                            'registration_date' => $legacy->FECHA_EXTRAVIO, // Ajustar según sea necesario
-                        ];
-                    });
+                try {
+                    $legacyMisplacements = Extravio::with('estadoExtravio')->where('ID_EXTRAVIO', $search)->get();
+                    if ($legacyMisplacements->isNotEmpty()) {
+                        $totalMisplacements = $legacyMisplacements->map(function ($legacy) {
+                            return [
+                                'id' => $legacy->ID_EXTRAVIO,
+                                'document_number' => $legacy->ID_EXTRAVIO,
+                                'lost_status_id' => $legacy->ID_ESTADO_EXTRAVIO, // Ajustar según sea necesario
+                                'lost_status' => [
+                                    'name' => $legacy->estadoExtravio->ESTADO_EXTRAVIO,
+                                ],
+                                'people' => [
+                                    'name' => trim(($legacy->NOMBRE ?? '') . ' ' . ($legacy->PATERNO ?? '') . ' ' . ($legacy->MATERNO ?? '')),
+                                ],
+                                'registration_date' => $legacy->FECHA_EXTRAVIO, // Ajustar según sea necesario
+                            ];
+                        });
+                    } else {
+                        $totalMisplacements = collect(); // Retorna vacío si no se encuentran resultados
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Error fetching legacy misplacements: " . $e->getMessage());
+                    $totalMisplacements = collect(); // Retorna vacío si ocurre un error
                 }
             } else {
                 $totalMisplacements->load('people', 'lostStatus');
@@ -196,7 +203,7 @@ class RequestController extends Controller
             ];
 
             $identification = [
-                'folio'=> $extravio->NUMERO_DOCUMENTO
+                'folio' => $extravio->NUMERO_DOCUMENTO
             ];
 
             $documents = $documentsData->map(function ($doc) {
@@ -295,32 +302,60 @@ class RequestController extends Controller
             'deadline' => 'required|date',
             'cancellation_reason' => 'required',
         ]);
+
         try {
+            DB::beginTransaction();
+
             $misplacement = Misplacement::find($misplacement_id);
-            $misplacement->lost_status_id = SELF::LOST_STATUS_CANCELATION;
-            $misplacement->cancellation_date = $request->deadline;
-            $misplacement->cancellation_reason_description = $request->message;
-            $misplacement->cancellation_reason_id = $request->cancellation_reason;
-            $misplacement->save();
-            $person = $this->authApiService->getPersonById($misplacement->people_id);
-            $reason = CancellationReason::find($request->cancellation_reason);
+            $document_number = null;
+            $person = null;
+            $people_id = null;
+
+            if ($misplacement) {
+                $misplacement->update([
+                    'lost_status_id' => SELF::LOST_STATUS_CANCELATION,
+                    'cancellation_date' => $request->deadline,
+                    'cancellation_reason_description' => $request->message,
+                    'cancellation_reason_id' => $request->cancellation_reason,
+                ]);
+                $document_number = $misplacement->document_number;
+                $people_id = $misplacement->people_id;
+                $person = $this->authApiService->getPersonById($misplacement->people_id);
+            } else {
+                $legacyMisplacement = Extravio::where('ID_EXTRAVIO', $misplacement_id)->firstOrFail();
+                $legacyMisplacement->load('estadoExtravio', 'usuario', 'identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
+                $legacyMisplacement->ID_ESTADO_EXTRAVIO = SELF::LOST_STATUS_CANCELATION;
+                $legacyMisplacement->FECHA_CANCELACION = $request->deadline;
+                $legacyMisplacement->OBSERVACIONES_CANCELACION = $request->message;
+                $legacyMisplacement->ID_MOTIVO_CANCELACION = $request->cancellation_reason;
+                $legacyMisplacement->save();
+
+                $document_number = $misplacement_id;
+                $people_id = $legacyMisplacement->usuario->idPersonApi;
+                $person = $this->authApiService->getPersonById($people_id);
+            }
+
+            $reason = CancellationReason::findOrFail($request->cancellation_reason);
 
             $data = [
                 "fullName" => $person['fullName'] ?? 'Usuario',
-                "folio" => (string) $misplacement->document_number,
+                "folio" => (string) $document_number,
                 "status" => $reason->name,
                 "area" => "Trámite en Línea",
                 "name" => "Constancia de Extravío de Documentos",
-                "observations" => $request->message ?? 'Sin observaciones'
+                "observations" => $request->message ?? 'Sin observaciones',
             ];
 
-            $this->authApiService->storeProcesure($misplacement->people_id, $data);
+            $this->authApiService->storeProcesure($people_id, $data);
             Mail::to($person['email'])->queue(new EmailCancel($data));
-            Log::info("Store Request Cancelation To Folio:" . $misplacement->document_number);
+
+            Log::info("Store Request Cancellation for Folio: " . $document_number);
+
+            DB::commit();
             return to_route('misplacement.show', $misplacement_id);
         } catch (\Exception $e) {
-            DB::rollBack(); // Revertir transacción en caso de error
-            Log::error("Error en storeData: " . $e->getMessage());
+            DB::rollBack();
+            Log::error("Error in storeCancelRequest: " . $e->getMessage());
             return back()->withErrors(['message' => 'Ocurrió un error al procesar la solicitud.']);
         }
     }

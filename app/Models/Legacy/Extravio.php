@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Extravio extends Model
 {
     use HasFactory;
-
+    public $timestamps = false;
     protected $connection = 'sqlsrv';
     protected $table = 'PGJ_EXTRAVIOS';
     protected $primaryKey = 'ID_EXTRAVIO';
