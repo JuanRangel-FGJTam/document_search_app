@@ -127,7 +127,7 @@ onMounted(() => useToast());
                                 class="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors duration-200 shadow-md">
                                 Descargar Constancia
                             </button>
-                            <button v-if="misplacement.lost_status_id == 3 && person" @click="reSendDocument()"
+                            <button v-if="misplacement.lost_status_id == 3 && person.email" @click="reSendDocument()"
                                 class="px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors duration-200 shadow-md">
                                 Reenviar Constancia
                             </button>
@@ -166,7 +166,7 @@ onMounted(() => useToast());
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Tipo de Identificación</p>
-                            <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
+                            <p>{{ misplacement?.misplacement_identifications?.identification_type?.name ?? 'Dato no encontrado' }}</p>
                         </div>
                         <div>
                             <p class="font-semibold">Folio de Identificación</p>
@@ -221,7 +221,7 @@ onMounted(() => useToast());
                     <!-- NARRACIÓN DE LOS HECHOS -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Narración de los Hechos</h3>
                     <div class="border p-4 rounded-lg">
-                        <p class="text-gray-800">{{ placeEvent.description }}</p>
+                        <p class="text-gray-800">{{ placeEvent.description ?? 'Descripción no encontrada'}}</p>
                     </div>
                 </div>
             </div>
