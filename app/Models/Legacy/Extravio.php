@@ -5,7 +5,8 @@ namespace App\Models\Legacy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-// use Laravel\Scout\Searchable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class Extravio extends Model
 {
@@ -44,12 +45,14 @@ class Extravio extends Model
     ];
 
     public function estadoExtravio(){
+
         return $this->belongsTo(EstadoExtravio::class,'ID_ESTADO_EXTRAVIO','ID_ESTADO_EXTRAVIO');
     }
 
     public function identificacion(){
         return $this->belongsTo(Identificacion::class, 'ID_IDENTIFICACION','ID_IDENTIFICACION');
     }
+
 
     public function tipoDocumento(){
         return $this->belongsTo(TipoDocumento::class, 'ID_TIPO_DOCUMENTO','ID_TIPO_DOCUMENTO');
@@ -63,12 +66,25 @@ class Extravio extends Model
         return $this->belongsTo(UsuarioApi::class, 'idUsuario','idUsuario');
     }
 
-    public function hechos(){
-        return $this->belongsTo(Hechos::class, 'ID_EXTRAVIO','ID_EXTRAVIO');
-    }
-
     public function hechosCP(){
         return $this->belongsTo(HechosCP::class, 'ID_EXTRAVIO','ID_EXTRAVIO');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function hechos(): HasMany
+    {
+        return $this->hasMany(Hechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function lugarHechos(): HasMany
+    {
+        return $this->hasMany(LugarHechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
+
     }
 
 }
