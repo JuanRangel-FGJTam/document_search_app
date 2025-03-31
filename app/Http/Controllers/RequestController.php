@@ -185,7 +185,15 @@ class RequestController extends Controller
         } else {
             $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
             $extravio->load('estadoExtravio', 'usuario', 'identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
-            $person = $this->authApiService->getPersonById($extravio->usuario->idPersonApi);
+            $person = null;
+            if ($extravio->usuario && $extravio->usuario->idPersonApi) {
+                $person = $this->authApiService->getPersonById($extravio->usuario->idPersonApi);
+            }
+            if (!$person) {
+                $person = [
+                    'fullName' => $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO,
+                ];
+            }
             $documentsData = Objeto::where('ID_EXTRAVIO', $misplacement_id)->get();
             $documentsData->load('tipoDocumento');
 
@@ -340,25 +348,25 @@ class RequestController extends Controller
                 $legacyMisplacement->save();
 
                 $document_number = $misplacement_id;
-                $people_id = $legacyMisplacement->usuario->idPersonApi;
-                $person = $this->authApiService->getPersonById($people_id);
+                $people_id = $legacyMisplacement->usuario->idPersonApi ?? null;
+                $person = $people_id ? $this->authApiService->getPersonById($people_id) : null;
             }
 
             $reason = CancellationReason::findOrFail($request->cancellation_reason);
+            if ($person) {
+                $data = [
+                    "fullName" => $person['fullName'] ?? 'Usuario',
+                    "folio" => (string) $document_number,
+                    "status" => $reason->name,
+                    "area" => "Trámite en Línea",
+                    "name" => "Constancia de Extravío de Documentos",
+                    "observations" => $request->message ?? 'Sin observaciones',
+                ];
+                $this->authApiService->storeProcesure($people_id, $data);
+                Mail::to($person['email'])->queue(new EmailCancel($data));
+            }
 
-            $data = [
-                "fullName" => $person['fullName'] ?? 'Usuario',
-                "folio" => (string) $document_number,
-                "status" => $reason->name,
-                "area" => "Trámite en Línea",
-                "name" => "Constancia de Extravío de Documentos",
-                "observations" => $request->message ?? 'Sin observaciones',
-            ];
-
-            $this->authApiService->storeProcesure($people_id, $data);
-            Mail::to($person['email'])->queue(new EmailCancel($data));
-
-            Log::info("Store Request Cancellation for Folio: " . $document_number);
+            Log::info("Store Request Cancellation for Folio: " . $document_number. 'By user_id: '. Auth::user()->id);
 
             DB::commit();
             return to_route('misplacement.show', $misplacement_id);
