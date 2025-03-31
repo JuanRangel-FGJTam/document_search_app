@@ -4,21 +4,25 @@ namespace App\Console\Commands;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Console\Command;
 use App\Models\
 {
     Misplacement,
     LostDocument,
-    SyncedMisplacement
+    SyncedMisplacement,
+    PlaceEvent
 };
 use App\Models\Legacy\
 {
     Extravio,
-    Objeto
+    Hechos,
+    Objeto,
+    LugarHechos
 };
 use App\Helpers\ExtravioAdapter;
 use App\Helpers\ExtravioObjectAdapter;
-
+use App\Services\AuthApiService;
 use Exception;
 use Throwable;
 
@@ -38,11 +42,16 @@ class SyncRecordsToLegacy extends Command
      */
     protected $description = "Send the local records of 'Encuesta', 'Extravios' and 'Objetos' to the legacy database";
 
+    protected AuthApiService $apiService;
+
     /**
      * Execute the console command.
      */
     public function handle()
     {
+        // * initilize the api service
+        $this->apiService = new AuthApiService();
+
         // * get the pending local records that are not in the legacy database
         $misplacements = Misplacement::whereDoesntHave('syncedMisplacement')
             ->orWhereHas('syncedMisplacement', function ($query) {
@@ -55,7 +64,6 @@ class SyncRecordsToLegacy extends Command
         // * loop through the records
         foreach ($misplacements as $misplacement)
         {
-
             // * create the synced record
             $syncedMisplacement = SyncedMisplacement::firstOrNew([
                 'misplacement_id' => $misplacement->id
@@ -91,27 +99,13 @@ class SyncRecordsToLegacy extends Command
 
                 // * get the local missing documents
                 $lostDocuments = LostDocument::where('misplacement_id', $misplacement->id)->get();
-                foreach ($lostDocuments as $lostDocument)
-                {
-                    // * get the legacy record
-                    $legacyObjeto = ExtravioObjectAdapter::fromLostDocument($lostDocument);
-                    $legacyObjeto->ID_EXTRAVIO = $legacyIdExtravio;
+                $this->processLostDocuments($lostDocuments, $legacyIdExtravio);
 
-                    // * check if the object is already stored by comparing the document number and owner
-                    $existingObjectRecord = Objeto::where([
-                        "ID_EXTRAVIO" => $legacyIdExtravio,
-                        "NUMERO_DOCUMENTO" => $lostDocument->document_number,
-                        "TITULAR_DOCUMENTO" => $lostDocument->document_owner,
-                    ])->first();
 
-                    // * skipt the record if exist
-                    if(isset($existingObjectRecord))
-                    {
-                        continue;
-                    }
+                // * save event description and place events
+                $placeEvent = PlaceEvent::where('misplacement_id', $misplacement->id)->firstOrFail();
+                $this->processPlaceEvent($placeEvent, $misplacement, $legacyIdExtravio);
 
-                    $legacyObjeto->save();
-                }
 
                 DB::connection('sqlsrv')->commit();
                 Log::info("Misplacement record with id '{id}' synced to legacy", [
@@ -146,6 +140,100 @@ class SyncRecordsToLegacy extends Command
             }
         }
         Log::info("Job finished");
+    }
+
+
+    /**
+     * processLostDocuments
+     *
+     * @param  Collection<LostDocument> $lostDocuments
+     * @param  int|string $legacyIdExtravio
+     * @return void
+     */
+    private function processLostDocuments($lostDocuments, $legacyIdExtravio)
+    {
+        foreach ($lostDocuments as $lostDocument)
+        {
+            // * get the legacy record
+            $legacyObjeto = ExtravioObjectAdapter::fromLostDocument($lostDocument);
+            $legacyObjeto->ID_EXTRAVIO = $legacyIdExtravio;
+
+            // * check if the object is already stored by comparing the document number and owner
+            $existingObjectRecord = Objeto::where([
+                "ID_EXTRAVIO" => $legacyIdExtravio,
+                "NUMERO_DOCUMENTO" => $lostDocument->document_number,
+                "TITULAR_DOCUMENTO" => $lostDocument->document_owner,
+            ])->first();
+
+            // * skipt the record if exist
+            if(isset($existingObjectRecord))
+            {
+                continue;
+            }
+
+            $legacyObjeto->save();
+        }
+    }
+
+
+    /**
+     * processPlaceEvent
+     *
+     * @param  PlaceEvent $placeEvent
+     * @param  Misplacement $misplacement
+     * @param  int|string $legacyIdExtravio
+     * @return void
+     */
+    private function processPlaceEvent($placeEvent, $misplacement, $legacyIdExtravio)
+    {
+        // * save event description (Hechos)
+        $hechos = Hechos::where("ID_EXTRAVIO", $legacyIdExtravio)->first();
+        if(isset($hechos))
+        {
+            if($hechos->DESCRIPCION != Trim($placeEvent->description))
+            {
+                $hechos->DESCRIPCION = Trim($placeEvent->description);
+                $hechos->save();
+            }
+        }
+        else
+        {
+            $hechos = Hechos::create([
+                "ID_EXTRAVIO" => $legacyIdExtravio,
+                "ID_MUNICIPIO" => 0,
+                "ID_LOCALIDAD" => 0,
+                "ID_COLONIA" => 0,
+                "ID_CALLE" => 0,
+                "DESCRIPCION" => Trim($placeEvent->description),
+                "FECHA" => $misplacement->registration_date
+            ]);
+        }
+
+
+        // * save the place event
+        $hechosCP = LugarHechos::where("ID_EXTRAVIO", $legacyIdExtravio)->first();
+        if(!isset($hechosCP))
+        {
+            $hechos = LugarHechos::create([
+                "ID_EXTRAVIO" => $legacyIdExtravio,
+                "CPcodigo" => Trim($placeEvent->zipcode),
+                "CPcalle" => Trim($placeEvent->street),
+                "FECHA_REGISTRO" => $misplacement->registration_date
+            ]);
+
+            // * get the place info from the api
+            try
+            {
+                $zipCodeInfo = $this->apiService->getZipCode(Trim($placeEvent->zipcode));
+                $hechos->CPmunicipio = collect($zipCodeInfo->municipalities)->firstWhere('id', $placeEvent->municipality_api_id)?->name;
+                $hechos->CPcolonia = collect($zipCodeInfo->colonies)->firstWhere('id', $placeEvent->colony_api_id)?->name;
+                $hechos->save();
+            }
+            catch (\Throwable $th)
+            {
+                Log::error("Failed to fetch zip code info for '{$placeEvent->zipcode}' from the ApiService: {$th->getMessage()}");
+            }
+        }
     }
 
 }
