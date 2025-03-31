@@ -6,19 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // use Laravel\Scout\Searchable;
-use App\Models\Legacy\CatIdentificacion;
 
-class Identificacion extends Model
+class CatIdentificacion extends Model
 {
     use HasFactory;
 
     protected $connection = 'sqlsrv';
-    protected $table = 'PGJ_IDENTIFICACION';
+    protected $table = 'CAT_IDENTIFICACION2';
     protected $primaryKey = 'ID_IDENTIFICACION';
 
-
-    public function cat_identificacion(){
-        return $this->belongsTo(CatIdentificacion::class,  'ID_TIPO_IDENTIFICACION','ID_IDENTIFICACION');
-    }
 
 }
