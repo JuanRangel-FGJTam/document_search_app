@@ -78,13 +78,4 @@ class Extravio extends Model
         return $this->hasMany(Hechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function lugarHechos(): HasMany
-    {
-        return $this->hasMany(LugarHechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
-
-    }
-
 }

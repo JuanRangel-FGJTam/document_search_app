@@ -18,7 +18,7 @@ use App\Models\Legacy\
     Extravio,
     Hechos,
     Objeto,
-    LugarHechos
+    HechosCP
 };
 use App\Helpers\ExtravioAdapter;
 use App\Helpers\ExtravioObjectAdapter;
@@ -211,10 +211,10 @@ class SyncRecordsToLegacy extends Command
 
 
         // * save the place event
-        $hechosCP = LugarHechos::where("ID_EXTRAVIO", $legacyIdExtravio)->first();
+        $hechosCP = HechosCP::where("ID_EXTRAVIO", $legacyIdExtravio)->first();
         if(!isset($hechosCP))
         {
-            $hechos = LugarHechos::create([
+            $hechos = HechosCP::create([
                 "ID_EXTRAVIO" => $legacyIdExtravio,
                 "CPcodigo" => Trim($placeEvent->zipcode),
                 "CPcalle" => Trim($placeEvent->street),
