@@ -72,6 +72,7 @@ class SyncRecordsToLegacy extends Command
                     throw new Exception('The legacy record could not be created');
                 }
 
+                // * save the ID for use after
                 $legacyIdExtravio = $legacyExtravio->ID_EXTRAVIO;
 
                 // * check if the legacy record already exists
@@ -95,6 +96,20 @@ class SyncRecordsToLegacy extends Command
                     // * get the legacy record
                     $legacyObjeto = ExtravioObjectAdapter::fromLostDocument($lostDocument);
                     $legacyObjeto->ID_EXTRAVIO = $legacyIdExtravio;
+
+                    // * check if the object is already stored by comparing the document number and owner
+                    $existingObjectRecord = Objeto::where([
+                        "ID_EXTRAVIO" => $legacyIdExtravio,
+                        "NUMERO_DOCUMENTO" => $lostDocument->document_number,
+                        "TITULAR_DOCUMENTO" => $lostDocument->document_owner,
+                    ])->first();
+
+                    // * skipt the record if exist
+                    if(isset($existingObjectRecord))
+                    {
+                        continue;
+                    }
+
                     $legacyObjeto->save();
                 }
 
@@ -102,7 +117,6 @@ class SyncRecordsToLegacy extends Command
                 Log::info("Misplacement record with id '{id}' synced to legacy", [
                     "id" => $misplacement->id,
                     'legacy_id' => $legacyIdExtravio
-
                 ]);
 
                 // * save the sync record
