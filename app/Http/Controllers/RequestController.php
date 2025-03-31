@@ -473,14 +473,13 @@ class RequestController extends Controller
 
     public function downloadPDF(string $misplacement_id)
     {
-        $misplacementLegacyService = new MisplacementLegacyService();
         $misplacement = Misplacement::find($misplacement_id);
         if (!$misplacement) {
             $fileURL = $this->regenerateLegacyPDF($misplacement_id);
         } else {
             $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
             if (!$procedure) {
-                return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de comunicarle al usuario que realice de nuevo el trámite.');
+                return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de cancelar esta constancia para la generación de una nueva.');
             }
             $url = $procedure['files'][0]['fileUrl'];
             $response = Http::get($url);
@@ -589,6 +588,7 @@ class RequestController extends Controller
         $qrUrl = $this->generateQrCode($url);
         $identification = $personLegacy['identificacion'];
         $pdfUrl = $this->generatePdf($personLegacy, $misplacementData, $placeDataLegacy, $lostDocuments, $identification, $localPath, $qrUrl);
+        Log::info('Regenerating legacy PDF for misplacement ID: ' . $misplacement_id);
         return 'app/public/tmp/' . $pdfUrl['document_name'] . '.pdf';
     }
 }
