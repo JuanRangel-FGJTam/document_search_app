@@ -166,7 +166,7 @@ onMounted(() => useToast());
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Tipo de Identificación</p>
-                            <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
+                            <p>{{ misplacement?.misplacement_identifications?.identification_type?.name ?? 'Dato no encontrado' }}</p>
                         </div>
                         <div>
                             <p class="font-semibold">Folio de Identificación</p>
@@ -221,7 +221,7 @@ onMounted(() => useToast());
                     <!-- NARRACIÓN DE LOS HECHOS -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Narración de los Hechos</h3>
                     <div class="border p-4 rounded-lg">
-                        <p class="text-gray-800">{{ placeEvent.description }}</p>
+                        <p class="text-gray-800">{{ placeEvent.description ?? 'Descripción no encontrada'}}</p>
                     </div>
                 </div>
             </div>

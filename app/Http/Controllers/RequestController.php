@@ -207,15 +207,15 @@ class RequestController extends Controller
                 'people' => [
                     'name' => trim(($extravio->NOMBRE ?? '') . ' ' . ($extravio->PATERNO ?? '') . ' ' . ($extravio->MATERNO ?? '')),
                 ],
-                'registration_date' => $extravio->FECHA_EXTRAVIO,
-                'cancellation_date' => $extravio->FECHA_CANCELACION,
+                'registration_date' => $extravio->FECHA_EXTRAVIO ?? null,
+                'cancellation_date' => $extravio->FECHA_CANCELACION ?? null,
                 'cancellation_reason_id' => $extravio->ID_MOTIVO_CANCELACION ?? null,
                 'cancellation_reason' => [
                     'name' => $extravio->motivoCancelacion->MotivoCancelacion ?? null
                 ],
-                'cancellation_reason_description' => $extravio->OBSERVACIONES_CANCELACION,
+                'cancellation_reason_description' => $extravio->OBSERVACIONES_CANCELACION ?? null,
                 'misplacement_identifications' => [
-                    'identification_type' => $extravio->identificacion->IDENTIFICACION
+                    'identification_type' => $extravio->identificacion->IDENTIFICACION ?? null
                 ],
             ];
 
