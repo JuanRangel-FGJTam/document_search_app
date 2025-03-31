@@ -584,7 +584,7 @@ class RequestController extends Controller
         $placeDataLegacy = $misplacementLegacyService->getPlaceData($misplacement_id);
         $lostDocuments = $misplacementLegacyService->getLostDocuments($misplacement_id);
         $localPath = $personLegacy['identificacion']['file_path'];
-        $url = SELF::LEGACY_MODE . '?QueryStringFolio=' . $misplacement_id . '&QueryStringCodigo=' . $misplacement->CODIGO;
+        $url = SELF::LEGACY_URL . '?QueryStringFolio=' . $misplacement_id . '&QueryStringCodigo=' . $misplacement->CODIGO;
         $qrUrl = $this->generateQrCode($url);
         $identification = $personLegacy['identificacion'];
         $pdfUrl = $this->generatePdf($personLegacy, $misplacementData, $placeDataLegacy, $lostDocuments, $identification, $localPath, $qrUrl);
