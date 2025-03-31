@@ -284,31 +284,19 @@ class RequestController extends Controller
         $person_email = null;
         $misplacement = Misplacement::find($misplacement_id);
         $misplacementLegacyService = new MisplacementLegacyService();
-        if(!$misplacement){
-            $misplacement = Extravio::find($misplacement_id);
-            $misplacementData = (object) [
-                'document_number' => $misplacement_id,
-                'registration_date' => $misplacement->FECHA_EXTRAVIO
-            ];
+        if (!$misplacement) {
             $personLegacy = $misplacementLegacyService->getPersonLegacy($misplacement_id);
             $person_name = $personLegacy['fullName'];
             $person_email = $personLegacy['email'];
-            $placeDataLegacy = $misplacementLegacyService->getPlaceData($misplacement_id);
-            $lostDocuments = $misplacementLegacyService->getLostDocuments($misplacement_id);
-            $localPath = $personLegacy['identificacion']['file_path'];
-            $url = SELF::LEGACY_MODE.'?QueryStringFolio='.$misplacement_id.'&QueryStringCodigo='.$misplacement->CODIGO;
-            $qrUrl = $this->generateQrCode($url);
-            $identification = $personLegacy['identificacion'];
-            $pdfUrl = $this->generatePdf($personLegacy, $misplacementData, $placeDataLegacy, $lostDocuments, $identification, $localPath, $qrUrl);
-            $fileURL =  'app/public/tmp/' . $pdfUrl['document_name'] . '.pdf';
-        }else{
+            $fileURL = $this->regenerateLegacyPDF($misplacement_id);
+        } else {
             $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
             if (!$procedure) {
                 return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de cancelar esta constancia para la generación de una nueva.');
             }
             $person = $this->authApiService->getPersonById($misplacement->people_id);
             $person_name = $person['fullName'];
-            $person_email=$person['email'];
+            $person_email = $person['email'];
             $url = $procedure['files'][0]['fileUrl'];
             $response = Http::get($url);
             if ($response->successful()) {
@@ -485,21 +473,27 @@ class RequestController extends Controller
 
     public function downloadPDF(string $misplacement_id)
     {
+        $misplacementLegacyService = new MisplacementLegacyService();
         $misplacement = Misplacement::find($misplacement_id);
-        $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
-        if (!$procedure) {
-            return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de comunicarle al usuario que realice de nuevo el trámite.');
-        }
-        $url = $procedure['files'][0]['fileUrl'];
-        $response = Http::get($url);
-        if ($response->successful()) {
-            $filename = 'document_' . $misplacement->people_id . '.pdf';
-            $path = 'public/documents/' . $filename;
-            Storage::put($path, $response->body());
-            $fileURL =  'app/public/documents/' . $filename;
+        if (!$misplacement) {
+            $fileURL = $this->regenerateLegacyPDF($misplacement_id);
         } else {
-            return redirect()->back()->with('error', 'Error al descargar el archivo. Intente nuevamente.');
+            $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
+            if (!$procedure) {
+                return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de comunicarle al usuario que realice de nuevo el trámite.');
+            }
+            $url = $procedure['files'][0]['fileUrl'];
+            $response = Http::get($url);
+            if ($response->successful()) {
+                $filename = 'document_' . $misplacement->people_id . '.pdf';
+                $path = 'public/documents/' . $filename;
+                Storage::put($path, $response->body());
+                $fileURL =  'app/public/documents/' . $filename;
+            } else {
+                return redirect()->back()->with('error', 'Error al descargar el archivo. Intente nuevamente.');
+            }
         }
+
 
         // Construir la ruta completa del archivo en el disco 'public'
         $path = storage_path($fileURL);
@@ -576,5 +570,25 @@ class RequestController extends Controller
         $path = 'public/qrCode/' . $filename;
         Storage::put($path, $writer->writeString($url));
         return 'storage/qrCode/' . $filename;
+    }
+
+
+    public function regenerateLegacyPDF(string $misplacement_id)
+    {
+        $misplacementLegacyService = new MisplacementLegacyService();
+        $misplacement = Extravio::find($misplacement_id);
+        $misplacementData = (object) [
+            'document_number' => $misplacement_id,
+            'registration_date' => $misplacement->FECHA_EXTRAVIO
+        ];
+        $personLegacy = $misplacementLegacyService->getPersonLegacy($misplacement_id);
+        $placeDataLegacy = $misplacementLegacyService->getPlaceData($misplacement_id);
+        $lostDocuments = $misplacementLegacyService->getLostDocuments($misplacement_id);
+        $localPath = $personLegacy['identificacion']['file_path'];
+        $url = SELF::LEGACY_MODE . '?QueryStringFolio=' . $misplacement_id . '&QueryStringCodigo=' . $misplacement->CODIGO;
+        $qrUrl = $this->generateQrCode($url);
+        $identification = $personLegacy['identificacion'];
+        $pdfUrl = $this->generatePdf($personLegacy, $misplacementData, $placeDataLegacy, $lostDocuments, $identification, $localPath, $qrUrl);
+        return 'app/public/tmp/' . $pdfUrl['document_name'] . '.pdf';
     }
 }

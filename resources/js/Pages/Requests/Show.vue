@@ -13,6 +13,11 @@ const props = defineProps({
     identification: Object
 });
 
+console.log(props.misplacement);
+var download_name = props.misplacement.people_id;
+if(!props.misplacement.people_id){
+    download_name = props.misplacement.id;
+}
 const toast = useToast();
 
 function reSendDocument() {
@@ -36,7 +41,7 @@ function downloadPDF() {
             // Crear un enlace de descarga y simular el clic para descargar el archivo
             const a = document.createElement('a');
             a.href = url;
-            a.download = props.misplacement.people_id+'.pdf';  // Puedes usar otro nombre aquí si prefieres
+            a.download = download_name+'.pdf';  // Puedes usar otro nombre aquí si prefieres
             document.body.appendChild(a);
             a.click();
 
