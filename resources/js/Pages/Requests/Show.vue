@@ -13,15 +13,49 @@ const props = defineProps({
     identification: Object
 });
 
+console.log(props.misplacement);
+var download_name = props.misplacement.people_id;
+if(!props.misplacement.people_id){
+    download_name = props.misplacement.id;
+}
 const toast = useToast();
 
 function reSendDocument() {
     router.visit(route('misplacement.reSendDocument', props.misplacement.id), {
         onSuccess: () => {
-            toast.info('La constancia se reenviado al correo '+props.person.email+ ' correctamente!');
+            toast.info('La constancia se reenviado al correo ' + props.person.email + ' correctamente!');
         }
     });
 }
+
+
+function downloadPDF() {
+    axios.get(route('downloadPDF', props.misplacement.id), {
+        responseType: 'blob',  // Esto indica que la respuesta será un archivo binario
+    })
+        .then(response => {
+            console.log(response);
+            // Crear un objeto URL para la respuesta binaria
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+
+            // Crear un enlace de descarga y simular el clic para descargar el archivo
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = download_name+'.pdf';  // Puedes usar otro nombre aquí si prefieres
+            document.body.appendChild(a);
+            a.click();
+
+            // Limpiar el objeto URL después de la descarga
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Error al descargar el documento:', error);
+        });
+}
+
+
+
+
 function getTypeClass(typeId) {
     const classMap = {
         '1': 'bg-yellow-100 text-yellow-700',
@@ -43,7 +77,7 @@ onMounted(() => useToast());
                     <div class="flex items-center justify-between">
                         <BackButton class="mr-2" :href="route('misplacement.index')" />
                         <h2 class="text-2xl font-bold text-gray-800">
-                            Solicitud de Constancia - {{ misplacement.document_number }}
+                            Constancia de extravío - Folio {{ misplacement.document_number }}
                         </h2>
                     </div>
                 </div>
@@ -66,7 +100,8 @@ onMounted(() => useToast());
                     </div>
                     <div v-else>
                         <p class="text-red-600 font-semibold">ESTA PERSONA NO EXISTE EN FISCALIA DIGITAL</p>
-                        <p class="text-gray-600">Por favor, verifique los datos ingresados o contacte al soporte técnico para más información.</p>
+                        <p class="text-gray-600">Por favor, verifique los datos ingresados o contacte al soporte técnico
+                            para más información.</p>
                     </div>
                     <!-- DATOS DE LA SOLICITUD -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la Solicitud</h3>
@@ -86,23 +121,32 @@ onMounted(() => useToast());
                             <p>{{ misplacement.registration_date }}</p>
                         </div>
                         <template v-if="misplacement.lost_status_id == 3">
-                            <div class="flex items-center">
-                                <p class="text-center font-semibold text-green-600">Esta solicitud ha sido atendida</p>
+                            <div class="col-span-3 flex justify-center">
+                                <p class="text-center font-semibold text-green-600">
+                                    Esta solicitud ha sido atendida
+                                </p>
                             </div>
                         </template>
-                        <button @click="reSendDocument()"
-                            v-if="misplacement.lost_status_id == 3 && person"
-                            class="text-center px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors duration-200 shadow-md">
-                        Reenviar Constancia
-                        </button>
-                        <Link v-if="misplacement.lost_status_id != 4 && person"
-                            :href="route('misplacement.cancel', misplacement.id)"
-                            class="text-center px-4 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors duration-200 shadow-md">
-                        Cancelar Constancia
-                        </Link>
-                        <p v-if="misplacement.lost_status_id== 4" class="font-semibold text-red-600">
-                            Esta solicitud ha sido cancelada
-                        </p>
+                        <div class="col-span-3 flex justify-center gap-4 mt-4">
+                            <button v-if="misplacement.lost_status_id == 3 && person" @click="downloadPDF()"
+                                class="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors duration-200 shadow-md">
+                                Descargar Constancia
+                            </button>
+                            <button v-if="misplacement.lost_status_id == 3 && person.email" @click="reSendDocument()"
+                                class="px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors duration-200 shadow-md">
+                                Reenviar Constancia
+                            </button>
+                            <Link v-if="misplacement.lost_status_id != 4 && person"
+                                :href="route('misplacement.cancel', misplacement.id)"
+                                class="px-4 py-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors duration-200 shadow-md">
+                            Cancelar Constancia
+                            </Link>
+                        </div>
+                        <div v-if="misplacement.lost_status_id == 4" class="col-span-3">
+                            <p class="text-center font-semibold text-red-600">
+                                Esta solicitud ha sido cancelada
+                            </p>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg mt-4"
@@ -127,7 +171,7 @@ onMounted(() => useToast());
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Tipo de Identificación</p>
-                            <p>{{ misplacement.misplacement_identifications.identification_type.name }}</p>
+                            <p>{{ misplacement?.misplacement_identifications?.identification_type?.name ?? 'Dato no encontrado' }}</p>
                         </div>
                         <div>
                             <p class="font-semibold">Folio de Identificación</p>
@@ -139,12 +183,12 @@ onMounted(() => useToast());
                         </div>
                         <div>
                             <p class="font-semibold">Identificación</p>
-                            <img :src="identification.fileUrl" alt="Identificacion"
+                            <img :src="identification.image" alt="Identificacion"
                                 class="h-32 object-cover rounded-lg">
                         </div>
                         <div v-if="identification.fileUrlBack">
                             <p class="font-semibold">Identificación (reversa)</p>
-                            <img :src="identification.fileUrlBack" alt="Identificacion"
+                            <img :src="identification.imageBack" alt="Identificacion"
                                 class="h-32 object-cover rounded-lg">
                         </div>
                     </div>
@@ -182,7 +226,7 @@ onMounted(() => useToast());
                     <!-- NARRACIÓN DE LOS HECHOS -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Narración de los Hechos</h3>
                     <div class="border p-4 rounded-lg">
-                        <p class="text-gray-800">{{ placeEvent.description }}</p>
+                        <p class="text-gray-800">{{ placeEvent.description ?? 'Descripción no encontrada'}}</p>
                     </div>
                 </div>
             </div>

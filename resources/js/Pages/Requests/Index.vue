@@ -164,7 +164,7 @@ function getTypeClass(typeId) {
                                                                 {{ misplacement.people.name }}
                                                             </h4>
                                                             <p class="text-gray-500 dark:text-gray-400">
-                                                                {{ misplacement.people.email }}
+                                                                {{ misplacement.people.email ?? '' }}
                                                             </p>
                                                         </div>
                                                     </td>
