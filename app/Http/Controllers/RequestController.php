@@ -184,7 +184,7 @@ class RequestController extends Controller
             $placeEvent['colony'] = $colony;
         } else {
             $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
-            $extravio->load('estadoExtravio', 'usuario', 'identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
+            $extravio->load('estadoExtravio', 'usuario', 'identificacion.cat_identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
             $person = null;
             if ($extravio->usuario && $extravio->usuario->idPersonApi) {
                 $person = $this->authApiService->getPersonById($extravio->usuario->idPersonApi);
@@ -192,6 +192,11 @@ class RequestController extends Controller
             if (!$person) {
                 $person = [
                     'fullName' => $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO,
+                    'curp' => $extravio->identificacion->curprfc,
+                    'genderName' => $extravio->identificacion->ID_SEXO === "1" ? "Masculino" : "Femenino",
+                    'birthdateFormated' => $extravio->identificacion->FECHA_NACIMIENTO,
+                    'age' => \Carbon\Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO)->age,
+                    'email' => $extravio->identificacion->CORREO_ELECTRONICO
                 ];
             }
             $documentsData = Objeto::where('ID_EXTRAVIO', $misplacement_id)->get();
@@ -215,12 +220,17 @@ class RequestController extends Controller
                 ],
                 'cancellation_reason_description' => $extravio->OBSERVACIONES_CANCELACION ?? null,
                 'misplacement_identifications' => [
-                    'identification_type' => $extravio->identificacion->IDENTIFICACION ?? null
+                    'identification_type' => [
+                        'name' => $extravio->identificacion->cat_identificacion->IDENTIFICACION ?? null
+                    ],
                 ],
             ];
 
             $identification = [
-                'folio' => $extravio->NUMERO_DOCUMENTO
+                'folio' => $extravio->identificacion->NUMERO_IDENTIFICACION ?? null,
+                'image' => isset($extravio->identificacion->IDENTIFICACION)
+                    ? 'data:image/jpeg;base64,' . base64_encode($extravio->identificacion->IDENTIFICACION)
+                    : null
             ];
 
             $documents = $documentsData->map(function ($doc) {
@@ -246,6 +256,7 @@ class RequestController extends Controller
                 'description' => $extravio->hechos->DESCRIPCION ?? null
             ];
         }
+
 
         return Inertia::render('Requests/Show', [
             'person' => $person,
@@ -366,7 +377,7 @@ class RequestController extends Controller
                 Mail::to($person['email'])->queue(new EmailCancel($data));
             }
 
-            Log::info("Store Request Cancellation for Folio: " . $document_number. 'By user_id: '. Auth::user()->id);
+            Log::info("Store Request Cancellation for Folio: " . $document_number . 'By user_id: ' . Auth::user()->id);
 
             DB::commit();
             return to_route('misplacement.show', $misplacement_id);
