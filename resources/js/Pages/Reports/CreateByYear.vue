@@ -50,7 +50,7 @@ const submit = () => {
         toast.warning('Ingrese un año');
         return;
     }
-    if ((form.reportType === 2 || form.reportType === 3) && (!form.startDate || !form.endDate)) {
+    if ((form.reportType === 2 || form.reportType === 3) && (!form.start_date || !form.end_date)) {
         toast.warning('Seleccione una fecha de inicio y fin');
         return;
     }

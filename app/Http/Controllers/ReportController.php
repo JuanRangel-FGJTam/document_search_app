@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Misplacement;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
@@ -20,6 +19,9 @@ use App\Models\LostStatus;
 use App\Models\ReportType;
 use App\Models\Survey;
 use App\Services\AuthApiService;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -152,7 +154,13 @@ class ReportController extends Controller
             $status_name = $lost_status->name ?? null;
         }
 
-        // Obtener tipos de identificación
+        if (isset($filters['municipio'])) {
+            $municipalities = $this->authApiService->getMunicipalities();
+            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality_name = $municipality['name'] ?? null;
+        } else {
+            $municipality_name = null;
+        }
         $identifications = DocumentType::pluck('name', 'id')->map(fn($item) => strtolower($item));
         $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(fn($item, $key) => [
             $key => match (strtolower($item)) {
@@ -161,25 +169,22 @@ class ReportController extends Controller
             }
         ]);
 
-        // Obtener datos
-        $report = $this->getData($filters, $identifications, $identifications_legacy);
-        if (isset($filters['municipio'])) {
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
-            $municipality_name = $municipality['name'] ?? null;
+        if (isset($filters['date_range']) && !empty($filters['date_range'])) {
+            $data = $this->generateExcelReport($filters, $identifications, $identifications_legacy);
+            Log::info('Reporte exportado por usuario: ' . Auth::id());
+            return (new ExcelForDays())->create($data, $status_name, $municipality_name, $filters['date_range'][0], $filters['date_range'][1]);
         } else {
-            $municipality_name = null;
+            // Obtener datos
+            $report = $this->getData($filters, $identifications, $identifications_legacy);
+            $data = [
+                'year' => $filters['year'],
+                'data' => $report,
+                'status_name' => $status_name,
+                'municipality_name' => $municipality_name,
+            ];
+            Log::info('Reporte exportado por usuario: ' . Auth::id());
+            return (new ExcelRequest())->create($data);
         }
-
-        $data = [
-            'year' => $filters['year'],
-            'data' => $report,
-            'status_name' => $status_name,
-            'municipality_name' => $municipality_name,
-        ];
-
-        Log::info('Reporte exportado por usuario: ' . Auth::id());
-        return (new ExcelRequest())->create($data);
     }
 
     /**
@@ -196,7 +201,6 @@ class ReportController extends Controller
                 'identifications_count' => $identifications->mapWithKeys(fn($name) => [$name => 0])->toArray(),
             ]
         ])->toArray();
-
 
         $queryExtravios = Extravio::selectRaw('MONTH(PGJ_EXTRAVIOS.FECHA_REGISTRO) as mes, PGJ_OBJETOS.ID_TIPO_DOCUMENTO as document_type_id, COUNT(*) as total')
             ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO');
@@ -215,7 +219,14 @@ class ReportController extends Controller
             $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
         }
         if ($filters['municipio']) {
-            //$queryExtravios->where('PGJ_EXTRAVIOS.MUNICIPIO', $filters['municipio']);
+
+            $municipalities = $this->authApiService->getMunicipalities();
+            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality_name = $municipality['name'] ?? null;
+
+            if ($municipality_name) {
+                $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%'  . $municipality_name . '%');
+            }
 
             $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
                 ->where('place_events.municipality_api_id', $filters['municipio']);
@@ -258,101 +269,76 @@ class ReportController extends Controller
         return $report;
     }
 
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function getByYear2(Request $request)
+    private function generateExcelReport(array $filters, $identifications, $identifications_legacy)
     {
-        $request->validate([
-            'year' => 'required|numeric',
-        ]);
-
-        $status_name = null;
-        if ($request->status) {
-            $lost_status = LostStatus::find($request->status);
-            $status_name = $lost_status->name ?? null;
+        // Validar si hay un rango de fechas
+        if (empty($filters['date_range'])) {
+            throw new \Exception('Se requiere un rango de fechas.');
         }
 
-        // Obtener tipos de identificación
-        $identifications = DocumentType::pluck('name', 'id')->map(function ($item) {
-            return strtolower($item);
-        });
-        $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(function ($item, $key) {
-            return [
-                $key => match (strtolower($item)) {
-                    'credencial de elector' => 'credencial de elector',
-                    'pasaporte' => 'pasaporte',
-                    'visa' => 'visa',
-                    'licencia de conducir' => 'licencia de conducir',
-                    'otro documento' => 'otro documento',
-                    default => 'otro',
-                }
-            ];
-        })->map(function ($item) {
-            return strtolower($item);
-        });
+        [$start, $end] = $filters['date_range'];
+        $dates = collect();
+        for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
+            $dates->put($date->format('Y-m-d'), []);
+        }
 
-        // Inicializar estructura de la tabla
-        $currentYear = Carbon::now()->year;
-        $maxMonths = ($request->year == $currentYear) ? Carbon::now()->month : 12;
-        $report = collect(range(1, $maxMonths))->mapWithKeys(fn($m) => [
-            Carbon::create()->month($m)->format('F') => [
-                'total_solicitudes' => 0,
-                'identifications_count' => $identifications->mapWithKeys(fn($name) => [$name => 0])->toArray(),
-            ]
-        ])->toArray();
-
-        // Se obtiene mes, id de identificacion y el total
-        $extravios = Extravio::selectRaw('MONTH(PGJ_EXTRAVIOS.FECHA_REGISTRO) as mes, PGJ_OBJETOS.ID_TIPO_DOCUMENTO, COUNT(*) as total')
+        // Consultas
+        $queryExtravios = Extravio::selectRaw('CAST(PGJ_EXTRAVIOS.FECHA_REGISTRO AS DATE) as fecha, PGJ_OBJETOS.ID_TIPO_DOCUMENTO as document_type_id, COUNT(*) as total')
             ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
-            ->whereYear('PGJ_EXTRAVIOS.FECHA_REGISTRO', $request->year)
-            ->when($request->status, fn($query) => $query->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $request->status))
-            ->groupByRaw('MONTH(PGJ_EXTRAVIOS.FECHA_REGISTRO), PGJ_OBJETOS.ID_TIPO_DOCUMENTO')
-            ->get();
+            ->whereBetween('PGJ_EXTRAVIOS.FECHA_REGISTRO', [$start, $end])
+            ->groupByRaw('CAST(PGJ_EXTRAVIOS.FECHA_REGISTRO AS DATE), PGJ_OBJETOS.ID_TIPO_DOCUMENTO');
 
-        // Se obtiene mes, id de tipo de documento y el total
-        $misplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, ld.document_type_id, COUNT(*) as total')
+        $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, ld.document_type_id, COUNT(*) as total')
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id')
-            ->whereYear('misplacements.registration_date', $request->year)
-            ->when($request->status, fn($query) => $query->where('misplacements.lost_status_id', $request->status))
-            ->groupByRaw('MONTH(misplacements.registration_date), ld.document_type_id')
-            ->get();
+            ->whereBetween('misplacements.registration_date', [$start, $end])
+            ->groupByRaw('DATE(misplacements.registration_date), ld.document_type_id');
 
+        if (!empty($filters['municipio'])) {
+            $municipalities = $this->authApiService->getMunicipalities();
+            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality_name = $municipality['name'] ?? null;
 
-        // Se coloca el nombre del id guardado anteriormente
-        foreach ($extravios as $item) {
-            $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'otro';
-            //dd($identification_name);
-
-            if ($identification_name === 'otro') {
-                $identification_name = 'otro documento';
+            if ($municipality_name) {
+                $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%' . $municipality_name . '%');
             }
-            $report[$mes]['identifications_count'][$identification_name] += $item->total;
-            $report[$mes]['total_solicitudes'] += $item->total;
+
+            $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                ->where('place_events.municipality_api_id', $filters['municipio']);
         }
 
-        // Se coloca el nombre del id guardado anteriormente
-        foreach ($misplacements as $item) {
-            $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications[$item->document_type_id] ?? 'otro';
-            if ($identification_name === 'otro') {
-                $identification_name = 'otro documento';
-            }
-            $report[$mes]['identifications_count'][$identification_name] += $item->total;
-            $report[$mes]['total_solicitudes'] += $item->total;
+        if (!empty($filters['status'])) {
+            $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
+            $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
 
-        $data = [
-            'year' => $request->year,
-            'data' => $report,
-            'status_name' => $status_name,
-        ];
+        $extravios = $queryExtravios->get();
+        $misplacements = $queryMisplacements->get();
+        //dd($extravios);
+        // Procesar datos
+        $dates = $dates->map(function ($dateData, $fecha) use ($extravios, $identifications_legacy) {
+            foreach ($extravios as $item) {
+                if ($item->fecha === $fecha) {
+                    $identification_name = $identifications_legacy[$item->document_type_id] ?? 'otro documento';
+                    $dateData[$identification_name] = ($dateData[$identification_name] ?? 0) + $item->total;
+                }
+            }
+            return $dateData;
+        });
 
-        Log::info('Reporte exportado por usuario: ' . Auth::id());
-        return (new ExcelRequest())->create($data);
+
+        $dates = $dates->transform(function ($dateData, $fecha) use ($misplacements, $identifications) {
+            foreach ($misplacements as $item) {
+                if ($item->fecha === $fecha) {
+                    $identification_name = $identifications[$item->document_type_id] ?? 'otro documento';
+                    $dateData[$identification_name] = ($dateData[$identification_name] ?? 0) + $item->total;
+                }
+            }
+            return $dateData;
+        });
+
+        return $dates;
     }
+
 
     public function createSurveys(Request $request)
     {
