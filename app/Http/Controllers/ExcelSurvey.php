@@ -15,20 +15,29 @@ class ExcelSurvey
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        // Agregar logo
+        $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+        $drawing->setName('Logo');
+        $drawing->setDescription('Logo');
+        $drawing->setPath(public_path('/images/logos/logo_fgjtam.png')); // Cambiar por la ruta del logo
+        $drawing->setHeight(50);
+        $drawing->setCoordinates('A1');
+        $drawing->setWorksheet($sheet);
+
         // Establecer título del reporte
-        $sheet->setCellValue('A1', 'Reporte de Encuestas de '. $start_date. ' al '.$end_date);
-        $sheet->mergeCells('A1:' . $this->getColumnLetter(count($data)) . '1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1')->getFill()
+        $sheet->setCellValue('B1', 'Encuesta de satisfacción de ' . $start_date . ' al ' . $end_date);
+        $sheet->mergeCells('B1:' . $this->getColumnLetter(count($data[0])) . '1');
+        $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('B1')->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('FFD9D9D9');
 
         // Definir encabezados de preguntas
         $colIndex = 0;
-        foreach ($data as $surveyItem) {
+        foreach (array_keys($data[0]) as $question) {
             $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->setCellValue($colLetter . '2', $surveyItem['question']);
+            $sheet->setCellValue($colLetter . '2', $question);
             $sheet->getStyle($colLetter . '2')->getFont()->setBold(true);
             $sheet->getStyle($colLetter . '2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle($colLetter . '2')->getFill()
@@ -38,19 +47,19 @@ class ExcelSurvey
         }
 
         // Llenar respuestas
-        $maxRows = max(array_map(fn($item) => count($item['responses']), $data));
-        for ($row = 0; $row < $maxRows; $row++) {
+        $rowIndex = 3;
+        foreach ($data as $surveyItem) {
             $colIndex = 0;
-            foreach ($data as $surveyItem) {
+            foreach ($surveyItem as $response) {
                 $colLetter = $this->getColumnLetter($colIndex);
-                $responseValue = $surveyItem['responses'][$row] ?? 'N/A';
-                $sheet->setCellValue($colLetter . ($row + 3), $responseValue);
+                $sheet->setCellValue($colLetter . $rowIndex, $response);
                 $colIndex++;
             }
+            $rowIndex++;
         }
 
         // Ajustar tamaño de columnas
-        foreach (range(0, count($data) - 1) as $colIndex) {
+        foreach (range(0, count($data[0]) - 1) as $colIndex) {
             $colLetter = $this->getColumnLetter($colIndex);
             $sheet->getColumnDimension($colLetter)->setAutoSize(true);
         }
@@ -66,7 +75,7 @@ class ExcelSurvey
             200,
             [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition' => 'attachment; filename="Encuestas.xlsx"',
+                'Content-Disposition' => 'attachment; filename="Encuesta_Satisfaccion.xlsx"',
             ]
         );
     }

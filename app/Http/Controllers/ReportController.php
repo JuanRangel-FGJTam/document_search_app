@@ -368,7 +368,7 @@ class ReportController extends Controller
         ]);
 
         // Obtener encuestas en el rango de fechas
-        $surveys = Survey::whereBetween('register_date', [$request->start_date, $request->end_date])->get();
+        $surveys = Survey::with('misplacement.placeEvent')->whereBetween('register_date', [$request->start_date, $request->end_date])->get();
 
         // Definir preguntas y sus claves en la base de datos
         $surveyQuestions = [
@@ -383,17 +383,42 @@ class ReportController extends Controller
 
         // Formatear datos para el Excel
         $formattedData = [];
-        foreach ($surveyQuestions as $key => $question) {
-            $responses = [];
-            foreach ($surveys as $survey) {
-                $responses[] = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : 'No') : 'N/A';
+        foreach ($surveys as $survey) {
+            $row = [];
+            foreach ($surveyQuestions as $key => $question) {
+                $response = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : 'No') : 'N/A';
+                $row[$question] = $response;
             }
 
-            $formattedData[] = [
-                'question' => $question,
-                'responses' => $responses
-            ];
+            $documentNumber = $survey->misplacement->document_number ?? 'N/A';
+            $person = $this->authApiService->getPersonById($survey->misplacement->people_id);
+            if (!$person) {
+                continue;
+            }
+
+            $municipality_address = $person['address']['municipalityName'];
+
+            if (isset($survey->misplacement->placeEvent->municipality_api_id)) {
+                $municipalities = $this->authApiService->getMunicipalities();
+                $municipality = collect($municipalities)->firstWhere('id', $survey->misplacement->placeEvent->municipality_api_id);
+                $municipality_event = $municipality['name'] ?? null;
+            } else {
+                $municipality_event = null;
+            }
+
+            $row['Folio'] = $documentNumber;
+            $row['Municipio Domicilio'] = $municipality_address;
+            $row['Municipio Hechos'] = $municipality_event;
+            $row['Fecha Registro'] = $survey->misplacement->registration_date ?? 'N/A';
+
+            $formattedData[] = $row;
         }
+        // Asegurarse de que 'Folio' esté primero en cada fila
+        $formattedData = array_map(function ($row) {
+            $folio = $row['Folio'];
+            unset($row['Folio']);
+            return array_merge(['Folio' => $folio], $row);
+        }, $formattedData);
 
         // Pasar los datos a la clase que genera el Excel
         $excelRequest = new ExcelSurvey();
