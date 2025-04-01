@@ -379,6 +379,10 @@ class ReportController extends Controller
             'question_2' => '¿Solicitó ayuda telefónica?',
             'question_3' => '¿El servidor público le solicitó algún pago a cambio?',
             'question_4' => '¿Sintió discriminación en algún momento?',
+            'question_5'=> 'No tengo sugerencias',
+            'questions_6'=> 'Reducir el número de requisitos',
+            'question_7'=> 'Formatos más sencillos',
+            'question_8'=> 'Información más específica'
         ];
 
         // Formatear datos para el Excel
