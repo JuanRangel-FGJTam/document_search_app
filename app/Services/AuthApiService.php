@@ -72,7 +72,8 @@ class AuthApiService
         // * Validate response
         if (!$response->successful())
         {
-            $response->throw();
+            return [];
+            // $response->throw();
         }
         return $response->json();
     }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class HechosCP extends Model
 {
     use HasFactory;
+    public $timestamps = false;
 
     protected $connection = 'sqlsrv';
     protected $table = 'PGJ_HECHOS_CP';

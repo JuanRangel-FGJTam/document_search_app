@@ -20,7 +20,6 @@ use App\Models\Legacy\{
 
 class ExtravioAdapter
 {
-    public static $ID_INCREMENT = 1000000000;
     public static $DEFAULT_LEGACY_STATUS_ID = 0; // "Especifique"
     public static $DEFAULT_LEGACY_DOCUMENT_TYPE_ID = 6; // "Otro documento"
     public static $DEFAULT_LEGACY_IDENTIFICATION_ID = 5; // "Otro documento"
@@ -66,8 +65,8 @@ class ExtravioAdapter
 
         // * create the legacy Extravio object
         $extravio = new Extravio();
-        $extravio->ID_EXTRAVIO = $misplacement->id + self::$ID_INCREMENT;
-        $extravio->NUMERO_DOCUMENTO = $misplacement->document_number;
+        $extravio->ID_EXTRAVIO = $misplacement->document_number;
+        // $extravio->NUMERO_DOCUMENTO = $misplacement->document_number;
         $extravio->DESCRIPCION = $misplacement->observations;
         $extravio->FECHA_EXTRAVIO = trim($placeEvent->lost_date);
         $extravio->FECHA_REGISTRO = trim($misplacement->registration_date) . " 00:00:00.000";
@@ -110,7 +109,7 @@ class ExtravioAdapter
         }
 
         // * get the documment type
-        $legacyDocumentType = TipoDocumento::where('DOCUMENTO', 'like',  $identificationType->name)->first();
+        $legacyDocumentType = TipoDocumento::where('DOCUMENTO', 'like', $identificationType->name)->first();
         $extravio->ID_TIPO_DOCUMENTO = isset($legacyDocumentType)
             ? $legacyDocumentType->ID_TIPO_DOCUMENTO
             : self::$DEFAULT_LEGACY_DOCUMENT_TYPE_ID;

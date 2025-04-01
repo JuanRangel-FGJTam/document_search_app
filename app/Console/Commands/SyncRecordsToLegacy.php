@@ -107,6 +107,24 @@ class SyncRecordsToLegacy extends Command
                 $this->processPlaceEvent($placeEvent, $misplacement, $legacyIdExtravio);
 
 
+                // * get the identification from the API
+                try
+                {
+                    $identification = $this->apiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
+                    if(isset($identification) && !empty($identification))
+                    {
+                        $legacyExtravio->NUMERO_DOCUMENTO = $identification["folio"] ?? "" ;
+                    }
+                }
+                catch (\Throwable $th)
+                {
+                    Log::error("Failed to fetch identification for people_id '{people_id}': {message}", [
+                        "people_id" => $misplacement->people_id,
+                        "message" => $th->getMessage()
+                    ]);
+                }
+
+
                 DB::connection('sqlsrv')->commit();
                 Log::info("Misplacement record with id '{id}' synced to legacy", [
                     "id" => $misplacement->id,
@@ -115,7 +133,7 @@ class SyncRecordsToLegacy extends Command
 
                 // * save the sync record
                 $syncedMisplacement->legacy_id = $legacyIdExtravio;
-                $syncedMisplacement->failed = false;
+                $syncedMisplacement->failed = true;
                 $syncedMisplacement->message = null;
                 $syncedMisplacement->save();
 
@@ -225,8 +243,11 @@ class SyncRecordsToLegacy extends Command
             try
             {
                 $zipCodeInfo = $this->apiService->getZipCode(Trim($placeEvent->zipcode));
-                $hechos->CPmunicipio = collect($zipCodeInfo->municipalities)->firstWhere('id', $placeEvent->municipality_api_id)?->name;
-                $hechos->CPcolonia = collect($zipCodeInfo->colonies)->firstWhere('id', $placeEvent->colony_api_id)?->name;
+                if(isset($zipCodeInfo) && !empty($zipCodeInfo))
+                {
+                    $hechos->CPmunicipio = collect($zipCodeInfo->municipalities)->firstWhere('id', $placeEvent->municipality_api_id)?->name;
+                    $hechos->CPcolonia = collect($zipCodeInfo->colonies)->firstWhere('id', $placeEvent->colony_api_id)?->name;
+                }
                 $hechos->save();
             }
             catch (\Throwable $th)
