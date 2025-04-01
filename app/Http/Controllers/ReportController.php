@@ -285,8 +285,10 @@ class ReportController extends Controller
         // Consultas
         $queryExtravios = Extravio::selectRaw('CAST(PGJ_EXTRAVIOS.FECHA_REGISTRO AS DATE) as fecha, PGJ_OBJETOS.ID_TIPO_DOCUMENTO as document_type_id, COUNT(*) as total')
             ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
+            ->whereRaw("ISDATE(PGJ_EXTRAVIOS.FECHA_REGISTRO) = 1") // Filtra solo fechas válidas
             ->whereBetween('PGJ_EXTRAVIOS.FECHA_REGISTRO', [$start, $end])
             ->groupByRaw('CAST(PGJ_EXTRAVIOS.FECHA_REGISTRO AS DATE), PGJ_OBJETOS.ID_TIPO_DOCUMENTO');
+
 
         $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, ld.document_type_id, COUNT(*) as total')
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id')
@@ -311,7 +313,14 @@ class ReportController extends Controller
             $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
 
-        $extravios = $queryExtravios->get();
+        try {
+            $extravios = $queryExtravios->get();
+        } catch (\PDOException $e) {
+            Log::error("Error en la consulta de extravíos: " . $e->getMessage());
+            // Aquí podrías hacer una consulta alternativa o devolver un resultado vacío
+            $extravios = collect(); // Si no se puede obtener, devolver una colección vacía
+        }
+        //$extravios = $queryExtravios->get();
         $misplacements = $queryMisplacements->get();
         //dd($extravios);
         // Procesar datos
@@ -407,13 +416,29 @@ class ReportController extends Controller
 
             $formattedData[] = $row;
         }
-
-        $surveysLegacy = Encuesta::with(['extravio.hechosCP', 'extravio.domicilioCP'])
-            ->whereBetween('fechaRegistro', [
+        /*
+        $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1") // Filtra solo las fechas válidas
+            ->whereRaw("CAST(fechaRegistro AS DATETIME) BETWEEN ? AND ?", [
                 Carbon::parse($request->start_date)->startOfDay(),
                 Carbon::parse($request->end_date)->endOfDay()
             ])
+            ->with(['extravio.hechosCP', 'extravio.domicilioCP'])
             ->get();
+*/
+        try {
+            $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1") // Filtra solo las fechas válidas
+                ->whereRaw("CAST(fechaRegistro AS DATETIME) BETWEEN ? AND ?", [
+                    Carbon::parse($request->start_date)->startOfDay(),
+                    Carbon::parse($request->end_date)->endOfDay()
+                ])
+                ->with(['extravio.hechosCP', 'extravio.domicilioCP'])
+                ->get();
+        } catch (\PDOException $e) {
+            Log::error("Error en la consulta de encuestas: " . $e->getMessage());
+            // Aquí podrías hacer una consulta alternativa o devolver un resultado vacío
+            $surveysLegacy = collect(); // Si no se puede obtener, devolver una colección vacía
+        }
+
 
         foreach ($surveysLegacy as $survey) {
             $row = [];
