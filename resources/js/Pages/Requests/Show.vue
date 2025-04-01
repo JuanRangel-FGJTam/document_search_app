@@ -15,7 +15,7 @@ const props = defineProps({
 
 console.log(props.misplacement);
 var download_name = props.misplacement.people_id;
-if(!props.misplacement.people_id){
+if (!props.misplacement.people_id) {
     download_name = props.misplacement.id;
 }
 const toast = useToast();
@@ -41,7 +41,7 @@ function downloadPDF() {
             // Crear un enlace de descarga y simular el clic para descargar el archivo
             const a = document.createElement('a');
             a.href = url;
-            a.download = download_name+'.pdf';  // Puedes usar otro nombre aquí si prefieres
+            a.download = download_name + '.pdf';  // Puedes usar otro nombre aquí si prefieres
             document.body.appendChild(a);
             a.click();
 
@@ -58,8 +58,8 @@ function downloadPDF() {
 
 function getTypeClass(typeId) {
     const classMap = {
-        '1': 'bg-yellow-100 text-yellow-700',
-        '2': 'bg-blue-100 text-blue-700',
+        '1': 'bg-emerald-100 text-emerald-700',
+        '2': 'bg-emerald-100 text-emerald-700',
         '3': 'bg-emerald-100 text-emerald-700',
         '4': 'bg-red-100 text-red-700'
     };
@@ -112,8 +112,9 @@ onMounted(() => useToast());
                         </div>
                         <div>
                             <p class="font-semibold">Estatus</p>
-                            <span :class="getTypeClass(misplacement.lost_status_id)">
-                                {{ misplacement.lost_status.name }}
+                            <span class="flex text-center justify-center px-3 py-1 text-sm font-medium rounded-full"
+                                :class="misplacement.lost_status_id <= 3 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                                {{ misplacement.lost_status_id <= 3 ? 'VALIDADO' : misplacement.lost_status.name }}
                             </span>
                         </div>
                         <div>
@@ -128,11 +129,11 @@ onMounted(() => useToast());
                             </div>
                         </template>
                         <div class="col-span-3 flex justify-center gap-4 mt-4">
-                            <button v-if="misplacement.lost_status_id == 3 && person" @click="downloadPDF()"
+                            <button v-if="misplacement.lost_status_id <= 3 && person" @click="downloadPDF()"
                                 class="px-4 py-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors duration-200 shadow-md">
                                 Descargar Constancia
                             </button>
-                            <button v-if="misplacement.lost_status_id == 3 && person.email" @click="reSendDocument()"
+                            <button v-if="misplacement.lost_status_id <= 3 && person.email" @click="reSendDocument()"
                                 class="px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors duration-200 shadow-md">
                                 Reenviar Constancia
                             </button>
@@ -166,12 +167,21 @@ onMounted(() => useToast());
                             <p class="justify">{{ misplacement.cancellation_reason_description ?? 'Sin descripción' }}
                             </p>
                         </div>
+                        <div>
+                            <p class="font-semibold">Cancelada por</p>
+                            <p class="justify">{{ misplacement?.user?.name ?? 'Sin descripción' }}
+                            </p>
+                            <p class="justify text-base text-gray-500">{{ misplacement?.user?.email ?? 'Sin descripción'
+                                }}
+                            </p>
+                        </div>
                     </div>
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la identificación</h3>
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
                         <div>
                             <p class="font-semibold">Tipo de Identificación</p>
-                            <p>{{ misplacement?.misplacement_identifications?.identification_type?.name ?? 'Dato no encontrado' }}</p>
+                            <p>{{ misplacement?.misplacement_identifications?.identification_type?.name ??
+                                'Dato no encontrado' }}</p>
                         </div>
                         <div>
                             <p class="font-semibold">Folio de Identificación</p>
@@ -183,8 +193,7 @@ onMounted(() => useToast());
                         </div>
                         <div>
                             <p class="font-semibold">Identificación</p>
-                            <img :src="identification.image" alt="Identificacion"
-                                class="h-32 object-cover rounded-lg">
+                            <img :src="identification.image" alt="Identificacion" class="h-32 object-cover rounded-lg">
                         </div>
                         <div v-if="identification.fileUrlBack">
                             <p class="font-semibold">Identificación (reversa)</p>
@@ -226,7 +235,7 @@ onMounted(() => useToast());
                     <!-- NARRACIÓN DE LOS HECHOS -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Narración de los Hechos</h3>
                     <div class="border p-4 rounded-lg">
-                        <p class="text-gray-800">{{ placeEvent.description ?? 'Descripción no encontrada'}}</p>
+                        <p class="text-gray-800">{{ placeEvent.description ?? 'Descripción no encontrada' }}</p>
                     </div>
                 </div>
             </div>

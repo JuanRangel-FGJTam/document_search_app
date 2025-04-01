@@ -22,6 +22,7 @@ class Misplacement extends Model
         'cancellation_date',
         'cancellation_reason_description',
         'cancellation_reason_id',
+        'canceled_by'
     ];
 
 
@@ -43,6 +44,10 @@ class Misplacement extends Model
     public function misplacementIdentifications()
     {
         return $this->hasOne(MisplacementIdentification::class);
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'canceled_by');
     }
 
     public function toSearchableArray()
