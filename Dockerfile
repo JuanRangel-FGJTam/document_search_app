@@ -18,9 +18,17 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     pkg-config \
     libssl-dev \
-    gnupg2
+    gnupg2\
+    libmagickwand-dev \
+    imagemagick
 
 
+    # Instalar la extensión imagick para PHP
+RUN pecl install imagick && \
+docker-php-ext-enable imagick
+
+# Modificar policy.xml para permitir PDF
+RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/g' /etc/ImageMagick-6/policy.xml
 
 RUN mkdir -p /etc/apt/keyrings
 
