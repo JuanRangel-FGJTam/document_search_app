@@ -408,12 +408,14 @@ class ReportController extends Controller
             $formattedData[] = $row;
         }
 
-        $surveysLegacy = Encuesta::with(['extravio.hechosCP', 'extravio.domicilioCP'])
-            ->whereBetween('fechaRegistro', [
+        $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1") // Filtra solo las fechas válidas
+            ->whereRaw("CAST(fechaRegistro AS DATETIME) BETWEEN ? AND ?", [
                 Carbon::parse($request->start_date)->startOfDay(),
                 Carbon::parse($request->end_date)->endOfDay()
             ])
+            ->with(['extravio.hechosCP', 'extravio.domicilioCP'])
             ->get();
+
 
         foreach ($surveysLegacy as $survey) {
             $row = [];
