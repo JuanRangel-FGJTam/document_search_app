@@ -10,18 +10,19 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use Carbon\Carbon;
 
-class ExcelRequest
+class ExcelForDays
 {
     private $data;
-
-    public function create($data)
+    private $status_name;
+    private $municipality_name;
+    public function create($data, $status_name, $municipality_name, $start_date, $end_date)
     {
         $this->data = $data;
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $row = 5;
 
-        // Encabezado de la empresa y dirección
+        // Encabezado
         $sheet->mergeCells('A1:J1');
         $sheet->mergeCells('A2:J2');
         $sheet->mergeCells('A3:J3');
@@ -29,57 +30,27 @@ class ExcelRequest
         $sheet->setCellValue('A1', 'Fiscalía General de Justicia del Estado de Tamaulipas');
         $sheet->setCellValue(
             'A2',
-            'Reporte de Solicitudes - Estado: ' . ($data['status_name'] ?? 'Todos') .
-                (isset($data['municipality_name']) ? ' - Municipio ' . $data['municipality_name'] : '')
+            sprintf(
+                'Reporte de Solicitudes Por Día - Estado: %s%s - Periodo: %s a %s',
+                $status_name ?? 'Todos',
+                isset($municipality_name) ? ' - Municipio: ' . $municipality_name : '',
+                Carbon::parse($start_date)->format('d/m/Y'),
+                Carbon::parse($end_date)->format('d/m/Y')
+            )
         );
 
         // Alineación del encabezado
         $sheet->getStyle('A1:J3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A1:J3')->getFont()->setBold(true);
 
-        // Obtener el año actual y el mes actual
-        $currentYear = Carbon::now()->year;
-        $currentMonth = Carbon::now()->month;
-        $maxMonths = ($data['year'] == $currentYear) ? $currentMonth : 12;
-
-        // Definir los meses hasta el mes actual si es el año en curso
-        $englishMonths = [
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December'
-        ];
-
-        $spanishMonths = [
-            'Enero',
-            'Febrero',
-            'Marzo',
-            'Abril',
-            'Mayo',
-            'Junio',
-            'Julio',
-            'Agosto',
-            'Septiembre',
-            'Octubre',
-            'Noviembre',
-            'Diciembre'
-        ];
-
-        $selectedMonths = array_slice($englishMonths, 0, $maxMonths);
+        // Obtener las fechas únicas del reporte
+        $dates = array_keys($data->toArray());
 
         // Primera columna con los tipos de identificación
         $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
         $col = 'B';
-        foreach ($selectedMonths as $month) {
-            $sheet->setCellValue($col . $row, $month);
+        foreach ($dates as $date) {
+            $sheet->setCellValue($col . $row, $date);
             $col++;
         }
 
@@ -93,8 +64,8 @@ class ExcelRequest
 
         // Obtener todos los tipos de identificación únicos
         $identifications = collect();
-        foreach ($data['data'] as $monthData) {
-            $identifications = $identifications->merge(collect($monthData['identifications_count'])->keys());
+        foreach ($data as $dayData) {
+            $identifications = $identifications->merge(collect($dayData)->keys());
         }
         $identifications = $identifications->unique();
 
@@ -102,8 +73,8 @@ class ExcelRequest
         $dataRows = [];
         foreach ($identifications as $identificationType) {
             $dataRow = ['identification' => $identificationType];
-            foreach ($selectedMonths as $month) {
-                $dataRow[$month] = $data['data'][$month]['identifications_count'][$identificationType] ?? 0;
+            foreach ($dates as $date) {
+                $dataRow[$date] = $data[$date][$identificationType] ?? 0;
             }
             $dataRows[] = $dataRow;
         }
@@ -112,8 +83,8 @@ class ExcelRequest
         foreach ($dataRows as $rowData) {
             $sheet->setCellValue('A' . $row, $rowData['identification']);
             $col = 'B';
-            foreach ($selectedMonths as $month) {
-                $sheet->setCellValue($col . $row, $rowData[$month]);
+            foreach ($dates as $date) {
+                $sheet->setCellValue($col . $row, $rowData[$date]);
                 $col++;
             }
             $row++;
@@ -122,16 +93,9 @@ class ExcelRequest
         // Agregar la fila de totales
         $sheet->setCellValue('A' . $row, 'TOTAL');
         $col = 'B';
-        foreach ($selectedMonths as $month) {
-            $totalMonth = array_sum(array_column($dataRows, $month));
-            $sheet->setCellValue($col . $row, $totalMonth);
-            $col++;
-        }
-
-        // Traducir los títulos de los meses al español
-        $col = 'B';
-        foreach ($selectedMonths as $index => $month) {
-            $sheet->setCellValue($col . '5', $spanishMonths[$index]);
+        foreach ($dates as $date) {
+            $totalDay = array_sum(array_column($dataRows, $date));
+            $sheet->setCellValue($col . $row, $totalDay);
             $col++;
         }
 
@@ -143,12 +107,13 @@ class ExcelRequest
         $sheet->getRowDimension($row)->setRowHeight(20);
 
 
-        // Ajustar tamaño de columnas
-        foreach (range(0, count($selectedMonths)) as $colIndex) {
+        foreach (range(0, count($dates)) as $colIndex) {
             $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->getColumnDimension($colLetter)->setWidth(35); // Mitad del tamaño original
-            $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true); // Permitir que el texto se corte y pase a otro renglón
+            $sheet->getColumnDimension($colLetter)->setWidth(35);
+            $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true);
         }
+
+
 
         $writer = new Xlsx($spreadsheet);
 
@@ -163,14 +128,11 @@ class ExcelRequest
             200,
             [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition' => 'attachment; filename="Reporte_Solicitudes.xlsx"',
+                'Content-Disposition' => 'attachment; filename="Reporte_Solicitudes_Diario.xlsx"',
             ]
         );
     }
 
-    /**
-     * Convierte un índice numérico en una letra de columna de Excel (A, B, C... AA, AB...)
-     */
     private function getColumnLetter($index)
     {
         return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
