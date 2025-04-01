@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Searchable;
+use App\Models\PlaceEvent;
 class Misplacement extends Model
 {
     use HasFactory;
@@ -43,6 +44,10 @@ class Misplacement extends Model
     public function misplacementIdentifications()
     {
         return $this->hasOne(MisplacementIdentification::class);
+    }
+
+    public function placeEvent(){
+        return $this->hasOne(PlaceEvent::class);
     }
 
     public function toSearchableArray()

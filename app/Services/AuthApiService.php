@@ -27,7 +27,7 @@ class AuthApiService
 
         // * Validate response
         if (!$response->successful()) {
-            Log::warning("Error al obtener los datos de la persona:{type}:{message} ",['type'=>$person_id, 'message'=>$response->getBody()]);
+            Log::warning("Error al obtener los datos de la persona:{type}:{message} ", ['type' => $person_id, 'message' => $response->getBody()]);
             return [];
         }
         return $response->json();
@@ -87,7 +87,7 @@ class AuthApiService
     public function getProcedure(string $person_id, string $procedure_id)
     {
         $response = Http::withHeaders(['Accept' => 'application/json', 'Authorization' => self::authorizationValue()])
-            ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/procedures/'.$procedure_id));
+            ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/procedures/' . $procedure_id));
 
         // * Validate response
         if (!$response->successful()) {
@@ -100,6 +100,19 @@ class AuthApiService
     {
         $response = Http::withHeader('Authorization', self::authorizationValue())
             ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/document/' . $documentTypeId));
+
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
+
+    public function getMunicipalities()
+    {
+        $response = Http::withHeaders([
+            'Authorization' => self::authorizationValue()
+        ])->get(Str::finish(self::baseUrl(), '/api/catalog/municipalities'));
 
         // * Validate response
         if (!$response->successful()) {
