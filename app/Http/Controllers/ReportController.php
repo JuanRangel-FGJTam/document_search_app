@@ -426,15 +426,19 @@ class ReportController extends Controller
             ->get();
 */
         try {
-            $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1") // Filtra solo las fechas válidas
-                ->whereRaw("CAST(fechaRegistro AS DATETIME) BETWEEN ? AND ?", [
-                    Carbon::parse($request->start_date)->startOfDay(),
-                    Carbon::parse($request->end_date)->endOfDay()
+            $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1")
+                ->whereRaw("CONVERT(varchar(8),fechaRegistro, 112) BETWEEN ? AND ?", [
+                    Carbon::parse($request->start_date)->format('Ymd'),
+                    Carbon::parse($request->end_date)->format('Ymd')
                 ])
                 ->with(['extravio.hechosCP', 'extravio.domicilioCP'])
                 ->get();
         } catch (\PDOException $e) {
-            Log::error("Error en la consulta de encuestas: " . $e->getMessage());
+            // Maneja la excepción
+            Log::error('Error en la consulta: ' . $e->getMessage());
+            // Aquí puedes retornar algún mensaje o realizar otras acciones, como un fallback.
+
+
             // Aquí podrías hacer una consulta alternativa o devolver un resultado vacío
             $surveysLegacy = collect(); // Si no se puede obtener, devolver una colección vacía
         }
