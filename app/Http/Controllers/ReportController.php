@@ -387,19 +387,19 @@ class ReportController extends Controller
             $row = [];
             foreach ($surveyQuestions as $key => $question) {
                 if (str_starts_with($key, 'question')) {
-                    $response = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : ($survey[$key] == 2 ? 'No' : 'N/A')) : 'N/A';
+                    $response = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : ($survey[$key] == 0 ? 'No' : ' ')) : ' ';
                 } else {
-                    $response = isset($survey[$key]) ? $survey[$key] : 'N/A';
+                    $response = isset($survey[$key]) ? $survey[$key] : ' ';
                 }
                 $row[$question] = $response;
             }
 
-            $documentNumber = $survey->misplacement->document_number ?? 'N/A';
+            $documentNumber = $survey->misplacement->document_number ?? ' ';
             $person = $this->authApiService->getPersonById($survey->misplacement->people_id);
             if (!$person) {
                 continue;
             }
-            $municipality_address = $person['address']['municipalityName'] ?? 'N/A';
+            $municipality_address = $person['address']['municipalityName'] ?? ' ';
 
             if (isset($survey->misplacement->placeEvent->municipality_api_id)) {
                 $municipalities = $this->authApiService->getMunicipalities();
@@ -412,7 +412,7 @@ class ReportController extends Controller
             $row['Folio'] = $documentNumber;
             $row['Municipio Domicilio'] = $municipality_address;
             $row['Municipio Hechos'] = $municipality_event;
-            $row['Fecha Registro'] = $survey->misplacement->registration_date ?? 'N/A';
+            $row['Fecha Registro'] = $survey->misplacement->registration_date ?? ' ';
 
             $formattedData[] = $row;
         }
@@ -445,9 +445,9 @@ class ReportController extends Controller
             foreach ($surveyQuestions as $key => $question) {
                 $legacyKey = match ($key) {
                     'rating_1' => 'Rating1',
-                    'rating_2' => 'rbl2',
-                    'rating_3' => 'Rating3',
-                    'question_1' => 'Rating4',
+                    'rating_2' => 'Rating3',
+                    'rating_3' => 'Rating4',
+                    'question_1' => 'rbl2',
                     'question_2' => 'rbl5',
                     'question_3' => 'rbl6',
                     'question_4' => 'rbl7',
@@ -460,10 +460,10 @@ class ReportController extends Controller
 
                 if (str_starts_with($key, 'question')) {
                     $response = isset($survey[$legacyKey])
-                        ? ($survey[$legacyKey] == 1 ? 'Sí' : ($survey[$legacyKey] == 2 ? 'No' : 'N/A'))
-                        : 'N/A';
+                        ? ($survey[$legacyKey] == 1 ? 'Sí' : ($survey[$legacyKey] == 2 ? 'No' : ' '))
+                        : ' ';
                 } else {
-                    $response = isset($survey[$legacyKey]) ? $survey[$legacyKey] : 'N/A';
+                    $response = isset($survey[$legacyKey]) ? $survey[$legacyKey] : ' ';
                 }
                 $row[$question] = $response;
             }
@@ -477,11 +477,11 @@ class ReportController extends Controller
 
             if ($peopleId) {
                 $person = $this->authApiService->getPersonById($peopleId);
-                $municipality_address = $person['address']['municipalityName'] ?? 'N/A';
+                $municipality_address = $person['address']['municipalityName'] ?? ' ';
             } else {
                 // Si no se encuentra el usuario, obtener el domicilio desde DOMICILIOCP
                 $domicilio = $extravio->domicilioCP ?? null;
-                $municipality_address = $domicilio && $domicilio->CPmunicipio ? $domicilio->CPmunicipio : 'N/A';
+                $municipality_address = $domicilio && $domicilio->CPmunicipio ? $domicilio->CPmunicipio : ' ';
             }
 
             if (isset($extravio->hechosCP->CPmunicipio)) {
@@ -493,7 +493,7 @@ class ReportController extends Controller
             $row['Folio'] = $documentNumber;
             $row['Municipio Domicilio'] = $municipality_address;
             $row['Municipio Hechos'] = $municipality_event;
-            $row['Fecha Registro'] = $survey->fechaRegistro ?? 'N/A';
+            $row['Fecha Registro'] = $survey->fechaRegistro ?? ' ';
 
             $formattedData[] = $row;
         }
