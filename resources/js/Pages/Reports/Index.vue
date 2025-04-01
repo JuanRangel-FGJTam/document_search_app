@@ -1,116 +1,76 @@
 <script setup>
-import { onMounted } from 'vue';
-import { ref } from 'vue';
-import { usePage, useForm } from '@inertiajs/vue3';
-import { Link, router } from '@inertiajs/vue3';
-import { useToast } from 'vue-toastification';
-import ModalConfirmation from '@/Components/ModalConfirmation.vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import InputError from '@/Components/InputError.vue';
 
-const toast = useToast();
 const props = defineProps({
     errors: Object,
-    years: Array,
-    lost_statuses: Object
+    report_types: Object
 });
-
-const form = useForm({
-    year: 2025,
-    status: null
-});
-
-
-const submit = () => {
-    if (!form.year) {
-        toast.warning('Ingrese un año');
-        return;
-    }
-    toast.info('Generando reporte...');
-    axios.post(route('reports.getByYear'), form, {
-        responseType: 'blob'
-    })
-        .then(response => {
-            // Crear una URL para el blob
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-
-            // Crear un elemento de enlace y activar la descarga
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'Solicitudes_Constancias_' + form.year + '.xlsx');  // Establecer el nombre de archivo
-
-            // Agregar al documento y activar el clic
-            document.body.appendChild(link);
-            link.click();
-
-            // Limpiar
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-            toast.success('Reporte generado con éxito');
-        })
-        .catch(error => {
-            console.error('Error downloading the file:', error);
-            toast.error('Error al obtener los datos');
-        });
-}
-
 </script>
 
 <template>
     <AppLayout title="Reportes de constancias">
         <div class="py-6">
             <div class="max-w-7xl mx-auto">
-                <div class="bg-white shadow-md rounded-lg p-6">
-                    <div class="w-full px-2 py-2">
-                        <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+                <div class="bg-white shadow-lg rounded-lg p-6">
+                    <div class="w-full px-4 py-4">
+                        <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
                             Reportes de solicitudes de constancias
                         </h2>
-                        <form @submit.prevent="submit">
-                            <div class="grid gap-4 mb-4 sm:grid-cols-2 sm:gap-6 sm:mb-5">
-                                <div class="col-span-1">
-                                    <label for="deadline"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Seleccione año a exportar
-                                    </label>
-                                    <select id="year" name="year" v-model="form.year"
-                                        class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                                        <option disabled value="">Seleccione un elemento</option>
-                                        <option v-for="year in years" :key="year" v-bind:value="year">
-                                            {{ year }}
-                                        </option>
-                                    </select>
-                                    <InputError v-if="errors.year" :message="errors.year" />
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-8">
+                            <!-- Reporte por Año -->
+                            <Link
+                                class="flex items-center justify-between p-6 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer"
+                                :href="route('reports.createByYear')">
+                            <div class="flex items-center">
+                                <div class="text-3xl text-indigo-600 mr-6">
+                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
-                                <div class="col-span-1">
-                                    <label for="deadline"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Seleccione status de solicitudes
-                                    </label>
-                                    <select id="status" name="status" v-model="form.status"
-                                        class="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                                        <option disabled value="">Seleccione un elemento</option>
-                                        <option :value="null">TODOS</option>
-                                        <option v-for="lost_status in lost_statuses" :key="lost_status.id" v-bind:value="lost_status.id">
-                                            {{ lost_status.name }}
-                                        </option>
-                                    </select>
-                                    <InputError v-if="errors.status" :message="errors.status" />
+                                <div class="text-lg font-semibold text-gray-800">
+                                    Reporte de constancias de extravio
                                 </div>
                             </div>
-                            <div class="flex items-center justify-end space-x-4">
-                                <button type="submit"
-                                    class="flex items-center px-5 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-150 ease-in-out text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-6 h-6 mr-2"
-                                        fill="currentColor">
-                                        <path d="M18.9 35.7 7.7 24.5 9.85 22.35 18.9 31.4 38.1 12.2 40.25 14.35Z" />
-                                    </svg>
-                                    Exportar
-                                </button>
+                            <div class="text-indigo-500">
+                                <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" height="24px"
+                                    viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                                    <path
+                                        d="M320-440h320v-80H320v80Zm0 120h320v-80H320v80Zm0 120h200v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+                                </svg>
                             </div>
-                        </form>
+                            </Link>
+
+                            <!-- Reporte de Encuestas -->
+                            <Link
+                                class="flex items-center justify-between p-6 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer"
+                                :href="route('reports.createSurveys')">
+                            <div class="flex items-center">
+                                <div class="text-lg font-semibold text-gray-800">
+                                    Reporte de encuestas de satisfacción
+                                </div>
+                            </div>
+                            <div class="text-green-500">
+                                <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                    width="24px" fill="currentColor">
+                                    <path
+                                        d="M480-260q68 0 123.5-38.5T684-400H276q25 63 80.5 101.5T480-260ZM312-520l44-42 42 42 42-42-84-86-86 86 42 42Zm250 0 42-42 44 42 42-42-86-86-84 86 42 42ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Z" />
+                                </svg>
+                            </div>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+/* Estilos personalizados */
+.hover\:scale-105:hover {
+    transform: scale(1.05);
+}
+
+.transition {
+    transition: all 0.3s ease-in-out;
+}
+</style>

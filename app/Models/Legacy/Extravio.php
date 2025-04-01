@@ -70,12 +70,17 @@ class Extravio extends Model
         return $this->belongsTo(HechosCP::class, 'ID_EXTRAVIO','ID_EXTRAVIO');
     }
 
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function hechos(): HasMany
     {
         return $this->hasMany(Hechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
+    }
+
+    public function domicilioCP(){
+        return $this->belongsTo(DomicilioCP::class,'IdExtravio','ID_EXTRAVIO');
     }
 
 }

@@ -39,7 +39,15 @@ Route::middleware([
 
     Route::prefix('/admin/reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/createByYear', [ReportController::class, 'createByYear'])->name('reports.createByYear');
         Route::post('/getByYear', [ReportController::class, 'getByYear'])->name('reports.getByYear');
+
+        Route::get('/create/surveys', [ReportController::class, 'createSurveys'])->name('reports.createSurveys');
+        Route::post('/getSurveys', [ReportController::class, 'getSurveys'])->name('reports.getSurveys');
+
+        Route::post('/generate', [ReportController::class, 'generateReport'])->name('reports.generate');
+
+
     });
 
     Route::prefix('/admin/surveys')->group(function () {
