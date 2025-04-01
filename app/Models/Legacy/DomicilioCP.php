@@ -7,16 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // use Laravel\Scout\Searchable;
 
-class Encuesta extends Model
+class DomicilioCP extends Model
 {
     use HasFactory;
 
     protected $connection = 'sqlsrv';
-    protected $table = 'PGJ_ENCUESTA';
-    protected $primaryKey = 'idEncuesta';
+    protected $table = 'PGJ_DOMICILIO_CP';
+    protected $primaryKey = 'ID_DOMICILIO';
 
-    public function extravio(): BelongsTo
-    {
-        return $this->belongsTo(Extravio::class, 'IdExtravio', 'ID_EXTRAVIO');
+    public function extravio(){
+        return $this->belongsTo(Extravio::class,'ID_EXTRAVIO','ID_EXTRAVIO');
     }
+
 }

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
 use App\Models\DocumentType;
 use App\Models\IdentificationType;
+use App\Models\Legacy\Encuesta;
 use App\Models\Legacy\Extravio;
 use App\Models\Legacy\Identificacion;
 use App\Models\Legacy\Objeto;
@@ -379,10 +380,10 @@ class ReportController extends Controller
             'question_2' => '¿Solicitó ayuda telefónica?',
             'question_3' => '¿El servidor público le solicitó algún pago a cambio?',
             'question_4' => '¿Sintió discriminación en algún momento?',
-            'question_5'=> 'No tengo sugerencias',
-            'questions_6'=> 'Reducir el número de requisitos',
-            'question_7'=> 'Formatos más sencillos',
-            'question_8'=> 'Información más específica'
+            'question_5' => 'No tengo sugerencias',
+            'questions_6' => 'Reducir el número de requisitos',
+            'question_7' => 'Formatos más sencillos',
+            'question_8' => 'Información más específica'
         ];
 
         // Formatear datos para el Excel
@@ -390,7 +391,11 @@ class ReportController extends Controller
         foreach ($surveys as $survey) {
             $row = [];
             foreach ($surveyQuestions as $key => $question) {
-                $response = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : 'No') : 'N/A';
+                if (str_starts_with($key, 'question')) {
+                    $response = isset($survey[$key]) ? ($survey[$key] == 1 ? 'Sí' : ($survey[$key] == 2 ? 'No' : 'N/A')) : 'N/A';
+                } else {
+                    $response = isset($survey[$key]) ? $survey[$key] : 'N/A';
+                }
                 $row[$question] = $response;
             }
 
@@ -399,8 +404,7 @@ class ReportController extends Controller
             if (!$person) {
                 continue;
             }
-
-            $municipality_address = $person['address']['municipalityName'];
+            $municipality_address = $person['address']['municipalityName'] ?? 'N/A';
 
             if (isset($survey->misplacement->placeEvent->municipality_api_id)) {
                 $municipalities = $this->authApiService->getMunicipalities();
@@ -417,6 +421,73 @@ class ReportController extends Controller
 
             $formattedData[] = $row;
         }
+
+        $surveysLegacy = Encuesta::with(['extravio.hechosCP', 'extravio.domicilioCP'])
+            ->whereBetween('fechaRegistro', [
+                Carbon::parse($request->start_date)->startOfDay(),
+                Carbon::parse($request->end_date)->endOfDay()
+            ])
+            ->get();
+
+        foreach ($surveysLegacy as $survey) {
+            $row = [];
+            foreach ($surveyQuestions as $key => $question) {
+                $legacyKey = match ($key) {
+                    'rating_1' => 'Rating1',
+                    'rating_2' => 'rbl2',
+                    'rating_3' => 'Rating3',
+                    'question_1' => 'Rating4',
+                    'question_2' => 'rbl5',
+                    'question_3' => 'rbl6',
+                    'question_4' => 'rbl7',
+                    'question_5' => 'chbNotengo',
+                    'questions_6' => 'chbReducirReq',
+                    'question_7' => 'chbFormatosSen',
+                    'question_8' => 'chbInformacionEspe',
+                    default => null,
+                };
+
+                if (str_starts_with($key, 'question')) {
+                    $response = isset($survey[$legacyKey])
+                        ? ($survey[$legacyKey] == 1 ? 'Sí' : ($survey[$legacyKey] == 2 ? 'No' : 'N/A'))
+                        : 'N/A';
+                } else {
+                    $response = isset($survey[$legacyKey]) ? $survey[$legacyKey] : 'N/A';
+                }
+                $row[$question] = $response;
+            }
+
+            $documentNumber = $survey->IdExtravio ?? 'N/A';
+            $extravio = Extravio::with('domicilioCP', 'hechosCP')->where('ID_EXTRAVIO', $survey->IdExtravio)->first();
+            // Obtener el people_id desde el usuario relacionado con el extravio
+            $peopleId = isset($extravio) && $extravio->idUsuario
+                ? $this->authApiService->getPersonById($extravio->idUsuario) ?? null
+                : null;
+
+            if ($peopleId) {
+                $person = $this->authApiService->getPersonById($peopleId);
+                $municipality_address = $person['address']['municipalityName'] ?? 'N/A';
+            } else {
+                // Si no se encuentra el usuario, obtener el domicilio desde DOMICILIOCP
+                $domicilio = $extravio->domicilioCP ?? null;
+                $municipality_address = $domicilio && $domicilio->CPmunicipio ? $domicilio->CPmunicipio : 'N/A';
+            }
+
+            if (isset($extravio->hechosCP->CPmunicipio)) {
+                $municipality_event = $extravio->hechosCP->CPmunicipio;
+            } else {
+                $municipality_event = null;
+            }
+
+            $row['Folio'] = $documentNumber;
+            $row['Municipio Domicilio'] = $municipality_address;
+            $row['Municipio Hechos'] = $municipality_event;
+            $row['Fecha Registro'] = $survey->fechaRegistro ?? 'N/A';
+
+            $formattedData[] = $row;
+        }
+
+
         // Asegurarse de que 'Folio' esté primero en cada fila
         $formattedData = array_map(function ($row) {
             $folio = $row['Folio'];

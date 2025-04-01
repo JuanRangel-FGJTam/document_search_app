@@ -44,4 +44,8 @@ class Extravio extends Model
         return $this->belongsTo(HechosCP::class, 'ID_EXTRAVIO','ID_EXTRAVIO');
     }
 
+    public function domicilioCP(){
+        return $this->belongsTo(DomicilioCP::class,'IdExtravio','ID_EXTRAVIO');
+    }
+
 }
