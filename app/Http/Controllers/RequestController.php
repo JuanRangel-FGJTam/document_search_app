@@ -166,7 +166,7 @@ class RequestController extends Controller
         if ($misplacement) {
             $personData = $this->authApiService->getPersonById($misplacement->people_id);
             $person = !empty($personData) ? $personData : null;
-            $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType');
+            $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType','user');
             $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
             $documents->load('documentType');
             $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);

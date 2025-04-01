@@ -174,9 +174,11 @@ function getTypeClass(typeId) {
                                                         </span>
                                                     </td>
                                                     <td class="px-4 py-3">
-                                                        <span :class="getTypeClass(misplacement.lost_status_id)">
-                                                            {{ misplacement.lost_status.name }}
-                                                        </span>
+                                                        <span
+                                                            class="flex text-center justify-center px-3 py-1 text-sm font-medium rounded-full"
+                                                            :class="misplacement.lost_status_id <= 3 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                                                            {{ misplacement.lost_status_id <= 3 ? 'VALIDADO' :
+                                                                misplacement.lost_status.name }} </span>
                                                     </td>
 
                                                     <td class="px-4 py-3 items-center justify-center">
