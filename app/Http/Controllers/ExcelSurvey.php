@@ -15,39 +15,40 @@ class ExcelSurvey
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Agregar logo
+        // Agregar logo con más separación
         $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
         $drawing->setName('Logo');
         $drawing->setDescription('Logo');
-        $drawing->setPath(public_path('/images/logos/logo_fgjtam.png')); // Cambiar por la ruta del logo
-        $drawing->setHeight(50);
+        $drawing->setPath(public_path('/images/logos/logo_fgjtam.png'));
+        $drawing->setHeight(70);
         $drawing->setCoordinates('A1');
         $drawing->setWorksheet($sheet);
 
-        // Establecer título del reporte
-        $sheet->setCellValue('B1', 'Encuesta de satisfacción de ' . $start_date . ' al ' . $end_date);
-        $sheet->mergeCells('B1:' . $this->getColumnLetter(count($data[0])) . '1');
-        $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(14);
-        $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('B1')->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setARGB('FFD9D9D9');
+        // Reservar más espacio para el logo (fusionar varias celdas verticalmente)
+        $sheet->mergeCells('A1:A3');
 
-        // Definir encabezados de preguntas
+        // Establecer título del reporte sin fondo y más grande
+        $sheet->setCellValue('B3', 'Encuesta de satisfacción de ' . $start_date . ' al ' . $end_date);
+        $sheet->mergeCells('B3:' . $this->getColumnLetter(count($data[0])) . '3');
+        $sheet->getStyle('B3')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('B3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Definir encabezados de preguntas con fondo azul rey y letras blancas
         $colIndex = 0;
         foreach (array_keys($data[0]) as $question) {
             $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->setCellValue($colLetter . '2', $question);
-            $sheet->getStyle($colLetter . '2')->getFont()->setBold(true);
-            $sheet->getStyle($colLetter . '2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle($colLetter . '2')->getFill()
+            $sheet->setCellValue($colLetter . '6', $question);
+            $sheet->getStyle($colLetter . '6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF'); // Letras blancas
+            $sheet->getStyle($colLetter . '6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($colLetter . '6')->getFill()
                 ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()->setARGB('FFD9D9D9');
+                ->getStartColor()->setARGB('FF000080'); // Azul rey
+            $sheet->getColumnDimension($colLetter)->setWidth(70); // Hacer los encabezados más largos
             $colIndex++;
         }
 
         // Llenar respuestas
-        $rowIndex = 3;
+        $rowIndex = 7;
         foreach ($data as $surveyItem) {
             $colIndex = 0;
             foreach ($surveyItem as $response) {
@@ -61,12 +62,13 @@ class ExcelSurvey
         // Ajustar tamaño de columnas
         foreach (range(0, count($data[0]) - 1) as $colIndex) {
             $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+            $sheet->getColumnDimension($colLetter)->setWidth(35); // Mitad del tamaño original
+            $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true); // Permitir que el texto se corte y pase a otro renglón
         }
 
         // Descargar el archivo
         $writer = new Xlsx($spreadsheet);
-        if (ob_get_contents()) ob_end_clean(); // Limpiar buffer de salida
+        if (ob_get_contents()) ob_end_clean();
 
         return response()->stream(
             function () use ($writer) {
