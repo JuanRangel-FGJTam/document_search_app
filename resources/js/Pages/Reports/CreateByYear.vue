@@ -4,7 +4,7 @@ import { useToast } from 'vue-toastification';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import BackButton from '@/Components/BackButton.vue';
-import { watch } from 'vue';
+import { watch, ref } from 'vue';
 const toast = useToast();
 const props = defineProps({
     errors: Object,
@@ -13,6 +13,7 @@ const props = defineProps({
     municipalities: Array,
     report_types: Object
 });
+const loading = ref(false);
 
 const form = useForm({
     reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
@@ -46,16 +47,20 @@ watch(() => form.reportType, (newValue) => {
 });
 
 const submit = () => {
+    loading.value = true;
     if ((form.reportType === 1 || form.reportType === 4) && !form.year) {
         toast.warning('Ingrese un año');
+        loading.value = false;
         return;
     }
     if ((form.reportType === 2 || form.reportType === 3) && (!form.start_date || !form.end_date)) {
         toast.warning('Seleccione una fecha de inicio y fin');
+        loading.value = false;
         return;
     }
     if ((form.reportType === 3 || form.reportType === 4) && !form.municipality) {
         toast.warning('Seleccione un municipio');
+        loading.value = false;
         return;
     }
 
@@ -77,6 +82,8 @@ const submit = () => {
         .catch(error => {
             console.error('Error downloading the file:', error);
             toast.error('Error al obtener los datos');
+        }).finally(() => {
+            loading.value = false;
         });
 };
 </script>
@@ -171,9 +178,29 @@ const submit = () => {
                             <div class="flex items-center justify-end space-x-4">
                                 <button type="submit"
                                     class="flex items-center px-5 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-150 ease-in-out text-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-6 h-6 mr-2"
-                                        fill="currentColor">
-                                        <path d="M18.9 35.7 7.7 24.5 9.85 22.35 18.9 31.4 38.1 12.2 40.25 14.35Z" />
+                                    <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-2"
+                                        viewBox="0 0 24 24">
+                                        <path fill="currentColor"
+                                            d="m12 16l-5-5l1.4-1.45l2.6 2.6V4h2v8.15l2.6-2.6L17 11zm-6 4q-.825 0-1.412-.587T4 18v-3h2v3h12v-3h2v3q0 .825-.587 1.413T18 20z" />
+                                    </svg>
+
+                                    <svg v-if="loading" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-2"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="2">
+                                            <path stroke-dasharray="16" stroke-dashoffset="16"
+                                                d="M12 3c4.97 0 9 4.03 9 9">
+                                                <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s"
+                                                    values="16;0" />
+                                                <animateTransform attributeName="transform" dur="1.5s"
+                                                    repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12" />
+                                            </path>
+                                            <path stroke-dasharray="64" stroke-dashoffset="64" stroke-opacity=".3"
+                                                d="M12 3c4.97 0 9 4.03 9 9c0 4.97 -4.03 9 -9 9c-4.97 0 -9 -4.03 -9 -9c0 -4.97 4.03 -9 9 -9Z">
+                                                <animate fill="freeze" attributeName="stroke-dashoffset" dur="1.2s"
+                                                    values="64;0" />
+                                            </path>
+                                        </g>
                                     </svg>
                                     Exportar
                                 </button>
