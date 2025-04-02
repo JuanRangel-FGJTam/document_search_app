@@ -109,7 +109,7 @@ class ExcelForDays
 
         foreach (range(0, count($dates)) as $colIndex) {
             $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->getColumnDimension($colLetter)->setWidth(35);
+            $sheet->getColumnDimension($colLetter)->setWidth(20);
             $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true);
         }
 

@@ -22,6 +22,7 @@ use App\Services\AuthApiService;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -283,11 +284,17 @@ class ReportController extends Controller
         }
 
         // Consultas
-        $queryExtravios = Extravio::selectRaw('CAST(PGJ_EXTRAVIOS.FECHA_REGISTRO AS DATE) as fecha, PGJ_OBJETOS.ID_TIPO_DOCUMENTO as document_type_id, COUNT(*) as total')
+        $queryExtravios = Extravio::selectRaw(
+            "CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120) as fecha,
+            PGJ_OBJETOS.ID_TIPO_DOCUMENTO as document_type_id,
+            COUNT(*) as total"
+        )
             ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
-            ->whereRaw("ISDATE(PGJ_EXTRAVIOS.FECHA_REGISTRO) = 1") // Filtra solo fechas válidas
-            ->whereBetween('PGJ_EXTRAVIOS.FECHA_REGISTRO', [$start, $end])
-            ->groupByRaw('CAST(PGJ_EXTRAVIOS.FECHA_REGISTRO AS DATE), PGJ_OBJETOS.ID_TIPO_DOCUMENTO');
+            ->whereBetween(
+                DB::raw("CONVERT(date, PGJ_EXTRAVIOS.FECHA_EXTRAVIO)"),
+                [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
+            )
+            ->groupBy('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
 
 
         $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, ld.document_type_id, COUNT(*) as total')
@@ -296,10 +303,10 @@ class ReportController extends Controller
             ->groupByRaw('DATE(misplacements.registration_date), ld.document_type_id');
 
         if (!empty($filters['municipio'])) {
+
             $municipalities = $this->authApiService->getMunicipalities();
             $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
-
             if ($municipality_name) {
                 $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%' . $municipality_name . '%');
             }
@@ -307,6 +314,7 @@ class ReportController extends Controller
             $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
                 ->where('place_events.municipality_api_id', $filters['municipio']);
         }
+
 
         if (!empty($filters['status'])) {
             $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
@@ -320,9 +328,8 @@ class ReportController extends Controller
             // Aquí podrías hacer una consulta alternativa o devolver un resultado vacío
             $extravios = collect(); // Si no se puede obtener, devolver una colección vacía
         }
-        //$extravios = $queryExtravios->get();
+
         $misplacements = $queryMisplacements->get();
-        //dd($extravios);
         // Procesar datos
         $dates = $dates->map(function ($dateData, $fecha) use ($extravios, $identifications_legacy) {
             foreach ($extravios as $item) {
@@ -333,7 +340,6 @@ class ReportController extends Controller
             }
             return $dateData;
         });
-
 
         $dates = $dates->transform(function ($dateData, $fecha) use ($misplacements, $identifications) {
             foreach ($misplacements as $item) {
