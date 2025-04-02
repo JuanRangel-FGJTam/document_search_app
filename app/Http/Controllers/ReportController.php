@@ -293,7 +293,7 @@ class ReportController extends Controller
         )
             ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
             ->whereBetween(
-                DB::raw("CONVERT(date, PGJ_EXTRAVIOS.FECHA_EXTRAVIO)"),
+                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
                 [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
             )
             ->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
