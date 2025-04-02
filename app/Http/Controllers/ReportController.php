@@ -234,7 +234,11 @@ class ReportController extends Controller
         }
 
         if ($filters['status']) {
-            $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
+            if ($filters['status'] == 3) {
+                $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', '<=', 3);
+            } else {
+                $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
+            }
             $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
 
@@ -317,7 +321,11 @@ class ReportController extends Controller
 
 
         if (!empty($filters['status'])) {
-            $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
+            if ($filters['status'] == 3) {
+                $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', '<=', 3);
+            } else {
+                $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
+            }
             $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
 
