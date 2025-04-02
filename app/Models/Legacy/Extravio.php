@@ -45,7 +45,7 @@ class Extravio extends Model
     }
 
     public function domicilioCP(){
-        return $this->belongsTo(DomicilioCP::class,'IdExtravio','ID_EXTRAVIO');
+        return $this->belongsTo(DomicilioCP::class,'ID_EXTRAVIO','ID_EXTRAVIO');
     }
 
 }

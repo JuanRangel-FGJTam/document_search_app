@@ -409,10 +409,13 @@ class ReportController extends Controller
                 $municipality_event = null;
             }
 
+            $registration_date = $survey->misplacement->registration_date;
+            $mx_registration_date = $registration_date ? Carbon::parse($registration_date)->format('d/m/Y') : ' ';
+
             $row['Folio'] = $documentNumber;
-            $row['Municipio Domicilio'] = $municipality_address;
             $row['Municipio Hechos'] = $municipality_event;
-            $row['Fecha Registro'] = $survey->misplacement->registration_date ?? ' ';
+            $row['Municipio Domicilio'] = $municipality_address;
+            $row['Fecha Registro'] = $mx_registration_date;
 
             $formattedData[] = $row;
         }
@@ -494,14 +497,16 @@ class ReportController extends Controller
                 $municipality_event = null;
             }
 
+            $registration_date = $survey->fechaRegistro ?? ' ';
+            $mx_registration_date = $registration_date ? Carbon::parse($registration_date)->format('d/m/Y') : ' ';
+
             $row['Folio'] = $documentNumber;
-            $row['Municipio Domicilio'] = $municipality_address;
             $row['Municipio Hechos'] = $municipality_event;
-            $row['Fecha Registro'] = $survey->fechaRegistro ?? ' ';
+            $row['Municipio Domicilio'] = $municipality_address;
+            $row['Fecha Registro'] = $mx_registration_date;
 
             $formattedData[] = $row;
         }
-
 
         // Asegurarse de que 'Folio' esté primero en cada fila
         $formattedData = array_map(function ($row) {

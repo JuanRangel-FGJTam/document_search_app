@@ -11,7 +11,7 @@ const props = defineProps({
     <AppLayout title="Dashboard">
         <div class="container px-6 mx-auto grid">
             <h2 class="my-6 text-2xl font-semibold text-gray-700 dark:text-gray-200">
-                Dashboard
+                Bienvenido de nuevo
             </h2>
             <!-- Cards -->
             <div class="grid gap-6 mb-8 md:grid-cols-2 xl:grid-cols-2">
@@ -28,7 +28,7 @@ const props = defineProps({
                 </div>
                 <div>
                     <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Solicitudes de constancias
+                        Solicitudes de constancias generadas el día de hoy
                     </p>
                     <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
                         {{ props.totalRequest }}
