@@ -110,7 +110,7 @@ class ExcelRequest
 
         // Escribir los datos en el Excel
         foreach ($dataRows as $rowData) {
-            $sheet->setCellValue('A' . $row, $rowData['identification']);
+            $sheet->setCellValue('A' . $row, strtoupper($rowData['identification']));
             $col = 'B';
             foreach ($selectedMonths as $month) {
                 $sheet->setCellValue($col . $row, $rowData[$month]);

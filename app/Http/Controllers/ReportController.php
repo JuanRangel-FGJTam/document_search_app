@@ -243,12 +243,12 @@ class ReportController extends Controller
 
         $extravios = $queryExtravios->get();
         $misplacements = $queryMisplacements->get();
-
+        $misplacements = collect();
+        //dd($identifications_legacy);
         // Se coloca el nombre del id guardado anteriormente
         foreach ($extravios as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $identification_name = $identifications_legacy[$item->ID_TIPO_DOCUMENTO] ?? 'otro';
-            //dd($identification_name);
+            $identification_name = $identifications_legacy[$item->document_type_id] ?? 'otro';
 
             if ($identification_name === 'otro') {
                 $identification_name = 'otro documento';
