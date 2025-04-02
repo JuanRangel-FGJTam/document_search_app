@@ -275,7 +275,7 @@ class ReportController extends Controller
 
     private function generateExcelReport(array $filters, $identifications, $identifications_legacy)
     {
-        // Validar si hay un rango de fechas
+        // Validar rango de fechas
         if (empty($filters['date_range'])) {
             throw new \Exception('Se requiere un rango de fechas.');
         }
@@ -283,13 +283,12 @@ class ReportController extends Controller
         [$start, $end] = $filters['date_range'];
         $dates = collect();
         for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
-            $dates->put($date->format('Y-m-d'), []);
+            $dates->put($date->format('Y-m-d'), 0); // Inicializar en 0
         }
 
-        // Consultas
+        // Consultas (solo agrupadas por fecha)
         $queryExtravios = Extravio::selectRaw(
             "CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120) as fecha,
-            PGJ_OBJETOS.ID_TIPO_DOCUMENTO as document_type_id,
             COUNT(*) as total"
         )
             ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
@@ -297,27 +296,26 @@ class ReportController extends Controller
                 DB::raw("CONVERT(date, PGJ_EXTRAVIOS.FECHA_EXTRAVIO)"),
                 [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
             )
-            ->groupBy('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
+            ->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
 
-
-        $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, ld.document_type_id, COUNT(*) as total')
+        $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id')
             ->whereBetween('misplacements.registration_date', [$start, $end])
-            ->groupByRaw('DATE(misplacements.registration_date), ld.document_type_id');
+            ->groupByRaw('DATE(misplacements.registration_date)');
 
+        // Aplicar filtros (municipio y estado)
         if (!empty($filters['municipio'])) {
-
             $municipalities = $this->authApiService->getMunicipalities();
             $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
             if ($municipality_name) {
-                $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%' . $municipality_name . '%');
+                $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')
+                    ->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%' . $municipality_name . '%');
             }
 
             $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
                 ->where('place_events.municipality_api_id', $filters['municipio']);
         }
-
 
         if (!empty($filters['status'])) {
             if ($filters['status'] == 3) {
@@ -328,36 +326,35 @@ class ReportController extends Controller
             $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
 
+        // Ejecutar consultas
         try {
             $extravios = $queryExtravios->get();
         } catch (\PDOException $e) {
-            Log::error("Error en la consulta de extravíos: " . $e->getMessage());
-            // Aquí podrías hacer una consulta alternativa o devolver un resultado vacío
-            $extravios = collect(); // Si no se puede obtener, devolver una colección vacía
+            Log::error("Error en consulta de extravíos: " . $e->getMessage());
+            $extravios = collect();
         }
 
         $misplacements = $queryMisplacements->get();
-        // Procesar datos
-        $dates = $dates->map(function ($dateData, $fecha) use ($extravios, $identifications_legacy) {
-            foreach ($extravios as $item) {
-                if ($item->fecha === $fecha) {
-                    $identification_name = $identifications_legacy[$item->document_type_id] ?? 'otro documento';
-                    $dateData[$identification_name] = ($dateData[$identification_name] ?? 0) + $item->total;
-                }
-            }
-            return $dateData;
-        });
 
-        $dates = $dates->transform(function ($dateData, $fecha) use ($misplacements, $identifications) {
-            foreach ($misplacements as $item) {
-                if ($item->fecha === $fecha) {
-                    $identification_name = $identifications[$item->document_type_id] ?? 'otro documento';
-                    $dateData[$identification_name] = ($dateData[$identification_name] ?? 0) + $item->total;
-                }
-            }
-            return $dateData;
-        });
+        // Procesar resultados y calcular totales
+        $grandTotal = 0;
 
+        foreach ($extravios as $item) {
+            if ($dates->has($item->fecha)) {
+                $dates[$item->fecha] += $item->total;
+                $grandTotal += $item->total;
+            }
+        }
+
+        foreach ($misplacements as $item) {
+            if ($dates->has($item->fecha)) {
+                $dates[$item->fecha] += $item->total;
+                $grandTotal += $item->total;
+            }
+        }
+
+        // Añadir el gran total como último elemento (clave "total_general")
+        $dates->put('total_general', $grandTotal);
         return $dates;
     }
 
