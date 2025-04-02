@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
     return Inertia::render('Auth/Login', [
         'canLogin' => Route::has('login'),
     ]);
@@ -46,8 +50,6 @@ Route::middleware([
         Route::post('/getSurveys', [ReportController::class, 'getSurveys'])->name('reports.getSurveys');
 
         Route::post('/generate', [ReportController::class, 'generateReport'])->name('reports.generate');
-
-
     });
 
     Route::prefix('/admin/surveys')->group(function () {

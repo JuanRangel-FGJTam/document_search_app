@@ -14,7 +14,8 @@ class DashboardController extends Controller
 
     public function index()
     {
-        $totalRequest = Misplacement::whereDate('registration_date', now())->count();
+        $today = new \Carbon\Carbon();
+        $totalRequest = Misplacement::whereDate('registration_date', $today->toDateString())->count();
 
         return Inertia::render('Dashboard', [
             'totalRequest' => $totalRequest

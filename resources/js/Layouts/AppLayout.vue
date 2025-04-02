@@ -29,7 +29,6 @@ const logout = () => {
 
 <template>
     <div>
-        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
         <Head :title="title" />
 
         <Banner />
@@ -42,7 +41,7 @@ const logout = () => {
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link>
+                                <Link :href="route('dashboard')">
                                     <ApplicationMark class="block h-[50px] w-auto" />
                                 </Link>
                             </div>
@@ -207,7 +206,7 @@ const logout = () => {
                 <!-- Responsive Navigation Menu -->
                 <div :class="{'block': showingNavigationDropdown, 'hidden': ! showingNavigationDropdown}" class="sm:hidden">
                     <div class="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
                     </div>
