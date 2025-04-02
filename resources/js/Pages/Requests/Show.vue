@@ -167,14 +167,6 @@ onMounted(() => useToast());
                             <p class="justify">{{ misplacement.cancellation_reason_description ?? 'Sin descripción' }}
                             </p>
                         </div>
-                        <div>
-                            <p class="font-semibold">Cancelada por</p>
-                            <p class="justify">{{ misplacement?.user?.name ?? 'Sin descripción' }}
-                            </p>
-                            <p class="justify text-base text-gray-500">{{ misplacement?.user?.email ?? 'Sin descripción'
-                                }}
-                            </p>
-                        </div>
                     </div>
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Datos de la identificación</h3>
                     <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">

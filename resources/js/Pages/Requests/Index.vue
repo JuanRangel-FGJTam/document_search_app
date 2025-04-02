@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
+import { useToast } from 'vue-toastification';
 const props = defineProps({
     misplacements: {
         type: Object,
@@ -12,11 +13,16 @@ const props = defineProps({
     },
     totalMisplacements: {
         type: Number
-    }
+    },
+    years: Array,
+    months: Object,
+    currentYear: String,
+    currentMonth: String
 });
-
+const toast = useToast();
 const selectedStatus = ref(5);
-
+const selectYear = ref(props.currentYear);
+const selectMonth = ref(props.currentMonth);
 const handleChange = (event) => {
     const search = event.target.value;
     router.get(route('misplacement.index'), {
@@ -33,6 +39,34 @@ const handleChange = (event) => {
             }
         });
 }
+
+const onChangeDate = () => {
+    const year = selectYear.value;
+    const month = selectMonth.value;
+
+    if(year == null){
+        toast.warning('Se debe de seleccionar una año en específico.');
+        return;
+    }
+
+    if(month == null){
+        toast.warning('Se debe de seleccionar un mes en específico');
+        return;
+    }
+    router.get(route('misplacement.index'), {
+        year,
+        month
+    }, {
+        preserveState: true,
+        only: ['misplacements', 'totalMisplacements', 'months'],
+        onSuccess: (page) => {
+
+        },
+        onError: () => {
+            console.log('Error');
+        }
+    });
+};
 
 function onChange() {
     router.get(route('misplacement.index'), {
@@ -135,6 +169,20 @@ function getTypeClass(typeId) {
                                             </div>
                                         </div>
                                     </div>
+                                    <select name="month" id="month" v-model="selectMonth" @change="onChangeDate"
+                                        class="appearance-none w-32 bg-white border border-gray-300 text-gray-900 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+                                        <option :value="null">Mes</option>
+                                        <option v-for="(month, index) in months" :key="index" v-bind:value="index">
+                                            {{ month }}
+                                        </option>
+                                    </select>
+                                    <select name="year" id="year" v-model="selectYear" @change="onChangeDate"
+                                        class="appearance-none w-32 bg-white border border-gray-300 text-gray-900 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+                                        <option :value="null">Año</option>
+                                        <option v-for="(year, index) in years" :key="index" v-bind:value="year">
+                                            {{ year }}
+                                        </option>
+                                    </select>
                                 </div>
                                 <div>
                                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">

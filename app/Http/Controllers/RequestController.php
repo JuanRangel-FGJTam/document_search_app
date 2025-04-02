@@ -70,6 +70,15 @@ class RequestController extends Controller
     {
         $status = $request->query('status');
         $search = $request->query('search');
+
+        // Obtener año y mes (usar actuales si no se proporcionan)
+        $year = $request->query('year', date('Y'));
+        $month = $request->query('month', date('n'));
+
+        $now = new \DateTime();
+        $currentYear = $now->format('Y');
+        $currentMonth = $now->format('n');
+
         $totalMisplacements = null;
         $lostStatuses = LostStatus::whereNotIn('id', [1, 2])->get();
 
@@ -85,6 +94,10 @@ class RequestController extends Controller
         $status_id = $statusMap[$status] ?? null;
         $query = Misplacement::query();
 
+        // Aplicar filtro por mes y año
+        $query->whereYear('registration_date', $year)
+              ->whereMonth('registration_date', $month);
+
         // Si se está buscando texto, realizar la búsqueda en Meilisearch
         if ($search !== null) {
             $totalMisplacements = Misplacement::search($search)->get();
@@ -96,22 +109,22 @@ class RequestController extends Controller
                             return [
                                 'id' => $legacy->ID_EXTRAVIO,
                                 'document_number' => $legacy->ID_EXTRAVIO,
-                                'lost_status_id' => $legacy->ID_ESTADO_EXTRAVIO, // Ajustar según sea necesario
+                                'lost_status_id' => $legacy->ID_ESTADO_EXTRAVIO,
                                 'lost_status' => [
                                     'name' => $legacy->estadoExtravio->ESTADO_EXTRAVIO,
                                 ],
                                 'people' => [
                                     'name' => trim(($legacy->NOMBRE ?? '') . ' ' . ($legacy->PATERNO ?? '') . ' ' . ($legacy->MATERNO ?? '')),
                                 ],
-                                'registration_date' => $legacy->FECHA_EXTRAVIO, // Ajustar según sea necesario
+                                'registration_date' => $legacy->FECHA_EXTRAVIO,
                             ];
                         });
                     } else {
-                        $totalMisplacements = collect(); // Retorna vacío si no se encuentran resultados
+                        $totalMisplacements = collect();
                     }
                 } catch (\Exception $e) {
                     Log::error("Error fetching legacy misplacements: " . $e->getMessage());
-                    $totalMisplacements = collect(); // Retorna vacío si ocurre un error
+                    $totalMisplacements = collect();
                 }
             } else {
                 $totalMisplacements->load('people', 'lostStatus');
@@ -125,13 +138,30 @@ class RequestController extends Controller
             $totalMisplacements->load('people', 'lostStatus');
         }
 
+        // Generar lista de años y meses disponibles
+        $years = range(2022, $currentYear);
+        $months = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+        ];
+
+        // Si el año seleccionado es el actual, limitar meses hasta el actual
+        if ($year == $currentYear) {
+            $months = array_slice($months, 0, $currentMonth, true);
+        }
+
         // Paginación
         $misplacements = \App\Support\Pagination::paginate($totalMisplacements, $request);
 
         return Inertia::render('Requests/Index', [
             'misplacements' => $misplacements,
             'lost_statuses' => $lostStatuses,
-            'totalMisplacements' => $totalMisplacements->count()
+            'totalMisplacements' => $totalMisplacements->count(),
+            'years' => $years,
+            'months' => $months,
+            'currentYear' => $year,  // Pasar el año actual usado
+            'currentMonth' => $month // Pasar el mes actual usado
         ]);
     }
 
@@ -166,7 +196,7 @@ class RequestController extends Controller
         if ($misplacement) {
             $personData = $this->authApiService->getPersonById($misplacement->people_id);
             $person = !empty($personData) ? $personData : null;
-            $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType','user');
+            $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType', 'user');
             $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
             $documents->load('documentType');
             $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);
