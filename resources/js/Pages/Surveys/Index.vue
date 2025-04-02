@@ -3,16 +3,50 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
+import { useToast } from 'vue-toastification';
 const props = defineProps({
     surveys: {
         type: Object,
     },
     totalSurveys: {
         type: Number
-    }
+    },
+    years: Array,
+    months: Object,
+    currentYear: String,
+    currentMonth: String
 });
 
-console.log(props.surveys);
+const toast = useToast();
+const selectYear = ref(props.currentYear);
+const selectMonth = ref(props.currentMonth);
+const onChangeDate = () => {
+    const year = selectYear.value;
+    const month = selectMonth.value;
+
+    if (year == null) {
+        toast.warning('Se debe de seleccionar una año en específico.');
+        return;
+    }
+
+    if (month == null) {
+        toast.warning('Se debe de seleccionar un mes en específico');
+        return;
+    }
+    router.get(route('surveys.index'), {
+        year,
+        month
+    }, {
+        preserveState: true,
+        only: ['surveys', 'totalSurveys', 'months'],
+        onSuccess: (page) => {
+
+        },
+        onError: () => {
+            console.log('Error');
+        }
+    });
+};
 
 </script>
 
@@ -22,17 +56,55 @@ console.log(props.surveys);
             <div class="max-w-7xl mx-auto">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <!-- component -->
-                    <div class="p-4 sm:flex sm:items-center sm:justify-between">
-                        <div>
-                            <div class="flex items-center gap-x-3">
-                                <h2
-                                    class="uppercase font-semibold text-lg text-gray-800 dark:text-gray-200 leading-tight">
-                                    Encuestas de Constancias de Extravio de Documentos
-                                </h2>
-                                <span
-                                    class="px-3 py-1 text-xs text-blue-600 bg-blue-100 rounded-full dark:bg-gray-800 dark:text-blue-400">
-                                    Total de encuestas: {{ totalSurveys }}
-                                </span>
+                    <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <!-- Encabezado y contador -->
+                        <div class="flex items-center gap-x-3">
+                            <h2 class="text-lg font-semibold leading-tight text-gray-800 uppercase dark:text-gray-200">
+                                Encuestas de Constancias de Extravio de Documentos
+                            </h2>
+                            <span
+                                class="px-3 py-1 text-xs text-blue-600 bg-blue-100 rounded-full dark:bg-gray-800 dark:text-blue-400">
+                                Total de encuestas: {{ totalSurveys }}
+                            </span>
+                        </div>
+
+                        <!-- Controles de filtrado -->
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                            <!-- Selector de mes -->
+                            <div class="relative">
+                                <select id="month" v-model="selectMonth" @change="onChangeDate"
+                                    class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent sm:w-32"
+                                    aria-label="Seleccionar mes">
+                                    <option :value="null">Mes</option>
+                                    <option v-for="(month, index) in months" :key="index" :value="index">
+                                        {{ month }}
+                                    </option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <!-- Selector de año -->
+                            <div class="relative">
+                                <select id="year" v-model="selectYear" @change="onChangeDate"
+                                    class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent sm:w-32"
+                                    aria-label="Seleccionar año">
+                                    <option :value="null">Año</option>
+                                    <option v-for="(year, index) in years" :key="index" :value="year">
+                                        {{ year }}
+                                    </option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
                     </div>

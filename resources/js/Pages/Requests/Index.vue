@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
+import { useToast } from 'vue-toastification';
 const props = defineProps({
     misplacements: {
         type: Object,
@@ -18,7 +19,7 @@ const props = defineProps({
     currentYear: String,
     currentMonth: String
 });
-
+const toast = useToast();
 const selectedStatus = ref(5);
 const selectYear = ref(props.currentYear);
 const selectMonth = ref(props.currentMonth);
