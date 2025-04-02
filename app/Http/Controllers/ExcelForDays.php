@@ -50,7 +50,8 @@ class ExcelForDays
         $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
         $col = 'B';
         foreach ($dates as $date) {
-            $sheet->setCellValue($col . $row, $date);
+            $formattedDate = \Carbon\Carbon::parse($date)->format('d-m-Y');
+            $sheet->setCellValue($col . $row, $formattedDate);
             $col++;
         }
 
