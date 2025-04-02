@@ -50,7 +50,8 @@ class ExcelForDays
         $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
         $col = 'B';
         foreach ($dates as $date) {
-            $sheet->setCellValue($col . $row, $date);
+            $formattedDate = \Carbon\Carbon::parse($date)->format('d-m-Y');
+            $sheet->setCellValue($col . $row, $formattedDate);
             $col++;
         }
 
@@ -81,7 +82,7 @@ class ExcelForDays
 
         // Escribir los datos en el Excel
         foreach ($dataRows as $rowData) {
-            $sheet->setCellValue('A' . $row, $rowData['identification']);
+            $sheet->setCellValue('A' . $row, strtoupper($rowData['identification']));
             $col = 'B';
             foreach ($dates as $date) {
                 $sheet->setCellValue($col . $row, $rowData[$date]);
@@ -109,7 +110,7 @@ class ExcelForDays
 
         foreach (range(0, count($dates)) as $colIndex) {
             $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->getColumnDimension($colLetter)->setWidth(35);
+            $sheet->getColumnDimension($colLetter)->setWidth(25);
             $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true);
         }
 
