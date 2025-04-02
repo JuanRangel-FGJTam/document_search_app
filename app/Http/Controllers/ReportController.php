@@ -247,7 +247,6 @@ class ReportController extends Controller
 
         $extravios = $queryExtravios->get();
         $misplacements = $queryMisplacements->get();
-        $misplacements = collect();
         //dd($identifications_legacy);
         // Se coloca el nombre del id guardado anteriormente
         foreach ($extravios as $item) {
