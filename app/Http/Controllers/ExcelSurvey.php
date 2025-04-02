@@ -41,20 +41,20 @@ class ExcelSurvey
         if (isset($data[0])) {
             // Definir encabezados de preguntas con fondo azul rey y letras blancas
             $sheet->setCellValue('A6', '#');
-            $sheet->getStyle('A6:P6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF'); // Letras blancas
+            $sheet->getStyle('A6:P6')->getFont()->setBold(true)->setSize(13)->getColor()->setARGB('FFFFFFFF'); // Letras blancas
             $sheet->getStyle('A6:P6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('A6:P6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
             $sheet->getStyle('A6:P6')->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()
-                ->setARGB('FF0b142e'); //  #0b142e 
+                ->setARGB('FF0b142e'); //  #0b142e
             $sheet->getColumnDimension('A')->setWidth(5);
             $colIndex = 0;
 
             foreach (array_keys($data[0]) as $question) {
                 $colLetter = $this->getColumnLetter($colIndex + 1);
                 $sheet->setCellValue($colLetter . '6', $question);
-                $sheet->getColumnDimension($colLetter)->setWidth(23); // Hacer los encabezados más largos
+                $sheet->getColumnDimension($colLetter)->setWidth(13); // Hacer los encabezados más largos
                 $colIndex++;
             }
 
@@ -81,7 +81,7 @@ class ExcelSurvey
             $sheet->getStyle('A5')->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()
-            ->setARGB('FFD3D3D3');            
+            ->setARGB('FFD3D3D3');
         }
 
         // Descargar el archivo

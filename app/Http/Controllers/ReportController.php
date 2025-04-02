@@ -379,12 +379,12 @@ class ReportController extends Controller
         // Definir preguntas y sus claves en la base de datos
         $surveyQuestions = [
             'rating_1' => '¿Qué tan difícil fue ingresar al rubro de Extravío de Documentos?',
+            'question_1' => '¿Fue útil la información brindada al inicio para el llenado de la Constancia?',
             'rating_2' => '¿Qué tan difícil le fue generar su Constancia?',
             'rating_3' => '¿Qué tan satisfecho se encuentra con el servicio?',
-            'question_1' => '¿Fue útil la información brindada al inicio para el llenado de la Constancia?',
             'question_2' => '¿Solicitó ayuda telefónica?',
             'question_3' => '¿El servidor público le solicitó algún pago a cambio?',
-            'question_4' => '¿Sintió discriminación en algún momento?',
+            'question_4' => '¿Al realizar el trámite sintió discriminación en algún momento?',
             'question_5' => 'No tengo sugerencias',
             'questions_6' => 'Reducir el número de requisitos',
             'question_7' => 'Formatos más sencillos',
@@ -476,9 +476,15 @@ class ReportController extends Controller
                 };
 
                 if (str_starts_with($key, 'question')) {
-                    $response = isset($survey[$legacyKey])
-                        ? ($survey[$legacyKey] == 1 ? 'Sí' : ($survey[$legacyKey] == 2 ? 'No' : ' '))
-                        : ' ';
+                    if ($key == 'question_5') {
+                        $response = isset($survey[$legacyKey])
+                            ? ($survey[$legacyKey] == 1 ? 'X' : ($survey[$legacyKey] == 2 ? ' ' : ' '))
+                            : ' ';
+                    } else {
+                        $response = isset($survey[$legacyKey])
+                            ? ($survey[$legacyKey] == 1 ? 'Sí' : ($survey[$legacyKey] == 2 ? 'No' : ' '))
+                            : ' ';
+                    }
                 } else {
                     $response = isset($survey[$legacyKey]) ? $survey[$legacyKey] : ' ';
                 }
