@@ -30,6 +30,7 @@ class AuthApiService
             Log::warning("Error al obtener los datos de la persona:{type}:{message} ", ['type' => $person_id, 'message' => $response->getBody()]);
             return [];
         }
+
         return $response->json();
     }
 

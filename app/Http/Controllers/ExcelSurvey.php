@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
+use Carbon\Carbon;
 
 class ExcelSurvey
 {
@@ -27,43 +28,60 @@ class ExcelSurvey
         // Reservar más espacio para el logo (fusionar varias celdas verticalmente)
         $sheet->mergeCells('A1:A3');
 
+        $mx_start_date = Carbon::parse($start_date)->format('d/m/Y');
+        $mx_end_date = Carbon::parse($end_date)->format('d/m/Y');
+
         // Establecer título del reporte sin fondo y más grande
-        $sheet->setCellValue('B3', 'Encuesta de satisfacción de ' . $start_date . ' al ' . $end_date);
-        $sheet->mergeCells('B3:' . $this->getColumnLetter(count($data[0])) . '3');
-        $sheet->getStyle('B3')->getFont()->setBold(true)->setSize(16);
-        $sheet->getStyle('B3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->mergeCells('C1:P3');
+        $sheet->setCellValue('C1', 'Encuestas de satisfacción del ' . $mx_start_date . ' al ' . $mx_end_date);
+        $sheet->getStyle('C1')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('C1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
-        // Definir encabezados de preguntas con fondo azul rey y letras blancas
-        $colIndex = 0;
-        foreach (array_keys($data[0]) as $question) {
-            $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->setCellValue($colLetter . '6', $question);
-            $sheet->getStyle($colLetter . '6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF'); // Letras blancas
-            $sheet->getStyle($colLetter . '6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle($colLetter . '6')->getFill()
+        if (isset($data[0])) {
+            // Definir encabezados de preguntas con fondo azul rey y letras blancas
+            $sheet->setCellValue('A6', '#');
+            $sheet->getStyle('A6:P6')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF'); // Letras blancas
+            $sheet->getStyle('A6:P6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A6:P6')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle('A6:P6')->getFill()
                 ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()->setARGB('FF000080'); // Azul rey
-            $sheet->getColumnDimension($colLetter)->setWidth(70); // Hacer los encabezados más largos
-            $colIndex++;
-        }
-
-        // Llenar respuestas
-        $rowIndex = 7;
-        foreach ($data as $surveyItem) {
+                ->getStartColor()
+                ->setARGB('FF0b142e'); //  #0b142e 
+            $sheet->getColumnDimension('A')->setWidth(5);
             $colIndex = 0;
-            foreach ($surveyItem as $response) {
-                $colLetter = $this->getColumnLetter($colIndex);
-                $sheet->setCellValue($colLetter . $rowIndex, $response);
+
+            foreach (array_keys($data[0]) as $question) {
+                $colLetter = $this->getColumnLetter($colIndex + 1);
+                $sheet->setCellValue($colLetter . '6', $question);
+                $sheet->getColumnDimension($colLetter)->setWidth(23); // Hacer los encabezados más largos
                 $colIndex++;
             }
-            $rowIndex++;
-        }
 
-        // Ajustar tamaño de columnas
-        foreach (range(0, count($data[0]) - 1) as $colIndex) {
-            $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->getColumnDimension($colLetter)->setWidth(35); // Mitad del tamaño original
-            $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true); // Permitir que el texto se corte y pase a otro renglón
+            // Llenar respuestas
+            $rowIndex = 7;
+            foreach ($data as $surveyItem) {
+                $sheet->setCellValue('A' . $rowIndex, $rowIndex - 6);
+
+                $colIndex = 0;
+                foreach ($surveyItem as $response) {
+                    $colLetter = $this->getColumnLetter($colIndex + 1);
+                    $sheet->setCellValue($colLetter . $rowIndex, $response);
+                    $colIndex++;
+                }
+                $rowIndex++;
+            }
+
+            $sheet->getStyle('A6:P6')->getAlignment()->setWrapText(true);
+        } else {
+            $sheet->mergeCells('A5:P5');
+            $sheet->setCellValue('A5', 'No hay encuestas en el periodo seleccionado');
+            $sheet->getStyle('A5')->getFont()->setSize(12);
+            $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A5')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFD3D3D3');            
         }
 
         // Descargar el archivo
