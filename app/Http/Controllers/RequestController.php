@@ -46,6 +46,8 @@ class RequestController extends Controller
     const CATALOG_PHONE_TYPE_HOME = 2;
     const DOCUMENT_TYPE_INE = 1;
 
+    const LAST_FOLIO_LEGACY = 163191;
+
     const LEGACY_MODE = 1;
 
     const LEGACY_URL = 'https://extraviodedocumentos.fgjtam.gob.mx/validacion/pagina/Validacion.aspx';
@@ -96,12 +98,14 @@ class RequestController extends Controller
 
         // Aplicar filtro por mes y año
         $query->whereYear('registration_date', $year)
-              ->whereMonth('registration_date', $month);
+            ->whereMonth('registration_date', $month);
 
         // Si se está buscando texto, realizar la búsqueda en Meilisearch
         if ($search !== null) {
-            $totalMisplacements = Misplacement::search($search)->get();
-            if ($totalMisplacements->isEmpty()) {
+            if ($search > SELF::LAST_FOLIO_LEGACY) {
+                $totalMisplacements = Misplacement::search($search)->get();
+                $totalMisplacements->load('people', 'lostStatus');
+            } else {
                 try {
                     $legacyMisplacements = Extravio::with('estadoExtravio')->where('ID_EXTRAVIO', $search)->get();
                     if ($legacyMisplacements->isNotEmpty()) {
@@ -126,8 +130,6 @@ class RequestController extends Controller
                     Log::error("Error fetching legacy misplacements: " . $e->getMessage());
                     $totalMisplacements = collect();
                 }
-            } else {
-                $totalMisplacements->load('people', 'lostStatus');
             }
         } else {
             // Si no hay búsqueda, aplicar el filtro de status
@@ -141,9 +143,18 @@ class RequestController extends Controller
         // Generar lista de años y meses disponibles
         $years = range(2022, $currentYear);
         $months = [
-            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
-            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
-            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
         ];
 
         // Si el año seleccionado es el actual, limitar meses hasta el actual

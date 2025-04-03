@@ -15,6 +15,7 @@ class ExcelForDays
     private $data;
     private $status_name;
     private $municipality_name;
+
     public function create($data, $status_name, $municipality_name, $start_date, $end_date)
     {
         $this->data = $data;
@@ -22,10 +23,10 @@ class ExcelForDays
         $sheet = $spreadsheet->getActiveSheet();
         $row = 5;
 
-        // Encabezado
-        $sheet->mergeCells('A1:J1');
-        $sheet->mergeCells('A2:J2');
-        $sheet->mergeCells('A3:J3');
+        // Encabezado (centrado y con merge)
+        $sheet->mergeCells('A1:H1');
+        $sheet->mergeCells('A2:H2');
+        $sheet->mergeCells('A3:H3');
 
         $sheet->setCellValue('A1', 'Fiscalía General de Justicia del Estado de Tamaulipas');
         $sheet->setCellValue(
@@ -39,89 +40,77 @@ class ExcelForDays
             )
         );
 
-        // Alineación del encabezado
-        $sheet->getStyle('A1:J3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:J3')->getFont()->setBold(true);
+        // Estilos del encabezado
+        $headerStyle = [
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true // Asegura que el texto largo se ajuste
+            ],
+            'font' => [
+                'bold' => true,
+                'size' => 12 // Tamaño un poco más grande
+            ]
+        ];
+        $sheet->getStyle('A1:H3')->applyFromArray($headerStyle);
 
-        // Obtener las fechas únicas del reporte
-        $dates = array_keys($data->toArray());
+        // Ajustar altura de filas para el título
+        $sheet->getRowDimension(1)->setRowHeight(25);
+        $sheet->getRowDimension(2)->setRowHeight(25);
+        $sheet->getRowDimension(3)->setRowHeight(25);
 
-        // Primera columna con los tipos de identificación
-        $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
-        $col = 'B';
-        foreach ($dates as $date) {
-            $formattedDate = \Carbon\Carbon::parse($date)->format('d-m-Y');
-            $sheet->setCellValue($col . $row, $formattedDate);
-            $col++;
+        // Ajustar ancho de columnas (de A a H) para el título
+        foreach (range('A', 'H') as $column) {
+            $sheet->getColumnDimension($column)->setWidth(15); // Ancho uniforme
         }
 
-        // Aplicar estilos a la cabecera
-        $sheet->getStyle('A' . $row . ':' . $col . $row)
+        // Cabecera de la tabla
+        $sheet->setCellValue('A' . $row, 'FECHA');
+        $sheet->setCellValue('B' . $row, 'TOTAL');
+
+        // Estilos de la cabecera
+        $sheet->getStyle('A' . $row . ':B' . $row)
             ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9D9D9');
-        $sheet->getStyle('A' . $row . ':' . $col . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':' . $col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A' . $row . ':B' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':B' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension($row)->setRowHeight(20);
         $row++;
 
-        // Obtener todos los tipos de identificación únicos
-        $identifications = collect();
-        foreach ($data as $dayData) {
-            $identifications = $identifications->merge(collect($dayData)->keys());
-        }
-        $identifications = $identifications->unique();
+        // Eliminar 'total_general' temporalmente para no mostrarlo en la lista de días
+        $totalGeneral = $this->data->pull('total_general');
+        $dates = $this->data->toArray();
 
-        // Llenar la tabla con los datos agrupados
-        $dataRows = [];
-        foreach ($identifications as $identificationType) {
-            $dataRow = ['identification' => $identificationType];
-            foreach ($dates as $date) {
-                $dataRow[$date] = $data[$date][$identificationType] ?? 0;
-            }
-            $dataRows[] = $dataRow;
-        }
-
-        // Escribir los datos en el Excel
-        foreach ($dataRows as $rowData) {
-            $sheet->setCellValue('A' . $row, strtoupper($rowData['identification']));
-            $col = 'B';
-            foreach ($dates as $date) {
-                $sheet->setCellValue($col . $row, $rowData[$date]);
-                $col++;
-            }
+        // Llenar datos por día
+        foreach ($dates as $date => $total) {
+            $sheet->setCellValue('A' . $row, Carbon::parse($date)->format('d-m-Y'));
+            $sheet->setCellValue('B' . $row, $total);
             $row++;
         }
 
-        // Agregar la fila de totales
-        $sheet->setCellValue('A' . $row, 'TOTAL');
-        $col = 'B';
-        foreach ($dates as $date) {
-            $totalDay = array_sum(array_column($dataRows, $date));
-            $sheet->setCellValue($col . $row, $totalDay);
-            $col++;
-        }
+        // Agregar fila del TOTAL GENERAL
+        $sheet->setCellValue('A' . $row, 'TOTAL GENERAL');
+        $sheet->setCellValue('B' . $row, $totalGeneral);
 
-        // Aplicar estilos a la fila de totales
-        $sheet->getStyle('A' . $row . ':' . $col . $row)
+        // Estilos del total general
+        $sheet->getStyle('A' . $row . ':B' . $row)
             ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF666666');
-        $sheet->getStyle('A' . $row . ':' . $col . $row)->getFont()->setBold(true)->getColor()->setARGB(Color::COLOR_WHITE);
-        $sheet->getStyle('A' . $row . ':' . $col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getRowDimension($row)->setRowHeight(20);
+        $sheet->getStyle('A' . $row . ':B' . $row)->getFont()->setBold(true)->getColor()->setARGB(Color::COLOR_WHITE);
+        $sheet->getStyle('A' . $row . ':B' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+        // Ajustar tamaño de columnas
+        $sheet->getColumnDimension('A')->setWidth(20);
+        $sheet->getColumnDimension('B')->setWidth(15);
 
-        foreach (range(0, count($dates)) as $colIndex) {
-            $colLetter = $this->getColumnLetter($colIndex);
-            $sheet->getColumnDimension($colLetter)->setWidth(25);
-            $sheet->getStyle($colLetter)->getAlignment()->setWrapText(true);
-        }
-
-
+        // Bordes para toda la tabla
+        $lastRow = $row;
+        $sheet->getStyle('A5:B' . $lastRow)
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         $writer = new Xlsx($spreadsheet);
 
         // Limpiar buffers de salida
         if (ob_get_contents()) ob_end_clean();
 
-        // Retornar el archivo Excel
         return response()->stream(
             function () use ($writer) {
                 $writer->save('php://output');
@@ -132,10 +121,5 @@ class ExcelForDays
                 'Content-Disposition' => 'attachment; filename="Reporte_Solicitudes_Diario.xlsx"',
             ]
         );
-    }
-
-    private function getColumnLetter($index)
-    {
-        return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
     }
 }

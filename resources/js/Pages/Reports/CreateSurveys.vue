@@ -37,11 +37,13 @@ const submit = () => {
 
     if (!form.year) {
         toast.warning('Ingrese un año');
+        loading.value = false;
         return;
     }
 
     if (!form.start_date || !form.end_date) {
         toast.warning('Debe seleccionar ambas fechas');
+        loading.value = false;
         return;
     }
 
