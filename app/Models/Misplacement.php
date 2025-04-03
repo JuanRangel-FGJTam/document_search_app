@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Scout\Searchable;
 use App\Models\PlaceEvent;
+
 class Misplacement extends Model
 {
     use HasFactory;
@@ -64,6 +66,16 @@ class Misplacement extends Model
         $array['people_name'] = $this->people->name ?? '';
         $array['people_email'] = $this->people->email ?? '';
         return $array;
+    }
+
+    /**
+     * Get all of the synced data
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function syncedMisplacement(): HasOne
+    {
+        return $this->HasOne(SyncedMisplacement::class);
     }
 
 }

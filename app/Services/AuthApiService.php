@@ -60,14 +60,21 @@ class AuthApiService
     }
 
 
+    /**
+     * get the colonies by zipCode
+     * @throws \Exception throws a exception if the HttpRequest fails
+     * @return mixed
+     */
     public function getZipCode(string $zipCode)
     {
         $response = Http::withHeader('Authorization', self::authorizationValue())
             ->get(Str::finish(self::baseUrl(), '/api/zipcode/' . $zipCode));
 
         // * Validate response
-        if (!$response->successful()) {
+        if (!$response->successful())
+        {
             return [];
+            // $response->throw();
         }
         return $response->json();
     }
