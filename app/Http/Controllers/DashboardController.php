@@ -14,6 +14,7 @@ class DashboardController extends Controller
 
     public function index()
     {
+        abort(403);
         $today = new \Carbon\Carbon();
         $totalRequest = Misplacement::whereDate('registration_date', $today->toDateString())->count();
 
