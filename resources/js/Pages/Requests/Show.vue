@@ -13,7 +13,7 @@ const props = defineProps({
     identification: Object
 });
 
-console.log(props.misplacement);
+console.log(props.identification);
 var download_name = props.misplacement.people_id;
 if (!props.misplacement.people_id) {
     download_name = props.misplacement.id;
@@ -181,7 +181,10 @@ onMounted(() => useToast());
                         </div>
                         <div>
                             <p class="font-semibold">Fecha de vencimiento</p>
-                            <p>{{ identification.valid ?? 'No disponible' }}</p>
+                            <p v-if="identification.documentTypeId == 6 && identification.valid == null">
+                                PERMANENTE
+                            </p>
+                            <p v-else>{{ identification.valid ?? 'No disponible' }}</p>
                         </div>
                         <div>
                             <p class="font-semibold">Identificación</p>
