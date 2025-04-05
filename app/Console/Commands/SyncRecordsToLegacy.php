@@ -60,6 +60,7 @@ class SyncRecordsToLegacy extends Command
             ->get();
 
         Log::info("Starting the job to synchronize the misplacements, pending: " . count($misplacements));
+        print("Starting the job to synchronize the misplacements, pending: " . count($misplacements) . "\n");
 
         // * loop through the records
         foreach ($misplacements as $misplacement)
@@ -85,9 +86,9 @@ class SyncRecordsToLegacy extends Command
 
                 // * check if the legacy record already exists
                 $existingRecord = Extravio::where('ID_EXTRAVIO', $legacyIdExtravio)->first();
-                if (Extravio::where('ID_EXTRAVIO', $legacyIdExtravio)->first())
+
+                if ($existingRecord)
                 {
-                    $existingRecord = Extravio::where('ID_EXTRAVIO', $legacyExtravio->ID_EXTRAVIO)->first();
                     $existingRecord->fill($legacyExtravio->toArray());
                     $existingRecord->save();
                 }
@@ -96,21 +97,24 @@ class SyncRecordsToLegacy extends Command
                     $legacyExtravio->save();
                 }
 
+                print("Continue saving misplacement record with id '{$misplacement->id}'\n");
 
                 // * get the local missing documents
                 $lostDocuments = LostDocument::where('misplacement_id', $misplacement->id)->get();
                 $this->processLostDocuments($lostDocuments, $legacyIdExtravio);
 
-
                 // * save event description and place events
                 $placeEvent = PlaceEvent::where('misplacement_id', $misplacement->id)->firstOrFail();
                 $this->processPlaceEvent($placeEvent, $misplacement, $legacyIdExtravio);
 
-
                 // * get the identification from the API
                 try
                 {
-                    $identification = $this->apiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
+                    $identification = $this->apiService->getDocumentById(
+                        $misplacement->people_id,
+                        $misplacement->misplacementIdentifications->identification_type_id
+                    );
+
                     if(isset($identification) && !empty($identification))
                     {
                         $legacyExtravio->NUMERO_DOCUMENTO = $identification["folio"] ?? "" ;
@@ -124,19 +128,21 @@ class SyncRecordsToLegacy extends Command
                     ]);
                 }
 
-
                 DB::connection('sqlsrv')->commit();
                 Log::info("Misplacement record with id '{id}' synced to legacy", [
                     "id" => $misplacement->id,
                     'legacy_id' => $legacyIdExtravio
                 ]);
 
+                $legacyExtravio->save();
+
                 // * save the sync record
                 $syncedMisplacement->legacy_id = $legacyIdExtravio;
-                $syncedMisplacement->failed = true;
+                $syncedMisplacement->failed = false;
                 $syncedMisplacement->message = null;
                 $syncedMisplacement->save();
 
+                print("Misplacement record with id '{$misplacement->id}' synced to legacy\n");
             }
             catch(Throwable $th)
             {
@@ -157,6 +163,8 @@ class SyncRecordsToLegacy extends Command
                 Log::info("---------------------------------------------");
             }
         }
+
+        print("Job finished");
         Log::info("Job finished");
     }
 
@@ -227,14 +235,18 @@ class SyncRecordsToLegacy extends Command
             ]);
         }
 
-
         // * save the place event
         $hechosCP = HechosCP::where("ID_EXTRAVIO", $legacyIdExtravio)->first();
         if(!isset($hechosCP))
         {
+            $municipality = $this->apiService->getMunicipalities($placeEvent->municipality_api_id);
+
             $hechos = HechosCP::create([
                 "ID_EXTRAVIO" => $legacyIdExtravio,
                 "CPcodigo" => Trim($placeEvent->zipcode),
+                "CPcolonia" => Trim($placeEvent->colony),
+                "CPmunicipio" => $municipality,
+                "CPColonia" => $colony,
                 "CPcalle" => Trim($placeEvent->street),
                 "FECHA_REGISTRO" => $misplacement->registration_date
             ]);

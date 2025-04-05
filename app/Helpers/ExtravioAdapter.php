@@ -95,7 +95,7 @@ class ExtravioAdapter
         }
 
         // * attempt to get the legacy status
-        $legacyEstadoExtravio = EstadoExtravio::where('ESTADO_EXTRAVIO', 'like', Str::upper($lostStatus->name))->first();
+        $legacyEstadoExtravio = EstadoExtravio::where('ESTADO_EXTRAVIO', 'LIKE', '%' . Str::upper($lostStatus->name) . '%')->first();
         $extravio->ID_ESTADO_EXTRAVIO = isset($legacyEstadoExtravio)
             ? $legacyEstadoExtravio->ID_ESTADO_EXTRAVIO
             : self::$DEFAULT_LEGACY_STATUS_ID;
@@ -109,14 +109,14 @@ class ExtravioAdapter
         }
 
         // * get the documment type
-        $legacyDocumentType = TipoDocumento::where('DOCUMENTO', 'like', Str::upper($identificationType->name))->first();
+        $legacyDocumentType = TipoDocumento::where('DOCUMENTO', 'LIKE', '%' . Str::upper($identificationType->name) . '%')->first();
         $extravio->ID_TIPO_DOCUMENTO = isset($legacyDocumentType)
             ? $legacyDocumentType->ID_TIPO_DOCUMENTO
             : self::$DEFAULT_LEGACY_DOCUMENT_TYPE_ID;
         $extravio->ESPECIFIQUE = $identificationType->name;
 
         // * get the identification type and name
-        $legacyIdentificacion = Identificacion::where('IDENTIFICACION', 'like', Str::upper($identificationType->name))->first();
+        $legacyIdentificacion = Identificacion::where('IDENTIFICACION', 'LIKE', '%' . Str::upper($identificationType->name) . '%')->first();
         $extravio->ID_IDENTIFICACION = isset($legacyIdentificacion)
             ? $legacyIdentificacion->ID_IDENTIFICACION
             : self::$DEFAULT_LEGACY_IDENTIFICATION_ID;

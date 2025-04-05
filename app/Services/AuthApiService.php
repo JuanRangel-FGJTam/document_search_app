@@ -25,7 +25,6 @@ class AuthApiService
         $response = Http::withHeader('Authorization', self::authorizationValue())
             ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id));
 
-        // * Validate response
         if (!$response->successful()) {
             Log::warning("Error al obtener los datos de la persona:{type}:{message} ", ['type' => $person_id, 'message' => $response->getBody()]);
             return [];
@@ -39,13 +38,11 @@ class AuthApiService
         $response = Http::withHeader('Authorization', self::authorizationValue())
             ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/address/'));
 
-        // * Validate response
         if (!$response->successful()) {
             return [];
         }
         return $response->json();
     }
-
 
     public function getUserContactType(string $person_id, string $typeId)
     {
@@ -59,7 +56,6 @@ class AuthApiService
         return $response->json();
     }
 
-
     /**
      * get the colonies by zipCode
      * @throws \Exception throws a exception if the HttpRequest fails
@@ -70,11 +66,9 @@ class AuthApiService
         $response = Http::withHeader('Authorization', self::authorizationValue())
             ->get(Str::finish(self::baseUrl(), '/api/zipcode/' . $zipCode));
 
-        // * Validate response
         if (!$response->successful())
         {
             return [];
-            // $response->throw();
         }
         return $response->json();
     }
@@ -85,7 +79,6 @@ class AuthApiService
         $response = Http::withHeaders(['Accept' => 'application/json', 'Authorization' => self::authorizationValue()])
             ->post(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/procedures'), $data);
 
-        // * Validate response
         if (!$response->successful()) {
             return [];
         }
@@ -97,7 +90,6 @@ class AuthApiService
         $response = Http::withHeaders(['Accept' => 'application/json', 'Authorization' => self::authorizationValue()])
             ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/procedures/' . $procedure_id));
 
-        // * Validate response
         if (!$response->successful()) {
             return [];
         }
@@ -116,13 +108,12 @@ class AuthApiService
         return $response->json();
     }
 
-    public function getMunicipalities()
+    public function getMunicipalities(int $stateId = 28): array
     {
         $response = Http::withHeaders([
             'Authorization' => self::authorizationValue()
-        ])->get(Str::finish(self::baseUrl(), '/api/catalog/municipalities'));
+        ])->get(Str::finish(self::baseUrl(), '/api/catalog/municipalities?stateId=' . $stateId));
 
-        // * Validate response
         if (!$response->successful()) {
             return [];
         }
