@@ -67,6 +67,9 @@ function getTypeClass(typeId) {
 }
 
 onMounted(() => useToast());
+function getIdentificationYear(validDate) {
+    return validDate ? new Date(validDate).getFullYear() : 'No disponible';
+}
 </script>
 
 <template>
@@ -115,7 +118,7 @@ onMounted(() => useToast());
                             <span class="flex text-center justify-center px-3 py-1 text-sm font-medium rounded-full"
                                 :class="misplacement.lost_status_id <= 3 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
                                 {{ misplacement.lost_status_id <= 3 ? 'VALIDADO' : misplacement.lost_status.name }}
-                            </span>
+                                    </span>
                         </div>
                         <div>
                             <p class="font-semibold">Fecha de Registro</p>
@@ -183,6 +186,9 @@ onMounted(() => useToast());
                             <p class="font-semibold">Fecha de vencimiento</p>
                             <p v-if="identification.documentTypeId == 6 && identification.valid == null">
                                 PERMANENTE
+                            </p>
+                            <p v-else-if="identification.documentTypeId == 1 && identification.valid != null">
+                                {{ getIdentificationYear(identification.valid) }}
                             </p>
                             <p v-else>{{ identification.valid ?? 'No disponible' }}</p>
                         </div>
