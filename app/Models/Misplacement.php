@@ -28,6 +28,10 @@ class Misplacement extends Model
         'canceled_by'
     ];
 
+    protected $casts = [
+        'registration_date' => 'date:Y-m-d',
+    ];
+
 
     public function people()
     {

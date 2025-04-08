@@ -358,7 +358,6 @@ class ReportController extends Controller
         }
 
         $misplacements = $queryMisplacements->get();
-
         // Procesar resultados y calcular totales
         $grandTotal = 0;
 
