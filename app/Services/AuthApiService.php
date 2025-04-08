@@ -119,4 +119,40 @@ class AuthApiService
         }
         return $response->json();
     }
+
+    public function getMunicipalityById(int $municipalityId): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => self::authorizationValue()
+        ])->get(Str::finish(self::baseUrl(), '/api/catalog/municipalities/' . $municipalityId));
+
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
+
+    public function getColonyById(int $colonyId): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => self::authorizationValue()
+        ])->get(Str::finish(self::baseUrl(), '/api/catalog/colonies/' . $colonyId));
+
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
+
+    public function getIdentificationByType(string $person_id, string $documentTypeId): array
+    {
+        $response = Http::withHeader('Authorization', self::authorizationValue())
+            ->get(Str::finish(self::baseUrl(), '/api/people/' . $person_id . '/document/' . $documentTypeId));
+
+        if (!$response->successful()) {
+            return [];
+        }
+
+        return $response->json();
+    }
 }

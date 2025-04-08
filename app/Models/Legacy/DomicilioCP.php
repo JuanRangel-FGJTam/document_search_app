@@ -14,6 +14,7 @@ class DomicilioCP extends Model
     protected $connection = 'sqlsrv';
     protected $table = 'PGJ_DOMICILIO_CP';
     protected $primaryKey = 'ID_DOMICILIO';
+    public $timestamps = false;
 
     public function extravio(){
         return $this->belongsTo(Extravio::class,'ID_EXTRAVIO','ID_EXTRAVIO');
