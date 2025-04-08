@@ -156,8 +156,7 @@ class ReportController extends Controller
         }
 
         if (isset($filters['municipio'])) {
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
         } else {
             $municipality_name = null;
@@ -221,10 +220,8 @@ class ReportController extends Controller
         }
         if ($filters['municipio']) {
 
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
-
             if ($municipality_name) {
                 $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%'  . $municipality_name . '%');
             }
@@ -328,8 +325,7 @@ class ReportController extends Controller
 
         // Aplicar filtros (municipio y estado)
         if (!empty($filters['municipio'])) {
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
             if ($municipality_name) {
                 $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')
@@ -434,8 +430,7 @@ class ReportController extends Controller
             $municipality_address = $person['address']['municipalityName'] ?? ' ';
 
             if (isset($survey->misplacement->placeEvent->municipality_api_id)) {
-                $municipalities = $this->authApiService->getMunicipalities();
-                $municipality = collect($municipalities)->firstWhere('id', $survey->misplacement->placeEvent->municipality_api_id);
+                $municipality = $this->authApiService->getMunicipalityById($survey->misplacement->placeEvent->municipality_api_id);
                 $municipality_event = $municipality['name'] ?? null;
             } else {
                 $municipality_event = null;

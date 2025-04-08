@@ -128,4 +128,17 @@ class AuthApiService
         }
         return $response->json();
     }
+
+    public function getMunicipalityById(string $municipality_id)
+    {
+        $response = Http::withHeaders([
+            'Authorization' => self::authorizationValue()
+        ])->get(Str::finish(self::baseUrl(), '/api/catalog/municipalities/' . $municipality_id));
+
+        // * Validate response
+        if (!$response->successful()) {
+            return [];
+        }
+        return $response->json();
+    }
 }
