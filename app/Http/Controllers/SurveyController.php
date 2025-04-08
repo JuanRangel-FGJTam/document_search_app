@@ -23,7 +23,9 @@ class SurveyController extends Controller
         // Aplicar filtro por mes y año
         $totalSurveys = Survey::with('misplacement.people')
             ->whereYear('register_date', $year)
-            ->whereMonth('register_date', $month)->get();;
+            ->whereMonth('register_date', $month)
+            ->orderBy('register_date', 'desc')
+            ->get();
         // Generar lista de años y meses disponibles
         $years = range(2022, $currentYear);
         $months = [

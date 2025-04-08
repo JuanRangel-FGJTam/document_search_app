@@ -53,8 +53,8 @@ const submit = () => {
         loading.value = false;
         return;
     }
-    if ((form.reportType === 2 || form.reportType === 3) && (!form.start_date || !form.end_date)) {
-        toast.warning('Seleccione una fecha de inicio y fin');
+    if ((form.reportType === 2 || form.reportType === 3) && !form.start_date && !form.end_date) {
+        toast.warning('Seleccione al menos una fecha.');
         loading.value = false;
         return;
     }

@@ -156,8 +156,7 @@ class ReportController extends Controller
         }
 
         if (isset($filters['municipio'])) {
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
         } else {
             $municipality_name = null;
@@ -221,10 +220,8 @@ class ReportController extends Controller
         }
         if ($filters['municipio']) {
 
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
-
             if ($municipality_name) {
                 $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%'  . $municipality_name . '%');
             }
@@ -282,8 +279,15 @@ class ReportController extends Controller
 
         [$start, $end] = $filters['date_range'];
         $dates = collect();
-        for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
-            $dates->put($date->format('Y-m-d'), 0); // Inicializar en 0
+
+        if ($start && !$end) {
+            $dates->put(Carbon::parse($start)->format('Y-m-d'), 0); // Solo start
+        } elseif (!$start && $end) {
+            $dates->put(Carbon::parse($end)->format('Y-m-d'), 0); // Solo end
+        } elseif ($start && $end) {
+            for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
+                $dates->put($date->format('Y-m-d'), 0); // Inicializar en 0
+            }
         }
 
         // Consultas (solo agrupadas por fecha)
@@ -291,22 +295,37 @@ class ReportController extends Controller
             "CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120) as fecha,
             COUNT(*) as total"
         )
-            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')
-            ->whereBetween(
-                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
-                [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
-            )
-            ->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
+            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO');
 
         $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
-            ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id')
-            ->whereBetween('misplacements.registration_date', [$start, $end])
-            ->groupByRaw('DATE(misplacements.registration_date)');
+            ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id');
+
+        if ($start && $end) {
+            $queryExtravios->whereBetween(
+                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
+                [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
+            );
+            $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
+        } elseif ($start) {
+            $queryExtravios->whereDate(
+                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
+                Carbon::parse($start)->format('Y-m-d')
+            );
+            $queryMisplacements->whereDate('misplacements.registration_date', $start);
+        } elseif ($end) {
+            $queryExtravios->whereDate(
+                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
+                Carbon::parse($end)->format('Y-m-d')
+            );
+            $queryMisplacements->whereDate('misplacements.registration_date', $end);
+        }
+
+        $queryExtravios->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
+        $queryMisplacements->groupByRaw('DATE(misplacements.registration_date)');
 
         // Aplicar filtros (municipio y estado)
         if (!empty($filters['municipio'])) {
-            $municipalities = $this->authApiService->getMunicipalities();
-            $municipality = collect($municipalities)->firstWhere('id', $filters['municipio']);
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
             if ($municipality_name) {
                 $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')
@@ -335,7 +354,6 @@ class ReportController extends Controller
         }
 
         $misplacements = $queryMisplacements->get();
-
         // Procesar resultados y calcular totales
         $grandTotal = 0;
 
@@ -412,8 +430,7 @@ class ReportController extends Controller
             $municipality_address = $person['address']['municipalityName'] ?? ' ';
 
             if (isset($survey->misplacement->placeEvent->municipality_api_id)) {
-                $municipalities = $this->authApiService->getMunicipalities();
-                $municipality = collect($municipalities)->firstWhere('id', $survey->misplacement->placeEvent->municipality_api_id);
+                $municipality = $this->authApiService->getMunicipalityById($survey->misplacement->placeEvent->municipality_api_id);
                 $municipality_event = $municipality['name'] ?? null;
             } else {
                 $municipality_event = null;
