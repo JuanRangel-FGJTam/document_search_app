@@ -298,10 +298,10 @@ class ReportController extends Controller
             )
             ->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
 
-        $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
+        $queryMisplacements = Misplacement::selectRaw('misplacements.registration_date as fecha, COUNT(*) as total')
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id')
             ->whereBetween('misplacements.registration_date', [$start, $end])
-            ->groupByRaw('DATE(misplacements.registration_date)');
+            ->groupByRaw('misplacements.registration_date');
 
         // Aplicar filtros (municipio y estado)
         if (!empty($filters['municipio'])) {
@@ -335,7 +335,6 @@ class ReportController extends Controller
         }
 
         $misplacements = $queryMisplacements->get();
-
         // Procesar resultados y calcular totales
         $grandTotal = 0;
 
