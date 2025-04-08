@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use App\Models\ {
     PlaceEvent,
     Misplacement,
@@ -30,7 +31,7 @@ class ExtravioAdapter
      * @param  Misplacement $misplacement
      * @return Extravio|null
      */
-    public static function fromMisplacement($misplacement)
+    public static function fromMisplacement($misplacement, $apiService)
     {
         // * attempt to get the local model realations
         // * get the people
@@ -62,11 +63,9 @@ class ExtravioAdapter
             throw new \Exception('IdentificationType not found for the given Misplacement ID: ' . $misplacement->id);
         }
 
-
         // * create the legacy Extravio object
         $extravio = new Extravio();
         $extravio->ID_EXTRAVIO = $misplacement->document_number;
-        // $extravio->NUMERO_DOCUMENTO = $misplacement->document_number;
         $extravio->DESCRIPCION = $misplacement->observations;
         $extravio->FECHA_EXTRAVIO = trim($placeEvent->lost_date);
         $extravio->FECHA_REGISTRO = trim($misplacement->registration_date) . " 00:00:00.000";
@@ -86,7 +85,6 @@ class ExtravioAdapter
                 $extravio->PATERNO = $nameParts[1] ?? null;
                 $extravio->MATERNO = $nameParts[2] ?? null;
                 break;
-            
             default:
                 $extravio->NOMBRE = implode(' ', array_slice($nameParts, 0, -2));
                 $extravio->PATERNO = $nameParts[count($nameParts) - 2] ?? null;
@@ -95,31 +93,28 @@ class ExtravioAdapter
         }
 
         // * attempt to get the legacy status
-        $legacyEstadoExtravio = EstadoExtravio::where('ESTADO_EXTRAVIO', 'like', Str::upper($lostStatus->name))->first();
+        $legacyEstadoExtravio = EstadoExtravio::where('ESTADO_EXTRAVIO', 'LIKE', '%' . Str::upper($lostStatus->name) . '%')->first();
         $extravio->ID_ESTADO_EXTRAVIO = isset($legacyEstadoExtravio)
             ? $legacyEstadoExtravio->ID_ESTADO_EXTRAVIO
             : self::$DEFAULT_LEGACY_STATUS_ID;
 
+
         // * set the cancelation info
-        if(isset($misplacement->cancellation_date))
+        if($misplacement->cancellation_date)
         {
+            Log::info("Setting cancelation info for Extravio with ID: {$misplacement->id}");
             $extravio->FECHA_CANCELACION = $misplacement->cancellation_date;
             $extravio->OBSERVACIONES_CANCELACION = $misplacement->cancellation_reason_description;
             $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;
         }
 
-        // * get the documment type
-        $legacyDocumentType = TipoDocumento::where('DOCUMENTO', 'like', Str::upper($identificationType->name))->first();
-        $extravio->ID_TIPO_DOCUMENTO = isset($legacyDocumentType)
-            ? $legacyDocumentType->ID_TIPO_DOCUMENTO
-            : self::$DEFAULT_LEGACY_DOCUMENT_TYPE_ID;
-        $extravio->ESPECIFIQUE = $identificationType->name;
-
-        // * get the identification type and name
-        $legacyIdentificacion = Identificacion::where('IDENTIFICACION', 'like', Str::upper($identificationType->name))->first();
-        $extravio->ID_IDENTIFICACION = isset($legacyIdentificacion)
-            ? $legacyIdentificacion->ID_IDENTIFICACION
-            : self::$DEFAULT_LEGACY_IDENTIFICATION_ID;
+        $api_identification = $apiService->getIdentificationByType($misplacement->people_id, $identificationType->id);
+        if($api_identification)
+        {
+            $extravio->ID_IDENTIFICACION = $api_identification['id'] ?? null;
+            $extravio->NUMERO_DOCUMENTO = $api_identification['folio'] ?? null;
+            $extravio->ESPECIFIQUE = $api_identification['documentTypeName'] ?? null;
+        }
 
         // * other fields
         // $extravio->ACTIVO = 1;
