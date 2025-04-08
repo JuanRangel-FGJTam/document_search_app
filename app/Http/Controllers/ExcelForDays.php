@@ -19,6 +19,8 @@ class ExcelForDays
     public function create($data, $status_name, $municipality_name, $start_date, $end_date)
     {
         $this->data = $data;
+        $this->status_name = $status_name;
+        $this->municipality_name = $municipality_name;
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $row = 5;
@@ -32,11 +34,14 @@ class ExcelForDays
         $sheet->setCellValue(
             'A2',
             sprintf(
-                'Reporte de Solicitudes Por Día - Estado: %s%s - Periodo: %s a %s',
-                $status_name ?? 'Todos',
-                isset($municipality_name) ? ' - Municipio: ' . $municipality_name : '',
-                Carbon::parse($start_date)->format('d/m/Y'),
-                Carbon::parse($end_date)->format('d/m/Y')
+            'Reporte de Solicitudes Por Día - Estado: %s%s - Periodo: %s',
+            $status_name ?? 'Todos',
+            isset($municipality_name) ? ' - Municipio: ' . $municipality_name : '',
+            $start_date && $end_date
+                ? sprintf('%s a %s', Carbon::parse($start_date)->format('d/m/Y'), Carbon::parse($end_date)->format('d/m/Y'))
+                : ($start_date
+                ? Carbon::parse($start_date)->format('d/m/Y')
+                : ($end_date ? Carbon::parse($end_date)->format('d/m/Y') : ''))
             )
         );
 
