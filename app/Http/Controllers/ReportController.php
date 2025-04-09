@@ -82,12 +82,14 @@ class ReportController extends Controller
 
         $lost_statuses = LostStatus::whereNotIn('id', [1, 2])->get();
         $report_types = ReportType::whereNotIn('id', [5])->get();
+        $document_types = DocumentType::all();
         return Inertia::render('Reports/CreateByYear', [
             'years' => $years,
             'months' => $months,
             'lost_statuses' => $lost_statuses,
             'report_types' => $report_types,
-            'municipalities' => $municipalities
+            'municipalities' => $municipalities,
+            'document_types' => $document_types,
         ]);
     }
 
@@ -119,6 +121,8 @@ class ReportController extends Controller
                     'status' => $request->status ?? null,
                     'municipio' => null, // No se filtra por municipio en este caso
                     'date_range' => [$request->start_date, $request->end_date],
+                    'document_type' => $request->document_type,
+                    'keyword' => $request->keyword,
                 ];
                 break;
             case 3:
@@ -127,6 +131,8 @@ class ReportController extends Controller
                     'status' => $request->status ?? null,
                     'municipio' => $request->municipality,
                     'date_range' => [$request->start_date, $request->end_date],
+                    'document_type' => $request->document_type,
+                    'keyword' => $request->keyword,
                 ];
                 break;
             case 4:
@@ -150,6 +156,9 @@ class ReportController extends Controller
     private function getReport(array $filters)
     {
         $status_name = null;
+        $municipality_name = null;
+        $document_type_name = null;
+        $keyword = null;
         if ($filters['status']) {
             $lost_status = LostStatus::find($filters['status']);
             $status_name = $lost_status->name ?? null;
@@ -158,9 +167,15 @@ class ReportController extends Controller
         if (isset($filters['municipio'])) {
             $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
-        } else {
-            $municipality_name = null;
         }
+        if (isset($filters['keyword'])) {
+            $keyword = $filters['keyword'];
+        }
+        if (isset($filters['document_type'])) {
+            $document_type = DocumentType::find($filters['document_type']);
+            $document_type_name = $document_type->name ?? null;
+        }
+
         $identifications = DocumentType::pluck('name', 'id')->map(fn($item) => strtolower($item));
         $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(fn($item, $key) => [
             $key => match (strtolower($item)) {
@@ -170,9 +185,9 @@ class ReportController extends Controller
         ]);
 
         if (isset($filters['date_range']) && !empty($filters['date_range'])) {
-            $data = $this->generateExcelReport($filters, $identifications, $identifications_legacy);
+            $data = $this->generateExcelReport($filters);
             Log::info('Reporte exportado por usuario: ' . Auth::id());
-            return (new ExcelForDays())->create($data, $status_name, $municipality_name, $filters['date_range'][0], $filters['date_range'][1]);
+            return (new ExcelForDays())->create($data, $status_name, $municipality_name,$document_type_name,$keyword,$filters['date_range'][0], $filters['date_range'][1]);
         } else {
             // Obtener datos
             $report = $this->getData($filters, $identifications, $identifications_legacy);
@@ -270,7 +285,7 @@ class ReportController extends Controller
         return $report;
     }
 
-    private function generateExcelReport(array $filters, $identifications, $identifications_legacy)
+    private function generateExcelReport(array $filters)
     {
         // Validar rango de fechas
         if (empty($filters['date_range'])) {
@@ -318,6 +333,21 @@ class ReportController extends Controller
                 Carbon::parse($end)->format('Y-m-d')
             );
             $queryMisplacements->whereDate('misplacements.registration_date', $end);
+        }
+
+        if ($filters['document_type']) {
+            if ($filters['document_type'] == 5) {
+                $queryExtravios->whereIn('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', [5, 6]);
+                if (!empty($filters['keyword'])) {
+                    $queryExtravios->where('PGJ_OBJETOS.ESPECIFIQUE', 'LIKE', '%' . $filters['keyword'] . '%');
+                }
+            } else {
+                $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', $filters['document_type']);
+            }
+            $queryMisplacements->where('ld.document_type_id', $filters['document_type']);
+            if ($filters['document_type'] == 5 && !empty($filters['keyword'])) {
+                $queryMisplacements->where('ld.specification', 'LIKE', '%' . $filters['keyword'] . '%');
+            }
         }
 
         $queryExtravios->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));

@@ -16,7 +16,7 @@ class ExcelForDays
     private $status_name;
     private $municipality_name;
 
-    public function create($data, $status_name, $municipality_name, $start_date, $end_date)
+    public function create($data, $status_name, $municipality_name, $document_type_name, $keyword, $start_date, $end_date)
     {
         $this->data = $data;
         $this->status_name = $status_name;
@@ -31,18 +31,21 @@ class ExcelForDays
         $sheet->mergeCells('A3:H3');
 
         $sheet->setCellValue('A1', 'Fiscalía General de Justicia del Estado de Tamaulipas');
+        $sheet->setCellValue('A2', 'Reporte de Solicitudes Por Día');
         $sheet->setCellValue(
-            'A2',
-            sprintf(
-            'Reporte de Solicitudes Por Día - Estado: %s%s - Periodo: %s',
-            $status_name ?? 'Todos',
-            isset($municipality_name) ? ' - Municipio: ' . $municipality_name : '',
-            $start_date && $end_date
-                ? sprintf('%s a %s', Carbon::parse($start_date)->format('d/m/Y'), Carbon::parse($end_date)->format('d/m/Y'))
-                : ($start_date
-                ? Carbon::parse($start_date)->format('d/m/Y')
-                : ($end_date ? Carbon::parse($end_date)->format('d/m/Y') : ''))
-            )
+            'A3',
+            'Estado: ' . ($status_name ?? 'Todos') .
+                (isset($municipality_name) ? ' - Municipio: ' . $municipality_name : '') .
+                (isset($document_type_name) ? ' - Tipo de documento extraviado: ' . $document_type_name : '') .
+                (isset($keyword) ? ' - Palabra clave: ' . $keyword : '') .
+                ' - Periodo: ' . (
+                    $start_date && $end_date
+                    ? sprintf('%s a %s', Carbon::parse($start_date)->format('d/m/Y'), Carbon::parse($end_date)->format('d/m/Y'))
+                    : ($start_date
+                        ? Carbon::parse($start_date)->format('d/m/Y')
+                        : ($end_date ? Carbon::parse($end_date)->format('d/m/Y') : '')
+                    )
+                )
         );
 
         // Estilos del encabezado
