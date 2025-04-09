@@ -11,17 +11,20 @@ const props = defineProps({
     years: Array,
     lost_statuses: Object,
     municipalities: Array,
-    report_types: Object
+    report_types: Object,
+    document_types: Object,
 });
 const loading = ref(false);
 
 const form = useForm({
-    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
+    reportType: 2, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
     year: 2025,
     status: null,
     start_date: null,
     end_date: null,
     municipality: null,
+    document_type: null,
+    keyword: null,
 });
 
 watch(() => form.reportType, (newValue) => {
@@ -173,7 +176,27 @@ const submit = () => {
                                         </option>
                                     </select>
                                 </div>
-
+                                <div class="col-span-1" v-if="[2, 3].includes(form.reportType)">
+                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                        Tipo de Documento extraviado
+                                    </label>
+                                    <select v-model="form.document_type"
+                                        class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+                                        <option :value="null">Seleccione una opción</option>
+                                        <option v-for="document in document_types" :key="document.id"
+                                            :value="document.id">
+                                            {{ document.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-span-1" v-if="form.document_type === 5">
+                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                        Palabra Clave
+                                    </label>
+                                    <input type="text" v-model="form.keyword"
+                                        class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"
+                                        placeholder="Ingrese una palabra clave">
+                                </div>
                             </div>
                             <div class="flex items-center justify-end space-x-4">
                                 <button type="submit"
