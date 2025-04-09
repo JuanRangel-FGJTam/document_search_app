@@ -33,7 +33,9 @@ class ExtravioObjectAdapter
         $objeto->NUMERO_DOCUMENTO = $lostDocument->document_number;
         $objeto->TITULAR_DOCUMENTO = $lostDocument->document_owner;
         $objeto->ESPECIFIQUE = $lostDocument->specification;
-        $objeto->FECHA_REGISTRO = Carbon::parse($lostDocument->registration_date)->format('Y-m-d H:i:s');
+        $objeto->FECHA_REGISTRO = (function($date) {
+            return $date->format('Y-m-d H:i:s.') . substr($date->format('u'), 0, 3);
+        })(Carbon::parse($lostDocument->registration_date));
         $objeto->ACTIVO = $lostDocument->active;
 
         // * get the legacy document type
