@@ -10,6 +10,7 @@ use App\Models\Legacy\{
     Objeto,
     TipoDocumento
 };
+use Carbon\Carbon;
 
 class ExtravioObjectAdapter
 {
@@ -32,7 +33,7 @@ class ExtravioObjectAdapter
         $objeto->NUMERO_DOCUMENTO = $lostDocument->document_number;
         $objeto->TITULAR_DOCUMENTO = $lostDocument->document_owner;
         $objeto->ESPECIFIQUE = $lostDocument->specification;
-        $objeto->FECHA_REGISTRO = date('Y-m-d H:i:s', strtotime($lostDocument->registration_date));
+        $objeto->FECHA_REGISTRO = Carbon::parse($lostDocument->registration_date)->format('Y-m-d H:i:s');
         $objeto->ACTIVO = $lostDocument->active;
 
         // * get the legacy document type
