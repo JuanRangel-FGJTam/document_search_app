@@ -32,6 +32,8 @@ class ReportController extends Controller
     CONST OTHER_DOCUMENT_LEGACY= 5;
     CONST OTHER_DOCUMENT_LEGACY_2  = 6;
     CONST ALL_STATUS = 3;
+    const LAST_FOLIO_LEGACY = 163191;
+
     public function __construct(AuthApiService $authApiService)
     {
         $this->authApiService = $authApiService;
@@ -313,7 +315,7 @@ class ReportController extends Controller
             "CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120) as fecha,
             COUNT(*) as total"
         )
-            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO');
+            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')->where('PGJ_EXTRAVIOS.ID_EXTRAVIO' <= self::LAST_FOLIO_LEGACY);
 
         $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id');
