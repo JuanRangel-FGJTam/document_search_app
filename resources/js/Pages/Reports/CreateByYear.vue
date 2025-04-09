@@ -17,7 +17,7 @@ const props = defineProps({
 const loading = ref(false);
 
 const form = useForm({
-    reportType: 2, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
+    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
     year: 2025,
     status: null,
     start_date: null,
@@ -189,7 +189,7 @@ const submit = () => {
                                         </option>
                                     </select>
                                 </div>
-                                <div class="col-span-1" v-if="[2, 3].includes(form.reportType) && form.document_type === 5">
+                                <div class="col-span-1" v-if="[2, 3].includes(form.reportType) && form.document_type === 9">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Palabra Clave
                                     </label>
