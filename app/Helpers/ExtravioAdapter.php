@@ -3,20 +3,16 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use App\Models\ {
     PlaceEvent,
     Misplacement,
-    MisplacementIdentification,
     IdentificationType,
     People,
     LostStatus,
 };
 use App\Models\Legacy\{
     Extravio,
-    TipoDocumento,
     EstadoExtravio,
-    Identificacion
 };
 
 class ExtravioAdapter
@@ -65,10 +61,10 @@ class ExtravioAdapter
 
         // * create the legacy Extravio object
         $extravio = new Extravio();
-        $extravio->ID_EXTRAVIO = $misplacement->document_number;
+        $extravio->ID_EXTRAVIO = trim($misplacement->document_number);
         $extravio->DESCRIPCION = $misplacement->observations;
         $extravio->FECHA_EXTRAVIO = trim($placeEvent->lost_date);
-        $extravio->FECHA_REGISTRO = trim($misplacement->registration_date) . " 00:00:00.000";
+        $extravio->FECHA_REGISTRO = date('Y-m-d H:i:s', strtotime(trim($misplacement->registration_date)));
 
         // * deserialize the name
         $nameParts = explode(' ', trim($people->name));
@@ -102,10 +98,9 @@ class ExtravioAdapter
         // * set the cancelation info
         if($misplacement->cancellation_date)
         {
-            Log::info("Setting cancelation info for Extravio with ID: {$misplacement->id}");
-            $extravio->FECHA_CANCELACION = $misplacement->cancellation_date;
+            $extravio->FECHA_CANCELACION = date('Y-m-d H:i:s', strtotime($misplacement->cancellation_date));
             $extravio->OBSERVACIONES_CANCELACION = $misplacement->cancellation_reason_description;
-            $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;
+            $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;  
         }
 
         $api_identification = $apiService->getIdentificationByType($misplacement->people_id, $identificationType->id);

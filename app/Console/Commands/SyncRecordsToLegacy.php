@@ -61,7 +61,7 @@ class SyncRecordsToLegacy extends Command
             $yesterday = $today->modify('-1 day');
         }
 
-        Log::info("Starting the job to synchronize records for date: " . $yesterday->format('Y-m-d'));
+        Log::info("-----Starting the job to synchronize records for date: " . $yesterday->format('Y-m-d') . "-----");
 
         // * initilize the api service
         $this->apiService = new AuthApiService();
@@ -70,7 +70,7 @@ class SyncRecordsToLegacy extends Command
             ->orWhereDate('updated_at', $yesterday->format('Y-m-d'))
             ->get();
 
-        Log::info("Starting the job to synchronize the misplacements, pending: " . count($misplacements));
+        Log::info("Misplacements to sync: " . count($misplacements));
 
         // * loop through the records
         foreach ($misplacements as $misplacement)
@@ -85,27 +85,24 @@ class SyncRecordsToLegacy extends Command
             try
             {
                 // * cast the local record to the legacy record
-                $legacyExtravio = ExtravioAdapter::fromMisplacement($misplacement, $this->apiService);
-                if($legacyExtravio === null)
+                $extravioRecord = ExtravioAdapter::fromMisplacement($misplacement, $this->apiService);
+                if($extravioRecord === null)
                 {
                     throw new Exception('The legacy record could not be created');
                 }
 
                 // * save the ID for use after
-                $legacyIdExtravio = $legacyExtravio->ID_EXTRAVIO;
+                $legacyIdExtravio = $extravioRecord->ID_EXTRAVIO;
 
-                $existingRecord = Extravio::where('ID_EXTRAVIO', $legacyIdExtravio)->first();
-                if($existingRecord)
-                {
-                    Log::info("Updating existing Extravio record with ID: {$legacyIdExtravio}");
-                    $existingRecord->fill($legacyExtravio->toArray());
-                    $existingRecord->save();
-                    continue;
+                $exists = Extravio::where('ID_EXTRAVIO', $legacyIdExtravio)->first();
+                if ($exists) {
+                    Log::info("Record with ID '{$legacyIdExtravio}' already exists in legacy database. Updating...");
+                    $exists->update($extravioRecord->toArray());
+                    $extravioRecord = $exists;
+                } else {
+                    Log::info("Creating new record with ID '{$legacyIdExtravio}' in legacy database.");
+                    $extravioRecord->save();
                 }
-
-                $legacyExtravio->save();
-
-                print("Continue create a new Extravio record with id '{$misplacement->id}'\n");
 
                 // * get the local missing documents
                 $lostDocuments = LostDocument::where('misplacement_id', $misplacement->id)->get();
@@ -129,7 +126,7 @@ class SyncRecordsToLegacy extends Command
                             $domicilioCP->CPmunicipio = $people_address['municipalityName'];
                             $domicilioCP->CPcolonia = $people_address['colonyName'];
                             $domicilioCP->CPcalle = $people_address['street'];
-                            $domicilioCP->FECHA_REGISTRO = $misplacement->registration_date . " 00:00:00.000";
+                            $domicilioCP->FECHA_REGISTRO = date('Y-m-d H:i:s', strtotime($misplacement->registration_date));
                             $domicilioCP->save();
                         }
                     } else {
@@ -149,7 +146,7 @@ class SyncRecordsToLegacy extends Command
 
                     if(isset($identification) && !empty($identification))
                     {
-                        $legacyExtravio->NUMERO_DOCUMENTO = $identification["folio"] ?? "" ;
+                        $extravioRecord->NUMERO_DOCUMENTO = $identification["folio"] ?? "" ;
                     }
                 }
                 catch (\Throwable $th)
@@ -160,19 +157,20 @@ class SyncRecordsToLegacy extends Command
                     ]);
                 }
 
-                DB::connection('sqlsrv')->commit();
-                Log::info("Misplacement record with id '{id}' synced to legacy", [
-                    "id" => $misplacement->id,
-                    'legacy_id' => $legacyIdExtravio
-                ]);
-
-                $legacyExtravio->save();
+                $extravioRecord->save();
 
                 // * save the sync record
                 $syncedMisplacement->legacy_id = $legacyIdExtravio;
                 $syncedMisplacement->failed = false;
                 $syncedMisplacement->message = null;
                 $syncedMisplacement->save();
+
+                DB::connection('sqlsrv')->commit();
+                Log::info("Misplacement record with id '{id}' synced to legacy", [
+                    "id" => $misplacement->id,
+                    'legacy_id' => $legacyIdExtravio
+                ]);
+                Log::info('-------------------');
 
                 print("Misplacement record with id '{$misplacement->id}' synced to legacy\n");
             }
@@ -190,14 +188,10 @@ class SyncRecordsToLegacy extends Command
                 $syncedMisplacement->save();
                 continue;
             }
-            finally
-            {
-                Log::info("---------------------------------------------");
-            }
         }
 
         print("Job finished");
-        Log::info("Job finished");
+        Log::info("-----Job finished-----");
     }
 
     /**
@@ -244,7 +238,7 @@ class SyncRecordsToLegacy extends Command
     {
         // * save event description (Hechos)
         $hechos = Hechos::where("ID_EXTRAVIO", $legacyIdExtravio)->first();
-        if(isset($hechos))
+        if($hechos)
         {
             if($hechos->DESCRIPCION != Trim($placeEvent->description))
             {
@@ -288,7 +282,7 @@ class SyncRecordsToLegacy extends Command
                 "CPmunicipio" => $municipalityName,
                 "CPcolonia" => $colonyName,
                 "CPcalle" => Trim($placeEvent->street),
-                "FECHA_REGISTRO" => $misplacement->registration_date
+                "FECHA_REGISTRO" => date('Y-m-d H:i:s', strtotime($misplacement->registration_date))
             ]);
         }
     }
