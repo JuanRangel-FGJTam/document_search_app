@@ -64,7 +64,8 @@ class ExtravioAdapter
         $extravio = new Extravio();
         $extravio->ID_EXTRAVIO = trim($misplacement->document_number);
         $extravio->DESCRIPCION = $misplacement->observations;
-        $extravio->FECHA_EXTRAVIO = trim($placeEvent->lost_date);
+        // Updated to convert lost_date to full datetime with milliseconds
+        $extravio->FECHA_EXTRAVIO = Carbon::parse(trim($placeEvent->lost_date))->format('Y-m-d');
         $extravio->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v');
 
         // * deserialize the name
