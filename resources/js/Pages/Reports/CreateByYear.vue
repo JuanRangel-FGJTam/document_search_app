@@ -189,7 +189,7 @@ const submit = () => {
                                         </option>
                                     </select>
                                 </div>
-                                <div class="col-span-1" v-if="form.document_type === 5">
+                                <div class="col-span-1" v-if="[2, 3].includes(form.reportType) && form.document_type === 5">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Palabra Clave
                                     </label>
