@@ -10,6 +10,7 @@ use App\Models\Legacy\{
     Objeto,
     TipoDocumento
 };
+use Carbon\Carbon;
 
 class ExtravioObjectAdapter
 {
@@ -31,18 +32,19 @@ class ExtravioObjectAdapter
         // $objeto->ID_EXTRAVIO = $extravio->ID_EXTRAVIO;
         $objeto->NUMERO_DOCUMENTO = $lostDocument->document_number;
         $objeto->TITULAR_DOCUMENTO = $lostDocument->document_owner;
-        $objeto->DESCRIPCION = $lostDocument->specification;
-        $objeto->FECHA_REGISTRO = trim($lostDocument->registration_date) . " 00:00:00.000";
+        $objeto->ESPECIFIQUE = $lostDocument->specification;
+        $objeto->FECHA_REGISTRO = Carbon::parse($lostDocument->registration_date)->format('Y-m-d H:i:s.v');
         $objeto->ACTIVO = $lostDocument->active;
-
-
+        
         // * get the legacy document type
-        $legacyTipoDocumento = TipoDocumento::where('DOCUMENTO', 'like', $documentType->name)->first();
+        $legacyTipoDocumento = TipoDocumento::where('DOCUMENTO', 'LIKE', '%' . $documentType->name . '%')->first();
+
         if ($legacyTipoDocumento != null) {
             $objeto->ID_TIPO_DOCUMENTO = $legacyTipoDocumento->ID_TIPO_DOCUMENTO;
+            $objeto->DESCRIPCION = $legacyTipoDocumento->DOCUMENTO;
         } else {
             $objeto->ID_TIPO_DOCUMENTO = self::$DEFAULT_LEGACY_DOCUMENT_TYPE_ID;
-            $objeto->ESPECIFIQUE = $documentType->name ?? "null";
+            $objeto->DESCRIPCION = $lostDocument->specification;
         }
 
         // * other fields

@@ -12,12 +12,11 @@ class Extravio extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
-
     protected $connection = 'sqlsrv';
     protected $table = 'PGJ_EXTRAVIOS';
     protected $primaryKey = 'ID_EXTRAVIO';
-
+    public $timestamps = false;
+    
     protected $fillable = [
         "ID_EXTRAVIO",
         "ID_ESTADO_EXTRAVIO",
