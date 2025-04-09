@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Console\Command;
+use Carbon\Carbon;
 use App\Models\
 {
     Misplacement,
@@ -142,7 +143,7 @@ class SyncRecordsToLegacy extends Command
                             $domicilioCP->CPmunicipio = $people_address['municipalityName'];
                             $domicilioCP->CPcolonia = $people_address['colonyName'];
                             $domicilioCP->CPcalle = $people_address['street'];
-                            $domicilioCP->FECHA_REGISTRO = date('Y-m-d H:i:s', strtotime($misplacement->registration_date));
+                            $domicilioCP->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v');
                             $domicilioCP->save();
                         }
                     } else {
@@ -278,7 +279,7 @@ class SyncRecordsToLegacy extends Command
                 "ID_COLONIA" => 0,
                 "ID_CALLE" => 0,
                 "DESCRIPCION" => Trim($placeEvent->description),
-                "FECHA" => $misplacement->registration_date
+                "FECHA" => Carbon::parse($misplacement->registration_date)->format('Y-m-d')
             ]);
         }
 
@@ -305,7 +306,7 @@ class SyncRecordsToLegacy extends Command
                 "CPmunicipio" => $municipalityName,
                 "CPcolonia" => $colonyName,
                 "CPcalle" => Trim($placeEvent->street),
-                "FECHA_REGISTRO" => date('Y-m-d H:i:s', strtotime($misplacement->registration_date))
+                "FECHA_REGISTRO" => Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v')
             ]);
         }
     }

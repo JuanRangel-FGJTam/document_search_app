@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 use App\Models\ {
     PlaceEvent,
     Misplacement,
@@ -64,7 +65,7 @@ class ExtravioAdapter
         $extravio->ID_EXTRAVIO = trim($misplacement->document_number);
         $extravio->DESCRIPCION = $misplacement->observations;
         $extravio->FECHA_EXTRAVIO = trim($placeEvent->lost_date);
-        $extravio->FECHA_REGISTRO = date('Y-m-d H:i:s', strtotime(trim($misplacement->registration_date)));
+        $extravio->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v');
 
         // * deserialize the name
         $nameParts = explode(' ', trim($people->name));
@@ -98,7 +99,7 @@ class ExtravioAdapter
         // * set the cancelation info
         if($misplacement->cancellation_date)
         {
-            $extravio->FECHA_CANCELACION = date('Y-m-d H:i:s', strtotime($misplacement->cancellation_date));
+            $extravio->FECHA_CANCELACION = Carbon::parse($misplacement->cancellation_date)->format('Y-m-d H:i:s.v');
             $extravio->OBSERVACIONES_CANCELACION = $misplacement->cancellation_reason_description;
             $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;  
         }
