@@ -28,7 +28,10 @@ class ReportController extends Controller
 {
 
     protected $authApiService;
-
+    CONST OTHER_DOCUMENT = 9;
+    CONST OTHER_DOCUMENT_LEGACY= 5;
+    CONST OTHER_DOCUMENT_LEGACY_2  = 6;
+    CONST ALL_STATUS = 3;
     public function __construct(AuthApiService $authApiService)
     {
         $this->authApiService = $authApiService;
@@ -336,8 +339,8 @@ class ReportController extends Controller
         }
 
         if ($filters['document_type']) {
-            if ($filters['document_type'] == 5) {
-                $queryExtravios->whereIn('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', [5, 6]);
+            if ($filters['document_type'] == SELF::OTHER_DOCUMENT) {
+                $queryExtravios->whereIn('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', [SELF::OTHER_DOCUMENT_LEGACY, SELF::OTHER_DOCUMENT_LEGACY_2]);
                 if (!empty($filters['keyword'])) {
                     $queryExtravios->where('PGJ_OBJETOS.ESPECIFIQUE', 'LIKE', '%' . $filters['keyword'] . '%');
                 }
@@ -345,7 +348,7 @@ class ReportController extends Controller
                 $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', $filters['document_type']);
             }
             $queryMisplacements->where('ld.document_type_id', $filters['document_type']);
-            if ($filters['document_type'] == 5 && !empty($filters['keyword'])) {
+            if ($filters['document_type'] == SELF::OTHER_DOCUMENT && !empty($filters['keyword'])) {
                 $queryMisplacements->where('ld.specification', 'LIKE', '%' . $filters['keyword'] . '%');
             }
         }
@@ -368,7 +371,7 @@ class ReportController extends Controller
 
         if (!empty($filters['status'])) {
             if ($filters['status'] == 3) {
-                $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', '<=', 3);
+                $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', '<=', SELF::ALL_STATUS);
             } else {
                 $queryExtravios->where('PGJ_EXTRAVIOS.ID_ESTADO_EXTRAVIO', $filters['status']);
             }
