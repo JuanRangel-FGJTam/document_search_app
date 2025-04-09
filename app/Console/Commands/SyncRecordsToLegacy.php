@@ -54,6 +54,7 @@ class SyncRecordsToLegacy extends Command
     {
         $today = new DateTime();
         $date = $this->argument('date');
+        $tableName = 'PGJ_WR_EXTRAVIOS.dbo.PGJ_EXTRAVIOS';
         
         if($date) {
             $yesterday = new DateTime($date);
@@ -62,6 +63,14 @@ class SyncRecordsToLegacy extends Command
         }
 
         Log::info("-----Starting the job to synchronize records for date: " . $yesterday->format('Y-m-d') . "-----");
+
+       // Enable IDENTITY_INSERT only on production
+        if (config('app.env') === 'production') {
+            Log::info("Enabling IDENTITY_INSERT for {$tableName}");
+
+            DB::connection('sqlsrv')
+                ->statement("SET IDENTITY_INSERT {$tableName} ON");
+        }
 
         // * initilize the api service
         $this->apiService = new AuthApiService();
@@ -101,18 +110,7 @@ class SyncRecordsToLegacy extends Command
                     $extravioRecord = $exists;
                 } else {
                     Log::info("Creating new record with ID '{$legacyIdExtravio}' in legacy database.");
-                    // Enable IDENTITY_INSERT only on production with dbo schema
-                    if (config('app.env') === 'production') {
-                        Log::info("-Enabling IDENTITY_INSERT for dbo.PGJ_EXTRAVIOS");
-                        DB::connection('sqlsrv')->statement("SET IDENTITY_INSERT PGJ_WR_EXTRAVIOS.dbo.PGJ_EXTRAVIOS ON");
-                    }
-
                     $extravioRecord->save();
-
-                    if (config('app.env') === 'production') {
-                        DB::connection('sqlsrv')->statement("SET IDENTITY_INSERT PGJ_WR_EXTRAVIOS.dbo.PGJ_EXTRAVIOS OFF");
-                        Log::info("-Disabled IDENTITY_INSERT for dbo.PGJ_EXTRAVIOS");
-                    }
                 }
 
                 // * get the local missing documents
@@ -198,6 +196,13 @@ class SyncRecordsToLegacy extends Command
                 $syncedMisplacement->message = $th->getMessage();
                 $syncedMisplacement->save();
                 continue;
+            }  finally {
+                // Always disable IDENTITY_INSERT, even if an error occurs
+                if (config('app.env') === 'production') {
+                    DB::connection('sqlsrv')
+                        ->statement("SET IDENTITY_INSERT {$tableName} OFF");
+                    Log::info("Disabled IDENTITY_INSERT for {$tableName}");
+                }
             }
         }
 
