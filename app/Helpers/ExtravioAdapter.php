@@ -67,6 +67,8 @@ class ExtravioAdapter
         // Updated to convert lost_date to full datetime with milliseconds
         $extravio->FECHA_EXTRAVIO = Carbon::parse(trim($placeEvent->lost_date))->format('Y-m-d');
         $extravio->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v');
+        $extravio->FECHA_CANCELACION = null;
+        $extravio->ACTIVO = 1;
 
         // * deserialize the name
         $nameParts = explode(' ', trim($people->name));

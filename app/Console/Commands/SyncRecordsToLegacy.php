@@ -67,7 +67,7 @@ class SyncRecordsToLegacy extends Command
 
        // Enable IDENTITY_INSERT only on production
         if (config('app.env') === 'production') {
-            Log::info("Enabling IDENTITY_INSERT for {$tableName}");
+            Log::debug("Enabling IDENTITY_INSERT for {$tableName}");
 
             DB::connection('sqlsrv')
                 ->statement("SET IDENTITY_INSERT {$tableName} ON");
@@ -106,19 +106,21 @@ class SyncRecordsToLegacy extends Command
 
                 $exists = Extravio::where('ID_EXTRAVIO', $legacyIdExtravio)->first();
                 if ($exists) {
-                    Log::info("Record with ID '{$legacyIdExtravio}' already exists in legacy database. Updating...");
+                    Log::debug("Record with ID '{$legacyIdExtravio}' already exists in legacy database. Updating...");
                     $exists->update($extravioRecord->toArray());
                     $extravioRecord = $exists;
                 } else {
-                    Log::info("Creating new record with ID '{$legacyIdExtravio}' in legacy database.");
+                    Log::debug("Creating new record with ID '{$legacyIdExtravio}' in legacy database.");
                     // Remove the ID_EXTRAVIO from the record to avoid conflicts and let the database generate a new one
                     if (config('app.env') === 'production') {
                         unset($extravioRecord->ID_EXTRAVIO);
                     }
 
+                    Log::debug($extravioRecord->toArray());
+
                     $extravioRecord->save();
                     $legacyIdExtravio = $extravioRecord->ID_EXTRAVIO;
-                    Log::info("New ID_EXTRAVIO generate by MSSQL: " . $legacyIdExtravio);
+                    Log::debug("New ID_EXTRAVIO generate by MSSQL: " . $legacyIdExtravio);
                 }
 
                 // * get the local missing documents
@@ -147,10 +149,10 @@ class SyncRecordsToLegacy extends Command
                             $domicilioCP->save();
                         }
                     } else {
-                        Log::info("People API data not found for people_id: " . $misplacement->people_id);
+                        Log::debug("People API data not found for people_id: " . $misplacement->people_id);
                     }
                 } else {
-                    Log::info("DomicilioCP record already exists for Extravio ID: " . $legacyIdExtravio);
+                    Log::debug("DomicilioCP record already exists for Extravio ID: " . $legacyIdExtravio);
                 }
 
                 // * get the identification from the API
@@ -209,7 +211,7 @@ class SyncRecordsToLegacy extends Command
                 if (config('app.env') === 'production') {
                     DB::connection('sqlsrv')
                         ->statement("SET IDENTITY_INSERT {$tableName} OFF");
-                    Log::info("Disabled IDENTITY_INSERT for {$tableName}");
+                    Log::debug("Disabled IDENTITY_INSERT for {$tableName}");
                 }
             }
         }
