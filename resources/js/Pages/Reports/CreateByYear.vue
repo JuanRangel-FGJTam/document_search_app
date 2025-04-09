@@ -17,7 +17,7 @@ const props = defineProps({
 const loading = ref(false);
 
 const form = useForm({
-    reportType: 2, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
+    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
     year: 2025,
     status: null,
     start_date: null,
