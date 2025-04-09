@@ -66,7 +66,7 @@ class ExtravioAdapter
         $extravio->DESCRIPCION = $misplacement->observations;
         // Updated to convert lost_date to full datetime with milliseconds
         $extravio->FECHA_EXTRAVIO = Carbon::parse(trim($placeEvent->lost_date))->format('Y-m-d');
-        $extravio->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v');
+        $extravio->FECHA_REGISTRO = $misplacement->registration_date.'T00:00:00.000';
         $extravio->FECHA_CANCELACION = null;
         $extravio->ACTIVO = 1;
 
@@ -102,9 +102,9 @@ class ExtravioAdapter
         // * set the cancelation info
         if($misplacement->cancellation_date)
         {
-            $extravio->FECHA_CANCELACION = Carbon::parse($misplacement->cancellation_date)->format('Y-m-d H:i:s.v');
+            $extravio->FECHA_CANCELACION = $misplacement->cancellation_date.'T00:00:00.000';
             $extravio->OBSERVACIONES_CANCELACION = $misplacement->cancellation_reason_description;
-            $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;  
+            $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;
         }
 
         $api_identification = $apiService->getIdentificationByType($misplacement->people_id, $identificationType->id);
@@ -123,7 +123,7 @@ class ExtravioAdapter
 
         // $extravio->IDENTIFICACION = null; // BLOB
         // $extravio->IDENTIFICACION_DESC = null; // NOMBRE DE ARCHIVO
-        
+
         // $extravio->idUsuario = 1;
         // $extravio->ExtravioPlaca = null;
 
