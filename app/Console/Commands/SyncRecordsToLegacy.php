@@ -110,6 +110,11 @@ class SyncRecordsToLegacy extends Command
                     $extravioRecord = $exists;
                 } else {
                     Log::info("Creating new record with ID '{$legacyIdExtravio}' in legacy database.");
+                    // Remove the ID_EXTRAVIO from the record to avoid conflicts and let the database generate a new one
+                    if (config('app.env') === 'production') {
+                        unset($extravioRecord->ID_EXTRAVIO);
+                    }
+
                     $extravioRecord->save();
                 }
 
