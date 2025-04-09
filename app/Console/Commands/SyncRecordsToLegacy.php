@@ -116,6 +116,8 @@ class SyncRecordsToLegacy extends Command
                     }
 
                     $extravioRecord->save();
+                    $legacyIdExtravio = $extravioRecord->ID_EXTRAVIO;
+                    Log::info("New ID_EXTRAVIO generate by MSSQL: " . $legacyIdExtravio);
                 }
 
                 // * get the local missing documents
