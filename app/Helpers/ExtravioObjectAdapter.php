@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Helpers;
+use Illuminate\Support\Facades\Log;
 
 use App\Models\ {
     DocumentType,
@@ -34,9 +35,11 @@ class ExtravioObjectAdapter
         $objeto->TITULAR_DOCUMENTO = $lostDocument->document_owner;
         $objeto->ESPECIFIQUE = $lostDocument->specification;
         $objeto->FECHA_REGISTRO = (function($date) {
-            return $date->format('Y-m-d H:i:s.') . substr($date->format('u'), 0, 3);
+            return $date->format('Y-m-d H:i:s.v');
         })(Carbon::parse($lostDocument->registration_date));
         $objeto->ACTIVO = $lostDocument->active;
+
+        Log::info('Parse date: ' . $objeto->FECHA_REGISTRO);
 
         // * get the legacy document type
         $legacyTipoDocumento = TipoDocumento::where('DOCUMENTO', 'LIKE', '%' . $documentType->name . '%')->first();
