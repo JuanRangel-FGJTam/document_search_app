@@ -2,7 +2,6 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Facades\Log;
 use App\Models\ {
     DocumentType,
     LostDocument

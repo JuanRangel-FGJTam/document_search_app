@@ -101,7 +101,18 @@ class SyncRecordsToLegacy extends Command
                     $extravioRecord = $exists;
                 } else {
                     Log::info("Creating new record with ID '{$legacyIdExtravio}' in legacy database.");
+                    // Enable IDENTITY_INSERT only on production
+                    if (config('app.env') === 'production') {
+                        Log::info("-Enabling IDENTITY_INSERT for PGJ_EXTRAVIOS");
+                        DB::connection('sqlsrv')->statement("SET IDENTITY_INSERT PGJ_EXTRAVIOS ON");
+                    }
+
                     $extravioRecord->save();
+
+                    if (config('app.env') === 'production') {
+                        DB::connection('sqlsrv')->statement("SET IDENTITY_INSERT PGJ_EXTRAVIOS OFF");
+                        Log::info("-Disabled IDENTITY_INSERT for PGJ_EXTRAVIOS");
+                    }
                 }
 
                 // * get the local missing documents
