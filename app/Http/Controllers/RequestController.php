@@ -291,6 +291,8 @@ class RequestController extends Controller
                     'document_type' => [
                         'name' => $doc->tipoDocumento->DOCUMENTO
                     ],
+                    'specification'=> $doc->ESPECIFIQUE,
+                    'is_legacy'=> true,
                     'document_number' => $doc->NUMERO_DOCUMENTO,
                     'document_owner' => $doc->TITULAR_DOCUMENTO
                 ];
