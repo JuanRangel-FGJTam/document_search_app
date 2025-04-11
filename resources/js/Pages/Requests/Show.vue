@@ -223,6 +223,10 @@ function getIdentificationYear(validDate) {
                             <p class="font-semibold">Documento</p>
                             <p>{{ doc.document_type.name }}</p>
                         </div>
+                        <div v-if="doc.specification">
+                            <p class="font-semibold">Especificación</p>
+                            <p>{{ doc.specification }}</p>
+                        </div>
                         <div>
                             <p class="font-semibold">Folio</p>
                             <p>{{ doc.document_number ?? 'No proporcionado' }}</p>
