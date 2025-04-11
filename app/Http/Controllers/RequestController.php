@@ -238,18 +238,34 @@ class RequestController extends Controller
             $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
             $extravio->load('estadoExtravio', 'usuario', 'identificacion.cat_identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
             $person = null;
+            $fullname = null;
+            $email = null;
             if ($extravio->usuario && $extravio->usuario->idPersonApi) {
                 $person = $this->authApiService->getPersonById($extravio->usuario->idPersonApi);
+                $fullname = $person['fullName'];
+                $email = $person['email'];
             }
             if (!$person) {
+                $fullname = trim(($extravio->NOMBRE ?? '') . ' ' . ($extravio->PATERNO ?? '') . ' ' . ($extravio->MATERNO ?? ''));
+                $email = $extravio->CORREO_ELECTRONICO ?? null;
                 $person = [
-                    'fullName' => $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO,
-                    'curp' => $extravio->identificacion->curprfc,
+                    'fullName' => $fullname,
+                    'curp' => $extravio->identificacion->curprfc ?? null,
                     'genderName' => $extravio->identificacion->ID_SEXO === "1" ? "Masculino" : "Femenino",
                     'birthdateFormated' => $extravio->identificacion->FECHA_NACIMIENTO,
                     'age' => \Carbon\Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO)->age,
                     'email' => $extravio->identificacion->CORREO_ELECTRONICO
                 ];
+                /*
+                $person = [
+                    'fullName' => 'John Doe',
+                    'curp' => 'DOEJ800101HDFNNL01',
+                    'genderName' => 'Masculino',
+                    'birthdateFormated' => '1980-01-01',
+                    'age' => 43,
+                    'email' => 'johndoe@example.com'
+                ];
+                */
             }
             $documentsData = Objeto::where('ID_EXTRAVIO', $misplacement_id)->get();
             $documentsData->load('tipoDocumento');
@@ -262,7 +278,8 @@ class RequestController extends Controller
                     'name' => $extravio->estadoExtravio->ESTADO_EXTRAVIO,
                 ],
                 'people' => [
-                    'name' => trim(($extravio->NOMBRE ?? '') . ' ' . ($extravio->PATERNO ?? '') . ' ' . ($extravio->MATERNO ?? '')),
+                    'name' => $fullname,
+                    'email' => $email,
                 ],
                 'registration_date' => $extravio->FECHA_EXTRAVIO ?? null,
                 'cancellation_date' => $extravio->FECHA_CANCELACION ?? null,
@@ -306,8 +323,8 @@ class RequestController extends Controller
                     'name' => $extravio->hechosCP->CPcolonia ?? null
                 ],
                 'street' => $extravio->hechosCP->CPcalle ?? null,
-                'lost_date' => $extravio->hechos->FECHA ?? null,
-                'description' => $extravio->hechos->DESCRIPCION ?? null
+                'lost_date' => $extravio->hechos->first()?->FECHA ?? null,
+                'description' => $extravio->hechos->first()?->DESCRIPCION ?? null,
             ];
         }
 
