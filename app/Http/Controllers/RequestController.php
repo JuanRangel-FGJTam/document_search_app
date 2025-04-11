@@ -256,6 +256,16 @@ class RequestController extends Controller
                     'age' => \Carbon\Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO)->age,
                     'email' => $extravio->identificacion->CORREO_ELECTRONICO
                 ];
+                /*
+                $person = [
+                    'fullName' => 'John Doe',
+                    'curp' => 'DOEJ800101HDFNNL01',
+                    'genderName' => 'Masculino',
+                    'birthdateFormated' => '1980-01-01',
+                    'age' => 43,
+                    'email' => 'johndoe@example.com'
+                ];
+                */
             }
             $documentsData = Objeto::where('ID_EXTRAVIO', $misplacement_id)->get();
             $documentsData->load('tipoDocumento');
@@ -311,8 +321,8 @@ class RequestController extends Controller
                     'name' => $extravio->hechosCP->CPcolonia ?? null
                 ],
                 'street' => $extravio->hechosCP->CPcalle ?? null,
-                'lost_date' => $extravio->hechos->FECHA ?? null,
-                'description' => $extravio->hechos->DESCRIPCION ?? null
+                'lost_date' => $extravio->hechos->first()?->FECHA ?? null,
+                'description' => $extravio->hechos->first()?->DESCRIPCION ?? null,
             ];
         }
 
