@@ -103,7 +103,10 @@ class RequestController extends Controller
         // Si se está buscando texto, realizar la búsqueda en Meilisearch
         if ($search !== null) {
             if ($search > SELF::LAST_FOLIO_LEGACY) {
-                $totalMisplacements = Misplacement::search($search)->get();
+                $totalMisplacements = Misplacement::where('document_number', $search)->get();
+                if ($totalMisplacements->isEmpty()) {
+                    $totalMisplacements = Misplacement::search($search)->get();
+                }
                 $totalMisplacements->load('people', 'lostStatus');
             } else {
                 try {
@@ -308,8 +311,8 @@ class RequestController extends Controller
                     'document_type' => [
                         'name' => $doc->tipoDocumento->DOCUMENTO
                     ],
-                    'specification'=> $doc->ESPECIFIQUE,
-                    'is_legacy'=> true,
+                    'specification' => $doc->ESPECIFIQUE,
+                    'is_legacy' => true,
                     'document_number' => $doc->NUMERO_DOCUMENTO,
                     'document_owner' => $doc->TITULAR_DOCUMENTO
                 ];
