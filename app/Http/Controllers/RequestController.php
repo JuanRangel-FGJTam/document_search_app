@@ -562,6 +562,8 @@ class RequestController extends Controller
         } else {
             $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
             if (!$procedure) {
+                // TODO
+                // Volver a generar el PDF
                 return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de cancelar esta constancia para la generación de una nueva.');
             }
             $url = $procedure['files'][0]['fileUrl'];
@@ -575,7 +577,6 @@ class RequestController extends Controller
                 return redirect()->back()->with('error', 'Error al descargar el archivo. Intente nuevamente.');
             }
         }
-
 
         // Construir la ruta completa del archivo en el disco 'public'
         $path = storage_path($fileURL);

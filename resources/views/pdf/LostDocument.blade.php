@@ -182,7 +182,7 @@
                 <table class="info-table" style="width: 100%; border-spacing: 8px;">
                     <tr>
                         <th style="width: 100px">Documento</th>
-                        <td>{{ $identification['documentTypeName'] }}</td>
+                        <td>{{ $identification['documentTypeName'] ?? '' }}</td>
                     </tr>
                     <tr>
                         <th>Folio</th>
