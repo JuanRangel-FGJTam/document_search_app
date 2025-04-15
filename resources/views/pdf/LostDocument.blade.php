@@ -182,19 +182,19 @@
                 <table class="info-table" style="width: 100%; border-spacing: 8px;">
                     <tr>
                         <th style="width: 100px">Documento</th>
-                        <td>{{ $identification['documentTypeName'] }}</td>
+                        <td>{{ $identification['documentTypeName'] ?? '' }}</td>
                     </tr>
                     <tr>
                         <th>Folio</th>
-                        <td>{{ isset($identification['folio']) ? $identification['folio'] : '#####' }}</td>
+                        <td>{{ isset($identification['folio']) ? $identification['folio'] : '' }}</td>
                     </tr>
                     <tr>
                         <th>Fecha de expiración</th>
                         <td>
                             @if (isset($identification['documentTypeId']) && $identification['documentTypeId'] == 1)
-                                {{ isset($identification['valid']) ? \Carbon\Carbon::parse($identification['valid'])->format('Y') : '#####' }}
+                                {{ isset($identification['valid']) ? \Carbon\Carbon::parse($identification['valid'])->format('Y') : '' }}
                             @else
-                                {{ isset($identification['valid']) ? $identification['valid'] : '#####' }}
+                                {{ isset($identification['valid']) ? $identification['valid'] : '' }}
                             @endif
                         </td>
                     </tr>
