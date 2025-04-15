@@ -12,7 +12,7 @@ class MisplacementLegacyService
     {
         $authApiService = new AuthApiService();
         $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
-        $extravio->load('identificacion.cat_identificacion', 'identificacion.cat_municipio', 'identificacion.cat_localidad', 'hechos', 'hechosCP', 'domicilioCP');
+        $extravio->load('identificacion', 'identificacion.cat_identificacion', 'identificacion.cat_municipio', 'identificacion.cat_localidad', 'hechos', 'hechosCP', 'domicilioCP');
 
         $person = null;
         if ($extravio->usuario && $extravio->usuario->idPersonApi) {
@@ -21,6 +21,8 @@ class MisplacementLegacyService
 
         if (!$person) {
             $name = '';
+            $documentName = '';
+            $folio = '';
 
             if ($extravio->NOMBRE && $extravio->PATERNO && $extravio->MATERNO) {
                 $name = $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO;
@@ -29,6 +31,16 @@ class MisplacementLegacyService
             if (empty($name) && $extravio->identificacion) {
                 $name = $extravio->identificacion->NOMBRE . ' ' . $extravio->identificacion->PATERNO . ' ' . $extravio->identificacion->MATERNO;
             }
+
+            if ($extravio->identificacion) {
+                if ($extravio->identificacion->cat_identificacion) {
+                    $documentName = $extravio->identificacion->cat_identificacion->IDENTIFICACION;
+                }
+
+                $folio = $extravio->identificacion->NUMERO_IDENTIFICACION;
+                $documentTypeId = $extravio->identificacion->ID_TIPO_IDENTIFICACION;
+            }
+
 
             $person = [
                 'fullName' => $name,
@@ -43,9 +55,9 @@ class MisplacementLegacyService
                     'street' => $extravio->domicilioCP->CPcalle,
                 ],
                 'identificacion'=> [
-                    'documentTypeName'=> $extravio->identificacion->cat_identificacion->IDENTIFICACION,
-                    'folio'=>$extravio->identificacion->NUMERO_IDENTIFICACION,
-                    'documentTypeId'=> $extravio->identificacion->ID_TIPO_IDENTIFICACION,
+                    'documentTypeName'=> $documentName,
+                    'folio'=> $folio,
+                    'documentTypeId'=> $documentTypeId,
                     'valid'=> null,
                 ]
             ];
