@@ -388,6 +388,11 @@ class RequestController extends Controller
                 $path = 'public/documents/' . $filename;
                 Storage::put($path, $response->body());
                 $fileURL =  'app/public/documents/' . $filename;
+            }else{
+                $fileURL = $this->regenerateMisplacementPDF($misplacement, $misplacement_id);
+                $uuid = (string) $fileURL['document_name'];
+                $filename = "{$uuid}.pdf";
+                $fileURL = 'app/public/tmp/' . $filename;
             }
         }
 
