@@ -559,9 +559,11 @@ class RequestController extends Controller
         $misplacement = Misplacement::find($misplacement_id);
         $procedure = null;
         $fileURL = null;
+        $path = null;
 
         if (!$misplacement) {
             $fileURL = $this->regenerateLegacyPDF($misplacement_id);
+            $path = storage_path($fileURL);
         } else {
             $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
             if (!$procedure) {
@@ -574,20 +576,18 @@ class RequestController extends Controller
                 $path = 'public/documents/' . $filename;
                 Storage::put($path, $response->body());
                 $fileURL =  'app/public/documents/' . $filename;
+                $path = storage_path($fileURL);
+                if (!file_exists($path)) {
+                    abort(404, 'File not found.');
+                }
             } else {
                 $fileURL = $this->regenerateMisplacementPDF($misplacement, $misplacement_id);
                 $uuid = (string) $fileURL['document_name'];
                 $filename = "{$uuid}.pdf";
-                $fileURL = storage_path('app/public/tmp/' . $filename);
+                $path = storage_path('app/public/tmp/' . $filename);
             }
         }
-
-        $path = storage_path($fileURL);
-        if (!file_exists($path)) {
-            abort(404, 'File not found.');
-        }
-
-        return response()->download($fileURL);
+        return response()->download($path);
     }
 
 
@@ -601,6 +601,16 @@ class RequestController extends Controller
         $misplacement->load('misplacementIdentifications.identificationType', 'placeEvent');
         $person = $this->authApiService->getPersonById($misplacement->people_id);
         $placeData = $this->placeEventService->getByMisplacementId($misplacement_id);
+        $zipCodes = $this->authApiService->getZipCode($placeData->zipcode);
+
+        if (isset($zipCodes['municipalities'])) {
+            $municipality = collect($zipCodes['municipalities'])->firstWhere('default', 1);
+        }
+        if (isset($zipCodes['colonies'])) {
+            $colony = collect($zipCodes['colonies'])->firstWhere('id', $placeData->colony_api_id);
+        }
+        $placeData['municipality_name'] = $municipality['name'];
+        $placeData['colony_name'] = $colony['name'];
         $lostDocuments = $this->lostDocumentService->getByMisplacementId($misplacement_id);
         $lostDocuments->load('documentType');
 
