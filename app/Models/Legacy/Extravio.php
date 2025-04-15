@@ -4,9 +4,6 @@ namespace App\Models\Legacy;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-
 
 class Extravio extends Model
 {
@@ -44,14 +41,13 @@ class Extravio extends Model
     ];
 
     public function estadoExtravio(){
-
         return $this->belongsTo(EstadoExtravio::class,'ID_ESTADO_EXTRAVIO','ID_ESTADO_EXTRAVIO');
     }
 
-    public function identificacion(){
-        return $this->belongsTo(Identificacion::class, 'ID_IDENTIFICACION','ID_IDENTIFICACION');
+    public function identificacion()
+    {
+        return $this->belongsTo(Identificacion::class, 'ID_IDENTIFICACION', 'ID_IDENTIFICACION');
     }
-
 
     public function tipoDocumento(){
         return $this->belongsTo(TipoDocumento::class, 'ID_TIPO_DOCUMENTO','ID_TIPO_DOCUMENTO');
@@ -72,13 +68,13 @@ class Extravio extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function hechos(): HasMany
+    public function hechos()
     {
-        return $this->hasMany(Hechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
+        return $this->hasOne(Hechos::class, 'ID_EXTRAVIO', 'ID_EXTRAVIO');
     }
 
     public function domicilioCP(){
-        return $this->belongsTo(DomicilioCP::class,'ID_EXTRAVIO','ID_EXTRAVIO');
+        return $this->hasOne(DomicilioCP::class,'ID_EXTRAVIO','ID_EXTRAVIO');
     }
 
 }

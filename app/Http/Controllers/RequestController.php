@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\{
     Http,
     DB
 };
+use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf as DomPdf;
 use Illuminate\Support\Str;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -211,7 +212,7 @@ class RequestController extends Controller
             $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
             $documents->load('documentType');
             $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);
-            $placeEvent->lost_date = \Carbon\Carbon::parse($placeEvent->lost_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
+            $placeEvent->lost_date = Carbon::parse($placeEvent->lost_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
 
             $identification = $this->authApiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
 
@@ -236,21 +237,37 @@ class RequestController extends Controller
             $placeEvent['colony'] = $colony;
         } else {
             $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
-            $extravio->load('estadoExtravio', 'usuario', 'identificacion.cat_identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
+            $extravio->load('estadoExtravio', 'usuario', 'identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
             $person = null;
             if ($extravio->usuario && $extravio->usuario->idPersonApi) {
                 $person = $this->authApiService->getPersonById($extravio->usuario->idPersonApi);
             }
+
             if (!$person) {
+                $genderName = 'NO ESPECIFICADO';
+                $age = null;
+
+                if ($extravio->identificacion && $extravio->identificacion->FECHA_NACIMIENTO) {
+                    $birthdate = Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO);
+                    $age = $birthdate->age;
+                }
+
+                if ($extravio->identificacion && $extravio->identificacion->SEXO == 'H') {
+                    $genderName = 'HOMBRE';
+                } elseif ($extravio->identificacion && $extravio->identificacion->SEXO == 'M') {
+                    $genderName = 'MUJER';
+                }
+
                 $person = [
                     'fullName' => $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO,
-                    'curp' => $extravio->identificacion->curprfc,
-                    'genderName' => $extravio->identificacion->ID_SEXO === "1" ? "Masculino" : "Femenino",
-                    'birthdateFormated' => $extravio->identificacion->FECHA_NACIMIENTO,
-                    'age' => \Carbon\Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO)->age,
-                    'email' => $extravio->identificacion->CORREO_ELECTRONICO
+                    'curp' => $extravio->identificacion->curprfc ?? '',
+                    'genderName' => $genderName,
+                    'birthdateFormated' => $extravio->identificacion->FECHA_NACIMIENTO ?? '',
+                    'age' => $age,
+                    'email' => $extravio->identificacion->CORREO_ELECTRONICO ?? '',
                 ];
             }
+
             $documentsData = Objeto::where('ID_EXTRAVIO', $misplacement_id)->get();
             $documentsData->load('tipoDocumento');
 
@@ -308,7 +325,6 @@ class RequestController extends Controller
                 'description' => $extravio->hechos->DESCRIPCION ?? null
             ];
         }
-
 
         return Inertia::render('Requests/Show', [
             'person' => $person,
@@ -389,7 +405,6 @@ class RequestController extends Controller
 
     public function storeCancelRequest(Request $request, string $misplacement_id)
     {
-
         $request->validate([
             'deadline' => 'required|date',
             'cancellation_reason' => 'required',
@@ -397,6 +412,8 @@ class RequestController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $deadline = Carbon::parse($request->deadline);
 
             $misplacement = Misplacement::find($misplacement_id);
             $document_number = null;
@@ -406,7 +423,7 @@ class RequestController extends Controller
             if ($misplacement) {
                 $misplacement->update([
                     'lost_status_id' => SELF::LOST_STATUS_CANCELATION,
-                    'cancellation_date' => $request->deadline,
+                    'cancellation_date' => $deadline,
                     'cancellation_reason_description' => $request->message,
                     'cancellation_reason_id' => $request->cancellation_reason,
                 ]);
@@ -417,7 +434,7 @@ class RequestController extends Controller
                 $legacyMisplacement = Extravio::where('ID_EXTRAVIO', $misplacement_id)->firstOrFail();
                 $legacyMisplacement->load('estadoExtravio', 'usuario', 'identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
                 $legacyMisplacement->ID_ESTADO_EXTRAVIO = SELF::LOST_STATUS_CANCELATION;
-                $legacyMisplacement->FECHA_CANCELACION = $request->deadline;
+                $legacyMisplacement->FECHA_CANCELACION = $deadline->format('Y-d-m');
                 $legacyMisplacement->OBSERVACIONES_CANCELACION = $request->message;
                 $legacyMisplacement->ID_MOTIVO_CANCELACION = $request->cancellation_reason;
                 $legacyMisplacement->save();
@@ -451,8 +468,6 @@ class RequestController extends Controller
             return back()->withErrors(['message' => 'Ocurrió un error al procesar la solicitud.']);
         }
     }
-
-
 
     public function acceptRequest(string $misplacement_id)
     {
@@ -568,7 +583,7 @@ class RequestController extends Controller
     {
         $pdfData = [
             'folio' => $misplacement->document_number,
-            'registration_date' => \Carbon\Carbon::parse($misplacement->registration_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY'),
+            'registration_date' => Carbon::parse($misplacement->registration_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY'),
             'fullName' => $userResponse['fullName'],
             'curp' => $userResponse['curp'],
             'genderName' => $userResponse['genderName'],
@@ -581,7 +596,7 @@ class RequestController extends Controller
                 'colonie' => $placeData['colony_name'],
                 'street' => $placeData['street'],
                 'description' => $placeData['description'],
-                'lost_date' => \Carbon\Carbon::parse($placeData['lost_date'])->locale('es')->isoFormat('D [de] MMMM [del] YYYY'),
+                'lost_date' => Carbon::parse($placeData['lost_date'])->locale('es')->isoFormat('D [de] MMMM [del] YYYY'),
             ],
             'documentLost' => $document_lost,
             'identification' => $identification,
@@ -589,7 +604,7 @@ class RequestController extends Controller
             'qrUrl' => $qrUrl,
         ];
 
-        $pdf = Dompdf::loadView('pdf.LostDocument', $pdfData);
+        $pdf = DomPdf::loadView('pdf.LostDocument', $pdfData);
         // Habilitar PHP para DOMPDF
         $pdf->getOptions()->setIsPhpEnabled(true);
 
