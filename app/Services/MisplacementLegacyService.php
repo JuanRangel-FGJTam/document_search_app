@@ -29,6 +29,7 @@ class MisplacementLegacyService
             if (empty($name) && $extravio->identificacion) {
                 $name = $extravio->identificacion->NOMBRE . ' ' . $extravio->identificacion->PATERNO . ' ' . $extravio->identificacion->MATERNO;
             }
+
             $person = [
                 'fullName' => $name,
                 'curp' => $extravio->identificacion->curprfc,

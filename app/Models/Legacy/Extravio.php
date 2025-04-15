@@ -53,7 +53,8 @@ class Extravio extends Model
         return $this->belongsTo(TipoDocumento::class, 'ID_TIPO_DOCUMENTO','ID_TIPO_DOCUMENTO');
     }
 
-    public function motivoCancelacion(){
+    public function motivoCancelacion()
+    {
         return $this->belongsTo(MotivoCancelacion::class, 'ID_MOTIVO_CANCELACION','idMotivo');
     }
 

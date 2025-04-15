@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\People;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use App\Models\Misplacement;
 use Illuminate\Support\Facades\Log;
 
 class AuthApiService

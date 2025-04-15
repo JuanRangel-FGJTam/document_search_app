@@ -104,7 +104,10 @@ class RequestController extends Controller
         // Si se está buscando texto, realizar la búsqueda en Meilisearch
         if ($search !== null) {
             if ($search > SELF::LAST_FOLIO_LEGACY) {
-                $totalMisplacements = Misplacement::search($search)->get();
+                $totalMisplacements = Misplacement::where('document_number', $search)->get();
+                if ($totalMisplacements->isEmpty()) {
+                    $totalMisplacements = Misplacement::search($search)->get();
+                }
                 $totalMisplacements->load('people', 'lostStatus');
             } else {
                 try {
@@ -239,13 +242,29 @@ class RequestController extends Controller
             $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
             $extravio->load('estadoExtravio', 'usuario', 'identificacion', 'tipoDocumento', 'motivoCancelacion', 'hechos', 'hechosCP');
             $person = null;
+            $fullname = null;
+            $email = null;
+
             if ($extravio->usuario && $extravio->usuario->idPersonApi) {
                 $person = $this->authApiService->getPersonById($extravio->usuario->idPersonApi);
+                if ($person) {
+                    $fullname = $person['fullName'];
+                    $email = $person['email'];
+                }
             }
 
             if (!$person) {
                 $genderName = 'NO ESPECIFICADO';
                 $age = null;
+                $email = $extravio->CORREO_ELECTRONICO ?? null;
+
+                if ($extravio->NOMBRE && $extravio->PATERNO && $extravio->MATERNO) {
+                    $name = $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO;
+                }
+    
+                if (empty($name) && $extravio->identificacion) {
+                    $fullname = $extravio->identificacion->NOMBRE . ' ' . $extravio->identificacion->PATERNO . ' ' . $extravio->identificacion->MATERNO;
+                }
 
                 if ($extravio->identificacion && $extravio->identificacion->FECHA_NACIMIENTO) {
                     $birthdate = Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO);
@@ -259,7 +278,7 @@ class RequestController extends Controller
                 }
 
                 $person = [
-                    'fullName' => $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO,
+                    'fullName' => $fullname,
                     'curp' => $extravio->identificacion->curprfc ?? '',
                     'genderName' => $genderName,
                     'birthdateFormated' => $extravio->identificacion->FECHA_NACIMIENTO ?? '',
@@ -271,6 +290,11 @@ class RequestController extends Controller
             $documentsData = Objeto::where('ID_EXTRAVIO', $misplacement_id)->get();
             $documentsData->load('tipoDocumento');
 
+            $cancelled_at = null;
+            if ($extravio->FECHA_CANCELACION) {
+                $cancelled_at = Carbon::parse($extravio->FECHA_CANCELACION)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
+            }
+
             $misplacement = [
                 'id' => $extravio->ID_EXTRAVIO,
                 'document_number' => $extravio->ID_EXTRAVIO,
@@ -279,10 +303,11 @@ class RequestController extends Controller
                     'name' => $extravio->estadoExtravio->ESTADO_EXTRAVIO,
                 ],
                 'people' => [
-                    'name' => trim(($extravio->NOMBRE ?? '') . ' ' . ($extravio->PATERNO ?? '') . ' ' . ($extravio->MATERNO ?? '')),
+                    'name' => $fullname,
+                    'email' => $email,
                 ],
                 'registration_date' => $extravio->FECHA_EXTRAVIO ?? null,
-                'cancellation_date' => $extravio->FECHA_CANCELACION ?? null,
+                'cancellation_date' => $cancelled_at,
                 'cancellation_reason_id' => $extravio->ID_MOTIVO_CANCELACION ?? null,
                 'cancellation_reason' => [
                     'name' => $extravio->motivoCancelacion->MotivoCancelacion ?? null
@@ -308,6 +333,8 @@ class RequestController extends Controller
                     'document_type' => [
                         'name' => $doc->tipoDocumento->DOCUMENTO
                     ],
+                    'specification' => $doc->ESPECIFIQUE,
+                    'is_legacy' => true,
                     'document_number' => $doc->NUMERO_DOCUMENTO,
                     'document_owner' => $doc->TITULAR_DOCUMENTO
                 ];
@@ -321,8 +348,8 @@ class RequestController extends Controller
                     'name' => $extravio->hechosCP->CPcolonia ?? null
                 ],
                 'street' => $extravio->hechosCP->CPcalle ?? null,
-                'lost_date' => $extravio->hechos->FECHA ?? null,
-                'description' => $extravio->hechos->DESCRIPCION ?? null
+                'lost_date' => $extravio->hechos->first()?->FECHA ?? null,
+                'description' => $extravio->hechos->first()?->DESCRIPCION ?? null,
             ];
         }
 

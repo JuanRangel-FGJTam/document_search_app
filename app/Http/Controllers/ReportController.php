@@ -28,11 +28,17 @@ class ReportController extends Controller
 {
 
     protected $authApiService;
-    CONST OTHER_DOCUMENT = 9;
-    CONST OTHER_DOCUMENT_LEGACY= 5;
-    CONST OTHER_DOCUMENT_LEGACY_2  = 6;
-    CONST ALL_STATUS = 3;
+    const OTHER_DOCUMENT = 9;
+    const OTHER_DOCUMENT_LEGACY = 5;
+    const OTHER_DOCUMENT_LEGACY_2  = 6;
+    const ALL_STATUS = 3;
     const LAST_FOLIO_LEGACY = 163191;
+
+    CONST LOCAL_PASAPORT_ID = 5;
+    CONST LOCAL_LICENSE_ID = 7;
+    CONST LEGACY_PASAPORT_ID = 2;
+    CONST LEGACY_LICENSE_ID = 4;
+
 
     public function __construct(AuthApiService $authApiService)
     {
@@ -179,7 +185,11 @@ class ReportController extends Controller
         if (isset($filters['document_type'])) {
             $document_type = DocumentType::find($filters['document_type']);
             $document_type_name = $document_type->name ?? null;
+            if ($filters['document_type'] != SELF::OTHER_DOCUMENT) {
+                $keyword = null;
+            }
         }
+        //dd($filters);
 
         $identifications = DocumentType::pluck('name', 'id')->map(fn($item) => strtolower($item));
         $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(fn($item, $key) => [
@@ -192,7 +202,7 @@ class ReportController extends Controller
         if (isset($filters['date_range']) && !empty($filters['date_range'])) {
             $data = $this->generateExcelReport($filters);
             Log::info('Reporte exportado por usuario: ' . Auth::id());
-            return (new ExcelForDays())->create($data, $status_name, $municipality_name,$document_type_name,$keyword,$filters['date_range'][0], $filters['date_range'][1]);
+            return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
         } else {
             // Obtener datos
             $report = $this->getData($filters, $identifications, $identifications_legacy);
@@ -294,45 +304,54 @@ class ReportController extends Controller
     {
         // Validar rango de fechas
         if (empty($filters['date_range'])) {
-            throw new \Exception('Se requiere un rango de fechas.');
+            Log::error('Error: A date range is required.');
+            throw new \Exception('A date range is required.');
         }
 
         [$start, $end] = $filters['date_range'];
         $dates = collect();
 
         if ($start && !$end) {
-            $dates->put(Carbon::parse($start)->format('Y-m-d'), 0); // Solo start
+            Log::info('Generating dates: Only start date provided.', ['start' => $start]);
+            $dates->put(Carbon::parse($start)->format('Y-m-d'), 0); // Only start
         } elseif (!$start && $end) {
-            $dates->put(Carbon::parse($end)->format('Y-m-d'), 0); // Solo end
+            Log::info('Generating dates: Only end date provided.', ['end' => $end]);
+            $dates->put(Carbon::parse($end)->format('Y-m-d'), 0); // Only end
         } elseif ($start && $end) {
+            Log::info('Generating dates: Full range provided.', ['start' => $start, 'end' => $end]);
             for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
-                $dates->put($date->format('Y-m-d'), 0); // Inicializar en 0
+                $dates->put($date->format('Y-m-d'), 0); // Initialize to 0
             }
         }
 
-        // Consultas (solo agrupadas por fecha)
+        Log::info('Generated dates:', ['dates' => $dates]);
+
+        // Queries (grouped by date only)
         $queryExtravios = Extravio::selectRaw(
             "CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120) as fecha,
             COUNT(*) as total"
         )
-            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO')->where('PGJ_EXTRAVIOS.ID_EXTRAVIO' <= self::LAST_FOLIO_LEGACY);
+            ->join('PGJ_OBJETOS', 'PGJ_OBJETOS.ID_EXTRAVIO', '=', 'PGJ_EXTRAVIOS.ID_EXTRAVIO');
 
         $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id');
 
         if ($start && $end) {
+            Log::info('Applying date range filter.', ['start' => $start, 'end' => $end]);
             $queryExtravios->whereBetween(
                 DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
                 [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
             );
             $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
         } elseif ($start) {
+            Log::info('Applying start date filter.', ['start' => $start]);
             $queryExtravios->whereDate(
                 DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
                 Carbon::parse($start)->format('Y-m-d')
             );
             $queryMisplacements->whereDate('misplacements.registration_date', $start);
         } elseif ($end) {
+            Log::info('Applying end date filter.', ['end' => $end]);
             $queryExtravios->whereDate(
                 DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
                 Carbon::parse($end)->format('Y-m-d')
@@ -341,13 +360,21 @@ class ReportController extends Controller
         }
 
         if ($filters['document_type']) {
+            Log::info('Applying document type filter.', ['document_type' => $filters['document_type']]);
             if ($filters['document_type'] == SELF::OTHER_DOCUMENT) {
-                $queryExtravios->whereIn('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', [SELF::OTHER_DOCUMENT_LEGACY, SELF::OTHER_DOCUMENT_LEGACY_2]);
+                Log::info('Document type filter: Other document.', ['keyword' => $filters['keyword'] ?? null]);
+                $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', SELF::OTHER_DOCUMENT_LEGACY_2);
                 if (!empty($filters['keyword'])) {
                     $queryExtravios->where('PGJ_OBJETOS.ESPECIFIQUE', 'LIKE', '%' . $filters['keyword'] . '%');
                 }
             } else {
-                $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', $filters['document_type']);
+                if ($filters['document_type'] == SELF::LOCAL_PASAPORT_ID) {
+                    $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', SELF::LEGACY_PASAPORT_ID);
+                } elseif ($filters['document_type'] == SELF::LOCAL_LICENSE_ID) {
+                    $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', SELF::LEGACY_LICENSE_ID);
+                } else {
+                    $queryExtravios->where('PGJ_OBJETOS.ID_TIPO_DOCUMENTO', $filters['document_type']);
+                }
             }
             $queryMisplacements->where('ld.document_type_id', $filters['document_type']);
             if ($filters['document_type'] == SELF::OTHER_DOCUMENT && !empty($filters['keyword'])) {
@@ -355,6 +382,7 @@ class ReportController extends Controller
             }
         }
 
+        Log::info('Grouping queries by date.');
         $queryExtravios->groupBy(DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"));
         $queryMisplacements->groupByRaw('DATE(misplacements.registration_date)');
 
@@ -362,14 +390,18 @@ class ReportController extends Controller
         if (!empty($filters['municipio'])) {
             $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
-            if ($municipality_name) {
-                $queryExtravios->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')
+            if (!empty($municipality_name)) {
+                $queryExtravios
+                    ->join('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO')
                     ->where('PGJ_HECHOS_CP.CPmunicipio', 'LIKE', '%' . $municipality_name . '%');
             }
-
-            $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
-                ->where('place_events.municipality_api_id', $filters['municipio']);
+            // Solo si se obtuvo un ID válido
+            if (!empty($filters['municipio'])) {
+                $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                    ->where('place_events.municipality_api_id', $filters['municipio']);
+            }
         }
+
 
         if (!empty($filters['status'])) {
             if ($filters['status'] == 3) {
