@@ -12,24 +12,35 @@ class MisplacementLegacyService
     {
         $authApiService = new AuthApiService();
         $extravio = Extravio::where('ID_EXTRAVIO', $misplacement_id)->first();
-        $extravio->load('identificacion.cat_identificacion', 'identificacion.cat_municipio', 'identificacion.cat_localidad', 'hechos', 'hechosCP');
+        $extravio->load('identificacion.cat_identificacion', 'identificacion.cat_municipio', 'identificacion.cat_localidad', 'hechos', 'hechosCP', 'domicilioCP');
+
         $person = null;
         if ($extravio->usuario && $extravio->usuario->idPersonApi) {
             $person = $authApiService->getPersonById($extravio->usuario->idPersonApi);
         }
 
         if (!$person) {
+            $name = '';
+
+            if ($extravio->NOMBRE && $extravio->PATERNO && $extravio->MATERNO) {
+                $name = $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO;
+            }
+
+            if (empty($name) && $extravio->identificacion) {
+                $name = $extravio->identificacion->NOMBRE . ' ' . $extravio->identificacion->PATERNO . ' ' . $extravio->identificacion->MATERNO;
+            }
+
             $person = [
-                'fullName' => $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO,
+                'fullName' => $name,
                 'curp' => $extravio->identificacion->curprfc,
                 'genderName' => $extravio->identificacion->ID_SEXO === "1" ? "Masculino" : "Femenino",
                 'birthdateFormated' => $extravio->identificacion->FECHA_NACIMIENTO,
                 'age' => \Carbon\Carbon::parse($extravio->identificacion->FECHA_NACIMIENTO)->age,
                 'email' => $extravio->identificacion->CORREO_ELECTRONICO,
                 'address' => [
-                    'municipalityName' => $extravio->identificacion->cat_municipio->MUNICIPIO,
-                    'colonyName' => $extravio->identificacion->cat_localidad->LCLDD,
-                    'street' => $extravio->identificacion->CALLE,
+                    'municipalityName' => $extravio->domicilioCP->CPmunicipio,
+                    'colonyName' => $extravio->domicilioCP->CPcolonia,
+                    'street' => $extravio->domicilioCP->CPcalle,
                 ],
                 'identificacion'=> [
                     'documentTypeName'=> $extravio->identificacion->cat_identificacion->IDENTIFICACION,
@@ -38,6 +49,7 @@ class MisplacementLegacyService
                     'valid'=> null,
                 ]
             ];
+
         }
 
         if ($extravio->identificacion->IDENTIFICACION) {

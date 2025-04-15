@@ -4,8 +4,6 @@ namespace App\Models\Legacy;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-// use Laravel\Scout\Searchable;
 use App\Models\Legacy\CatIdentificacion;
 
 class Identificacion extends Model
@@ -29,6 +27,8 @@ class Identificacion extends Model
         return $this->belongsTo(CatLocalidad::class,  'ID_LOCALIDAD','ID_LCLDD');
     }
 
-
-
+    public function extravio()
+    {
+        return $this->hasOne(Extravio::class, 'ID_IDENTIFICACION', 'ID_IDENTIFICACION');
+    }
 }
