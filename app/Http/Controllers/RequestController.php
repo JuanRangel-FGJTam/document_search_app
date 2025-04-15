@@ -261,7 +261,7 @@ class RequestController extends Controller
                 if ($extravio->NOMBRE && $extravio->PATERNO && $extravio->MATERNO) {
                     $name = $extravio->NOMBRE . ' ' . $extravio->PATERNO . ' ' . $extravio->MATERNO;
                 }
-    
+
                 if (empty($name) && $extravio->identificacion) {
                     $fullname = $extravio->identificacion->NOMBRE . ' ' . $extravio->identificacion->PATERNO . ' ' . $extravio->identificacion->MATERNO;
                 }
@@ -557,14 +557,15 @@ class RequestController extends Controller
     public function downloadPDF(string $misplacement_id)
     {
         $misplacement = Misplacement::find($misplacement_id);
+        $procedure = null;
+        $fileURL = null;
+
         if (!$misplacement) {
             $fileURL = $this->regenerateLegacyPDF($misplacement_id);
         } else {
             $procedure = $this->authApiService->getProcedure($misplacement->people_id, $misplacement->document_api_id);
             if (!$procedure) {
-                // TODO
-                // Volver a generar el PDF
-                return redirect()->back()->with('error', 'La constancia no se ha encontrado. Ha pasado el plazo del almacenamiento del documento. Favor de cancelar esta constancia para la generación de una nueva.');
+                return redirect()->back()->with('error', 'La constancia no se ha encontrado. Favor de cancelar esta constancia para la generación de una nueva.');
             }
             $url = $procedure['files'][0]['fileUrl'];
             $response = Http::get($url);
@@ -574,21 +575,64 @@ class RequestController extends Controller
                 Storage::put($path, $response->body());
                 $fileURL =  'app/public/documents/' . $filename;
             } else {
-                return redirect()->back()->with('error', 'Error al descargar el archivo. Intente nuevamente.');
+                $fileURL = $this->regenerateMisplacementPDF($misplacement, $misplacement_id);
+                $uuid = (string) $fileURL['document_name'];
+                $filename = "{$uuid}.pdf";
+                $fileURL = storage_path('app/public/tmp/' . $filename);
             }
         }
 
-        // Construir la ruta completa del archivo en el disco 'public'
         $path = storage_path($fileURL);
-        // Verificar si el archivo existe
         if (!file_exists($path)) {
             abort(404, 'File not found.');
         }
-        // Descargar el archivo
-        return response()->download($path);
+
+        return response()->download($fileURL);
     }
 
 
+    protected function regenerateMisplacementPDF($misplacement, $misplacement_id)
+    {
+        $misplacementData = (object) [
+            'document_number' => $misplacement_id,
+            'registration_date' => $misplacement->registration_date
+        ];
+
+        $misplacement->load('misplacementIdentifications.identificationType', 'placeEvent');
+        $person = $this->authApiService->getPersonById($misplacement->people_id);
+        $placeData = $this->placeEventService->getByMisplacementId($misplacement_id);
+        $lostDocuments = $this->lostDocumentService->getByMisplacementId($misplacement_id);
+        $lostDocuments->load('documentType');
+
+        $identification = $this->authApiService->getDocumentById(
+            $misplacement->people_id,
+            $misplacement->misplacementIdentifications->identification_type_id
+        );
+
+        $localPath = null;
+        if ($identification && isset($identification['fileUrl'])) {
+            $localPath = $this->downloadIdentificationImage($misplacement->people_id, $identification['fileUrl'], $misplacement_id);
+        }
+
+        $qrUrl = $this->generateQrCode(self::LOCAL_URL . '?QueryFolio=' . $misplacement->signature);
+        Log::info('Regenerating PDF for misplacement ID: ' . $misplacement_id);
+        return $this->generatePdf($person, $misplacementData, $placeData, $lostDocuments, $identification, $localPath, $qrUrl);
+    }
+
+    protected function downloadIdentificationImage($people_id, $url, $misplacement_id)
+    {
+        $response = Http::get($url);
+
+        if (!$response->successful()) {
+            Log::error("Failed to download identification image from MinIO for misplacement ID: {$misplacement_id}");
+            return null;
+        }
+        $filename = "identification_{$people_id}.jpg";
+        $path = "public/identifications/{$filename}";
+        Storage::put($path, $response->body());
+
+        return "storage/identifications/{$filename}";
+    }
 
 
     private function changeMisplacementState(string $misplacement_id, int $state_id)
