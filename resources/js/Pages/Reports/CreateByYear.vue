@@ -90,108 +90,103 @@ watch(() => form.reportType, (newValue) => {
     }
 });
 
-const submit = () => {
+const validateForm = () => {
+    if ((form.reportType === 1 || form.reportType === 4) && !form.year) {
+        toast.warning('Ingrese un año');
+        return false;
+    }
+    if ((form.reportType === 2 || form.reportType === 3) && !form.start_date && !form.end_date) {
+        toast.warning('Seleccione al menos una fecha.');
+        return false;
+    }
+    if ((form.reportType === 3 || form.reportType === 4) && !form.municipality) {
+        toast.warning('Seleccione un municipio');
+        return false;
+    }
+    return true;
+};
+
+const downloadReport = async () => {
     loadingXLSX.value = true;
-    if ((form.reportType === 1 || form.reportType === 4) && !form.year) {
-        toast.warning('Ingrese un año');
-        loading.value = false;
-        return;
-    }
-    if ((form.reportType === 2 || form.reportType === 3) && !form.start_date && !form.end_date) {
-        toast.warning('Seleccione al menos una fecha.');
-        loading.value = false;
-        return;
-    }
-    if ((form.reportType === 3 || form.reportType === 4) && !form.municipality) {
-        toast.warning('Seleccione un municipio');
-        loading.value = false;
+
+    if (!validateForm()) {
+        loadingXLSX.value = false;
         return;
     }
 
-    toast.info('Generando reporte...');
-    form.download = true;
-    axios.post(route('reports.generate'), form, { responseType: 'blob' })
-        .then(response => {
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            const reportTypeName = props.report_types.find(type => type.id === form.reportType)?.name || 'Reporte';
-            link.setAttribute('download', `Reporte_Constancias_${reportTypeName}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-            toast.success('Reporte generado con éxito');
-        })
-        .catch(error => {
-            console.error('Error downloading the file:', error);
-            toast.error('Error al obtener los datos');
-        }).finally(() => {
-            loadingXLSX.value = false;
-        });
+    try {
+        toast.info('Generando reporte...');
+        form.download = true;
+
+        const response = await axios.post(route('reports.generate'), form, { responseType: 'blob' });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        const reportTypeName = props.report_types.find(type => type.id === form.reportType)?.name || 'Reporte';
+
+        link.href = url;
+        link.setAttribute('download', `Reporte_Constancias_${reportTypeName}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast.success('Reporte generado con éxito');
+    } catch (error) {
+        console.error('Error downloading the file:', error);
+        toast.error('Error al obtener los datos');
+    } finally {
+        loadingXLSX.value = false;
+    }
 };
 
-const generateChart = () => {
-    form.download = false;
+const generateChart = async () => {
     loadingChart.value = true;
-    if ((form.reportType === 1 || form.reportType === 4) && !form.year) {
-        toast.warning('Ingrese un año');
-        loading.value = false;
+
+    if (!validateForm()) {
+        loadingChart.value = false;
         return;
     }
-    if ((form.reportType === 2 || form.reportType === 3) && !form.start_date && !form.end_date) {
-        toast.warning('Seleccione al menos una fecha.');
-        loading.value = false;
-        return;
+
+    try {
+        toast.info('Generando gráfico...');
+        form.download = false;
+
+        const { data } = await axios.post(route('reports.generate'), form);
+
+        const perMonth = data.totalPerMonth || {};
+        const perIdentification = data.totalPerIdentification || {};
+
+        barChartData.value = {
+            labels: Object.keys(perMonth),
+            datasets: [
+                {
+                    label: 'Solicitudes por mes',
+                    data: Object.values(perMonth),
+                    backgroundColor: '#42A5F5',
+                },
+            ],
+        };
+
+        doughnutData.value = {
+            labels: Object.keys(perIdentification),
+            datasets: [
+                {
+                    label: 'Tipo de identificación',
+                    data: Object.values(perIdentification),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#9C27B0'],
+                },
+            ],
+        };
+        toast.success('Gráficas generadas');
+    } catch (error) {
+        console.error('Error to make chart:', error);
+        toast.error('Error al obtener los datos');
+    } finally {
+        loadingChart.value = false;
     }
-    if ((form.reportType === 3 || form.reportType === 4) && !form.municipality) {
-        toast.warning('Seleccione un municipio');
-        loading.value = false;
-        return;
-    }
-    toast.info('Generando gráfico...');
-
-
-    // Aquí puedes hacer la llamada a la API para obtener los datos del gráfico
-    axios.post(route('reports.generate'), form)
-        .then(response => {
-            const responseData = response.data.data;
-            console.log('Datos del gráfico:', responseData);
-            console.log('Datos del gráfico:', response.data);
-            console.log('Datos del gráfico:', response.data.totalPerMonth);
-            console.log('Datos del gráfico:', response.data.totalPerIdentification);
-            toast.success('Gráficas generadas');
-            const perMonth = response.data.totalPerMonth
-            const perIdentification = response.data.totalPerIdentification
-
-            barChartData.value = {
-                labels: Object.keys(perMonth),
-                datasets: [
-                    {
-                        label: 'Solicitudes',
-                        data: Object.values(perMonth),
-                        backgroundColor: '#42A5F5'
-                    }
-                ]
-            }
-            doughnutData.value = {
-                labels: Object.keys(perIdentification),
-                datasets: [
-                    {
-                        label: 'Tipo de identificación',
-                        data: Object.values(perIdentification),
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#9C27B0']
-                    }
-                ]
-            }
-        })
-        .catch(error => {
-            console.error('Error downloading the file:', error);
-            toast.error('Error al obtener los datos');
-        }).finally(() => {
-            loadingChart.value = false;
-        });
 };
+
 
 </script>
 
@@ -342,7 +337,7 @@ const generateChart = () => {
                                     </svg>
                                     Graficar
                                 </button>
-                                <button type="submit"
+                                <button type="button" @click="downloadReport"
                                     class="flex items-center px-5 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-150 ease-in-out text-sm">
                                     <svg v-if="!loadingXLSX" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-2"
                                         viewBox="0 0 24 24">

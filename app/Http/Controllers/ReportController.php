@@ -219,6 +219,7 @@ class ReportController extends Controller
 
         if (isset($filters['date_range']) && !empty($filters['date_range'])) {
             $data = $this->generateExcelReport($filters);
+            dd($data);
             Log::info('Reporte exportado por usuario: ' . Auth::id());
             return response()->json([
                 'data' => $data,
@@ -234,12 +235,28 @@ class ReportController extends Controller
         } else {
             // Obtener datos
             $report = $this->getData($filters, $identifications, $identifications_legacy);
+            dd($report);
             $totalPerIdentification = [];
             $totalPerMonth = [];
 
             foreach ($report as $month => $data) {
                 // Total de solicitudes por mes
-                $totalPerMonth[$month] = $data['total_solicitudes'];
+                $monthInSpanish = match ($month) {
+                    'January' => 'Enero',
+                    'February' => 'Febrero',
+                    'March' => 'Marzo',
+                    'April' => 'Abril',
+                    'May' => 'Mayo',
+                    'June' => 'Junio',
+                    'July' => 'Julio',
+                    'August' => 'Agosto',
+                    'September' => 'Septiembre',
+                    'October' => 'Octubre',
+                    'November' => 'Noviembre',
+                    'December' => 'Diciembre',
+                    default => $month,
+                };
+                $totalPerMonth[$monthInSpanish] = $data['total_solicitudes'];
 
                 // Inicializa los tipos de identificaciones si es la primera vez
                 foreach ($data['identifications_count'] as $type => $quantity) {
