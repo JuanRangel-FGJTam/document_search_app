@@ -308,7 +308,7 @@ class SyncRecordsToLegacy extends Command
                 "CPmunicipio" => $municipalityName,
                 "CPcolonia" => $colonyName,
                 "CPcalle" => Trim($placeEvent->street),
-                "FECHA_REGISTRO" => Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v')
+                "FECHA_REGISTRO" => Carbon::parse($misplacement->registration_date)->format('Y-m-d')
             ]);
         }
     }

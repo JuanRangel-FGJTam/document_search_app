@@ -41,7 +41,6 @@ class MisplacementLegacyService
                 $documentTypeId = $extravio->identificacion->ID_TIPO_IDENTIFICACION;
             }
 
-
             $person = [
                 'fullName' => $name,
                 'curp' => $extravio->identificacion->curprfc,
@@ -61,7 +60,6 @@ class MisplacementLegacyService
                     'valid'=> null,
                 ]
             ];
-
         }
 
         if ($extravio->identificacion->IDENTIFICACION) {
