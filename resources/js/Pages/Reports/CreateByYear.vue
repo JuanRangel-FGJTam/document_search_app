@@ -99,10 +99,6 @@ const validateForm = () => {
         toast.warning('Seleccione al menos una fecha.');
         return false;
     }
-    if ((form.reportType === 3 || form.reportType === 4) && !form.municipality) {
-        toast.warning('Seleccione un municipio');
-        return false;
-    }
     return true;
 };
 
@@ -153,7 +149,7 @@ const generateChart = async () => {
         form.download = false;
 
         const { data } = await axios.post(route('reports.generate'), form);
-
+        console.log('Data for chart:', data);
         const perMonth = data.totalPerMonth || {};
         const perIdentification = data.totalPerIdentification || {};
 

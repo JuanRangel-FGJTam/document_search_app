@@ -35,7 +35,7 @@ class ExcelForDays
         $sheet->setCellValue(
             'A3',
             'Estado: ' . ($status_name ?? 'Todos') .
-                (isset($municipality_name) ? ' - Municipio: ' . $municipality_name : '') .
+                (isset($municipality_name) ? ' - Municipio: ' . $municipality_name : ' - Municipio: Todos') .
                 (isset($document_type_name) ? ' - Tipo de documento extraviado: ' . $document_type_name : '') .
                 (isset($keyword) ? ' - Palabra clave: ' . $keyword : '') .
                 ' - Periodo: ' . (

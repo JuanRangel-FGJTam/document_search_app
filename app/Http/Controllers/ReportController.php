@@ -219,23 +219,77 @@ class ReportController extends Controller
 
         if (isset($filters['date_range']) && !empty($filters['date_range'])) {
             $data = $this->generateExcelReport($filters);
-            dd($data);
-            Log::info('Reporte exportado por usuario: ' . Auth::id());
+
+            $startDate = \Carbon\Carbon::parse($filters['date_range'][0]);
+            $endDate = isset($filters['date_range'][1]) && $filters['date_range'][1]
+                ? \Carbon\Carbon::parse($filters['date_range'][1])
+                : now(); // si no hay fecha de fin, se toma hoy
+
+            $monthsInRange = [];
+            $cursor = $startDate->copy()->startOfMonth();
+
+            while ($cursor->lte($endDate)) {
+                $monthsInRange[$cursor->format('F')] = 0;
+                $cursor->addMonth();
+            }
+
+            $monthTranslations = [
+                'January' => 'Enero',
+                'February' => 'Febrero',
+                'March' => 'Marzo',
+                'April' => 'Abril',
+                'May' => 'Mayo',
+                'June' => 'Junio',
+                'July' => 'Julio',
+                'August' => 'Agosto',
+                'September' => 'Septiembre',
+                'October' => 'Octubre',
+                'November' => 'Noviembre',
+                'December' => 'Diciembre',
+            ];
+
+            // Inicializamos con los meses que sí están en el rango
+            $totalPerMonth = [];
+            foreach ($monthsInRange as $monthEnglish => $value) {
+                $totalPerMonth[$monthTranslations[$monthEnglish]] = 0;
+            }
+
+            $totalGeneral = 0;
+
+            foreach ($data as $date => $count) {
+                if ($date === 'total_general') continue;
+
+                try {
+                    $dateObj = \Carbon\Carbon::parse($date);
+                    $monthEnglish = $dateObj->format('F');
+
+                    if (isset($monthsInRange[$monthEnglish])) {
+                        $monthSpanish = $monthTranslations[$monthEnglish];
+                        $totalPerMonth[$monthSpanish] += $count;
+                        $totalGeneral += $count;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning("Fecha inválida en el reporte: $date");
+                }
+            }
+
+            Log::info('Gráfica generada por rango de fechas por el usuario: ' . Auth::id());
+
             return response()->json([
-                'data' => $data,
-                'status_name' => $status_name,
+                'totalPerMonth' => $totalPerMonth,
+                'totalPerIdentification' => $document_type_name
+                    ? [$document_type_name => $totalGeneral]
+                    : ['Total' => $totalGeneral],
                 'municipality_name' => $municipality_name,
                 'document_type_name' => $document_type_name,
-                'keyword' => $keyword,
                 'date_range' => [
                     'start' => $filters['date_range'][0],
-                    'end' => $filters['date_range'][1],
+                    'end' => $filters['date_range'][1] ?? now()->toDateString(),
                 ],
             ]);
         } else {
             // Obtener datos
             $report = $this->getData($filters, $identifications, $identifications_legacy);
-            dd($report);
             $totalPerIdentification = [];
             $totalPerMonth = [];
 
@@ -459,6 +513,10 @@ class ReportController extends Controller
                 $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
                     ->where('place_events.municipality_api_id', $filters['municipio']);
             }
+        } else {
+            // Si municipio está vacío, no se aplica ningún filtro y se toman todos los municipios
+            $queryExtravios->leftJoin('PGJ_HECHOS_CP', 'PGJ_EXTRAVIOS.ID_EXTRAVIO', '=', 'PGJ_HECHOS_CP.ID_EXTRAVIO');
+            $queryMisplacements->leftJoin('place_events', 'misplacements.id', '=', 'place_events.misplacement_id');
         }
 
 
