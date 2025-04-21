@@ -34,10 +34,10 @@ class ReportController extends Controller
     const ALL_STATUS = 3;
     const LAST_FOLIO_LEGACY = 163191;
 
-    CONST LOCAL_PASAPORT_ID = 5;
-    CONST LOCAL_LICENSE_ID = 7;
-    CONST LEGACY_PASAPORT_ID = 2;
-    CONST LEGACY_LICENSE_ID = 4;
+    const LOCAL_PASAPORT_ID = 5;
+    const LOCAL_LICENSE_ID = 7;
+    const LEGACY_PASAPORT_ID = 2;
+    const LEGACY_LICENSE_ID = 4;
 
 
     public function __construct(AuthApiService $authApiService)
@@ -106,7 +106,6 @@ class ReportController extends Controller
 
     public function generateReport(Request $request)
     {
-
         $request->validate([
             'reportType' => 'required|integer',
             'year' => 'nullable|numeric',
@@ -157,6 +156,7 @@ class ReportController extends Controller
             default:
                 abort(400, 'Tipo de reporte no válido');
         }
+        $filters['download'] = $request->download ?? null;
 
         return $this->getReport($filters);
     }
@@ -189,7 +189,6 @@ class ReportController extends Controller
                 $keyword = null;
             }
         }
-        //dd($filters);
 
         $identifications = DocumentType::pluck('name', 'id')->map(fn($item) => strtolower($item));
         $identifications_legacy = TipoDocumento::pluck('DOCUMENTO', 'ID_TIPO_DOCUMENTO')->mapWithKeys(fn($item, $key) => [
@@ -199,21 +198,64 @@ class ReportController extends Controller
             }
         ]);
 
+        if ($filters['download']) {
+            if (isset($filters['date_range']) && !empty($filters['date_range'])) {
+                $data = $this->generateExcelReport($filters);
+                Log::info('Reporte generada por usuario: ' . Auth::id());
+                return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
+            } else {
+                // Obtener datos
+                $report = $this->getData($filters, $identifications, $identifications_legacy);
+                $data = [
+                    'year' => $filters['year'],
+                    'data' => $report,
+                    'status_name' => $status_name,
+                    'municipality_name' => $municipality_name,
+                ];
+                Log::info('Reporte exportado por usuario: ' . Auth::id());
+                return (new ExcelRequest())->create($data);
+            }
+        }
+
         if (isset($filters['date_range']) && !empty($filters['date_range'])) {
             $data = $this->generateExcelReport($filters);
             Log::info('Reporte exportado por usuario: ' . Auth::id());
-            return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
+            return response()->json([
+                'data' => $data,
+                'status_name' => $status_name,
+                'municipality_name' => $municipality_name,
+                'document_type_name' => $document_type_name,
+                'keyword' => $keyword,
+                'date_range' => [
+                    'start' => $filters['date_range'][0],
+                    'end' => $filters['date_range'][1],
+                ],
+            ]);
         } else {
             // Obtener datos
             $report = $this->getData($filters, $identifications, $identifications_legacy);
-            $data = [
+            $totalPerIdentification = [];
+            $totalPerMonth = [];
+
+            foreach ($report as $month => $data) {
+                // Total de solicitudes por mes
+                $totalPerMonth[$month] = $data['total_solicitudes'];
+
+                // Inicializa los tipos de identificaciones si es la primera vez
+                foreach ($data['identifications_count'] as $type => $quantity) {
+                    if (!isset($totalPerIdentification[$type])) {
+                        $totalPerIdentification[$type] = 0;
+                    }
+                    $totalPerIdentification[$type] += $quantity;
+                }
+            }
+            Log::info('Grafica generada por usuario: ' . Auth::id());
+            return response()->json([
                 'year' => $filters['year'],
-                'data' => $report,
-                'status_name' => $status_name,
+                'totalPerMonth' => $totalPerMonth,
+                'totalPerIdentification' => $totalPerIdentification,
                 'municipality_name' => $municipality_name,
-            ];
-            Log::info('Reporte exportado por usuario: ' . Auth::id());
-            return (new ExcelRequest())->create($data);
+            ]);
         }
     }
 
