@@ -69,6 +69,16 @@ const form = useForm({
 });
 
 watch(() => form.reportType, (newValue) => {
+    // Reiniciar valores al cambiar el tipo de reporte
+    Object.assign(form, {
+        year: 2025,
+        start_date: null,
+        end_date: null,
+        municipality: null,
+        document_type: null,
+        keyword: null,
+    });
+    [barChartData, doughnutData, loadingXLSX, loadingChart].forEach(refVar => refVar.value = null);
     if ([2, 3].includes(newValue)) {
         // Observa cambios en las fechas para validar
         watch([() => form.start_date, () => form.end_date], ([start, end]) => {
