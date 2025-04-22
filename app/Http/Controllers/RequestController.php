@@ -220,14 +220,24 @@ class RequestController extends Controller
             $identification = $this->authApiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
 
             $zipCodes = $this->authApiService->getZipCode($placeEvent->zipcode);
-            $imageContent = Http::get($identification['fileUrl'])->body();
-            $base64Image = base64_encode($imageContent);
-            $identification['image'] = 'data:image/jpeg;base64,' . $base64Image;
+            try {
+                $imageContent = Http::get($identification['fileUrl'])->body();
+                $base64Image = base64_encode($imageContent);
+                $identification['image'] = 'data:image/jpeg;base64,' . $base64Image;
+            } catch (\Exception $e) {
+                Log::error("Error fetching front image: " . $e->getMessage());
+                $identification['image'] = null;
+            }
 
             if ($identification['fileUrlBack']) {
-                $imageContent = Http::get($identification['fileUrlBack'])->body();
-                $base64Image = base64_encode($imageContent);
-                $identification['imageBack'] = 'data:image/jpeg;base64,' . $base64Image;
+                try {
+                    $imageContent = Http::get($identification['fileUrlBack'])->body();
+                    $base64Image = base64_encode($imageContent);
+                    $identification['imageBack'] = 'data:image/jpeg;base64,' . $base64Image;
+                } catch (\Exception $e) {
+                    Log::error("Error fetching back image: " . $e->getMessage());
+                    $identification['imageBack'] = null;
+                }
             }
 
             if (isset($zipCodes['municipalities'])) {
@@ -388,7 +398,7 @@ class RequestController extends Controller
                 $path = 'public/documents/' . $filename;
                 Storage::put($path, $response->body());
                 $fileURL =  'app/public/documents/' . $filename;
-            }else{
+            } else {
                 $fileURL = $this->regenerateMisplacementPDF($misplacement, $misplacement_id);
                 $uuid = (string) $fileURL['document_name'];
                 $filename = "{$uuid}.pdf";
