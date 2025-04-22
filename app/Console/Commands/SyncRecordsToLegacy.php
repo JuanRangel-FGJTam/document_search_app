@@ -145,7 +145,7 @@ class SyncRecordsToLegacy extends Command
                             $domicilioCP->CPmunicipio = $people_address['municipalityName'];
                             $domicilioCP->CPcolonia = $people_address['colonyName'];
                             $domicilioCP->CPcalle = $people_address['street'];
-                            $domicilioCP->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d H:i:s.v');
+                            $domicilioCP->FECHA_REGISTRO = Carbon::parse($misplacement->registration_date)->format('Y-m-d\TH:i:s');
                             $domicilioCP->save();
                         }
                     } else {
@@ -308,7 +308,7 @@ class SyncRecordsToLegacy extends Command
                 "CPmunicipio" => $municipalityName,
                 "CPcolonia" => $colonyName,
                 "CPcalle" => Trim($placeEvent->street),
-                "FECHA_REGISTRO" => Carbon::parse($misplacement->registration_date)->format('Y-m-d')
+                "FECHA_REGISTRO" => Carbon::parse($misplacement->registration_date)->format('Y-m-d\TH:i:s')
             ]);
         }
     }
