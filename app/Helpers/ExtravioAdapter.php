@@ -103,7 +103,7 @@ class ExtravioAdapter
         // * set the cancelation info
         if($misplacement->cancellation_date)
         {
-            $extravio->FECHA_CANCELACION = Carbon::parse(trim($misplacement->cancellation_date))->format('Y-m-d');
+            $extravio->FECHA_CANCELACION = Carbon::parse(trim($misplacement->cancellation_date))->format('Y-m-d\TH:i:s');
             $extravio->OBSERVACIONES_CANCELACION = $misplacement->cancellation_reason_description;
             $extravio->ID_MOTIVO_CANCELACION = $misplacement->cancellation_reason_id;
         }
