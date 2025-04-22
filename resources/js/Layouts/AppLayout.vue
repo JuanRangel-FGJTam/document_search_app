@@ -54,7 +54,7 @@ const logout = () => {
                             </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink :href="route('reports.index')" :active="$page.url.startsWith('/admin/reports')">
-                                    Reportes
+                                    Reportes y Gráficas
                                 </NavLink>
                             </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">

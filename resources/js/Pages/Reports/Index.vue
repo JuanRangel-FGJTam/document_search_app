@@ -27,7 +27,7 @@ const props = defineProps({
                                     <i class="fas fa-calendar-alt"></i>
                                 </div>
                                 <div class="text-lg font-semibold text-gray-800">
-                                    Reporte de constancias de extravio
+                                    Reportes y gráficas de constancias de extravio
                                 </div>
                             </div>
                             <div class="text-indigo-500">
