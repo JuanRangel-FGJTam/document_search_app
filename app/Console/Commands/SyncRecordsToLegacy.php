@@ -57,7 +57,7 @@ class SyncRecordsToLegacy extends Command
         $date = $this->argument('date');
         $tableName = 'PGJ_WR_EXTRAVIOS.dbo.PGJ_EXTRAVIOS';
         
-        if($date) {
+        if ($date) {
             $yesterday = new DateTime($date);
         } else {
             $yesterday = $today->modify('-1 day');
