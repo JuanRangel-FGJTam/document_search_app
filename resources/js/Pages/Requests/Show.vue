@@ -192,14 +192,19 @@ function getIdentificationYear(validDate) {
                             </p>
                             <p v-else>{{ identification.valid ?? 'No disponible' }}</p>
                         </div>
-                        <div>
+                        <div v-if="identification.image">
                             <p class="font-semibold">Identificación</p>
                             <img :src="identification.image" alt="Identificacion" class="h-32 object-cover rounded-lg">
                         </div>
+                        <div v-else>
+                            <p class="font-semibold">Identificación</p>
+                            <p class="text-red-600">No disponible</p>
+                        </div>
                         <div v-if="identification.fileUrlBack">
                             <p class="font-semibold">Identificación (reversa)</p>
-                            <img :src="identification.imageBack" alt="Identificacion"
+                            <img v-if="identification.imageBack" :src="identification.imageBack" alt="Identificacion"
                                 class="h-32 object-cover rounded-lg">
+                            <p v-else class="text-red-600">No disponible</p>
                         </div>
                     </div>
                     <!-- DATOS DEL LUGAR DE LOS HECHOS -->
