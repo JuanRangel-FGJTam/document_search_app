@@ -66,8 +66,8 @@ class ExtravioAdapter
         $extravio->DESCRIPCION = $misplacement->observations;
         // Fecha extravio in format 2020-04-22
         $extravio->FECHA_EXTRAVIO = Carbon::parse(trim($placeEvent->lost_date))->format('Y-m-d');
-        // Fecha de registro in format 2020-04-22 14:28:22.387
-        $extravio->FECHA_REGISTRO = Carbon::parse(trim($misplacement->registration_date))->format('Y-m-d H:i:s.v');
+        // Update carbon function to handle this format datetime 2012-01-01T00:00:00
+        $extravio->FECHA_REGISTRO = Carbon::parse(trim($misplacement->registration_date))->format('Y-m-d\TH:i:s');
         $extravio->FECHA_CANCELACION = null;
         $extravio->ACTIVO = 1;
 
