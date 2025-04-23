@@ -3,15 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class VehicleModelController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $totalModel = \App\Models\VehicleModel::orderBy('name', 'asc')
+            ->get();
+        $models = \App\Support\Pagination::paginate($totalModel, $request);
+
+        return Inertia::render('Catalogs/VehicleModels/Index', [
+            'models' => $models,
+        ]);
     }
 
     /**
@@ -20,6 +27,7 @@ class VehicleModelController extends Controller
     public function create()
     {
         //
+        return Inertia::render('Catalogs/VehicleModels/Create');
     }
 
     /**
@@ -28,6 +36,15 @@ class VehicleModelController extends Controller
     public function store(Request $request)
     {
         //
+        $request->validate([
+            'name' => 'required|string|unique:vehicle_models,name',
+        ]);
+
+        $model = new \App\Models\VehicleModel();
+        $model->name = $request->name;
+        $model->save();
+
+        return redirect()->route('vehicleModel.index')->with('success', 'Modelo de vehículo creado correctamente.');
     }
 
     /**
@@ -44,6 +61,10 @@ class VehicleModelController extends Controller
     public function edit(string $id)
     {
         //
+        $model = \App\Models\VehicleModel::findOrFail($id);
+        return Inertia::render('Catalogs/VehicleModels/Edit', [
+            'model' => $model,
+        ]);
     }
 
     /**
@@ -52,6 +73,13 @@ class VehicleModelController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $request->validate([
+            'name' => 'required|string|unique:vehicle_models,name,' . $id,
+        ]);
+        $model = \App\Models\VehicleModel::findOrFail($id);
+        $model->name = $request->name;
+        $model->save();
+        return redirect()->route('vehicleModel.index')->with('success', 'Modelo de vehículo actualizado correctamente.');
     }
 
     /**
@@ -60,5 +88,11 @@ class VehicleModelController extends Controller
     public function destroy(string $id)
     {
         //
+        $model = \App\Models\VehicleModel::findOrFail($id);
+        if ($model->vehicles()->count() > 0) {
+            return redirect()->route('vehicleModel.index')->with('error', 'No se puede eliminar el modelo de vehículo porque está asociado a vehículos.');
+        }
+        $model->delete();
+        return redirect()->route('vehicleModel.index')->with('success', 'Modelo de vehículo eliminado correctamente.');
     }
 }

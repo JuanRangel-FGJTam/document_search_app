@@ -23,13 +23,13 @@ import { Link } from '@inertiajs/vue3';
                     </svg>
                 </div>
                 <div>
-                    <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-600 dark:text-gray-400">
                         Marcas de vehiculos
                     </p>
                 </div>
                 </Link>
                 <!-- Card -->
-                <Link :href="route('reports.index')"
+                <Link :href="route('vehicleModel.index')"
                     class="flex items-center p-4 bg-white rounded-lg shadow-lg dark:bg-gray-800 transition duration-300 ease-in-out transform hover:scale-105 hover:bg-gray-100">
                 <div class="p-3 mr-4 text-green-500 bg-green-100 rounded-full dark:text-green-100 dark:bg-green-500">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
@@ -41,7 +41,7 @@ import { Link } from '@inertiajs/vue3';
                     </svg>
                 </div>
                 <div>
-                    <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-600 dark:text-gray-400">
                         Modelos de vehículos
                     </p>
                 </div>
@@ -58,7 +58,7 @@ import { Link } from '@inertiajs/vue3';
                     </svg>
                 </div>
                 <div>
-                    <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-600 dark:text-gray-400">
                         Tipos de vehículos
                     </p>
                 </div>

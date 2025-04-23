@@ -90,7 +90,7 @@ Route::middleware([
             Route::post('/store', [VehicleModelController::class, 'store'])->name('vehicleModel.store');
             Route::get('/edit/{vehicleModel_id}', [VehicleModelController::class, 'edit'])->name('vehicleModel.edit');
             Route::post('/update/{vehicleModel_id}', [VehicleModelController::class, 'update'])->name('vehicleModel.update');
-            Route::get('/delete/{vehicleModel_id}', [VehicleModelController::class, 'delete'])->name('vehicleModel.delete');
+            Route::delete('/delete/{vehicleModel_id}', [VehicleModelController::class, 'destroy'])->name('vehicleModel.delete');
         });
 
         Route::prefix('/vehiculos-tipos')->group(function () {
