@@ -10,7 +10,9 @@ const props = defineProps({
     misplacement: Object,
     documents: Object,
     placeEvent: Object,
-    identification: Object
+    identification: Object,
+    vehicle: Object,
+    circulationDocument: Object,
 });
 
 console.log(props.identification);
@@ -207,6 +209,82 @@ function getIdentificationYear(validDate) {
                             <p v-else class="text-red-600">No disponible</p>
                         </div>
                     </div>
+
+                    <!-- DOCUMENTOS EXTRAVIADOS -->
+                    <template v-if="vehicle">
+                        <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">
+                            Placas Extraviadas
+                        </h3>
+                        <div class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
+                            <div>
+                                <p class="font-semibold">Titular</p>
+                                <p>{{ props.vehicle.owner ?? 'No proporcionada' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Placa</p>
+                                <p>{{ props.vehicle.plate_number ?? 'No proporcionada' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Número de Serie</p>
+                                <p>{{ props.vehicle.serie_number ?? 'No proporcionada' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Marca</p>
+                                <p>{{ props.vehicle.vehicle_brand.name ?? 'No proporcionada' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Modelo</p>
+                                <p>{{ props.vehicle.vehicle_model.name ?? 'No proporcionada' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Tipo de vehículo</p>
+                                <p>{{ props.vehicle.vehicle_type.name ?? 'No proporcionada' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Tipo de placa</p>
+                                <p>{{ props.vehicle.plate_type.name ?? 'No proporcionada' }}</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">
+                            Tarjeta de Circulación
+                        </h3>
+                        <div v-if="circulationDocument" class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
+                            <div>
+                                <p class="font-semibold">Fecha de Vencimiento</p>
+                                <p>{{ circulationDocument.valid ?? 'No proporcionado' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Imagen</p>
+                                <img :src="circulationDocument.image" alt="Documento"
+                                    class="h-32 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">
+                            Documentos Extraviados</h3>
+                        <div v-for="doc in documents" :key="doc.id"
+                            class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
+                            <div>
+                                <p class="font-semibold">Documento</p>
+                                <p>{{ doc.document_type.name }}</p>
+                            </div>
+                            <div v-if="doc.specification">
+                                <p class="font-semibold">Especificación</p>
+                                <p>{{ doc.specification }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Folio</p>
+                                <p>{{ doc.document_number ?? 'No proporcionado' }}</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Titular</p>
+                                <p>{{ doc.document_owner }}</p>
+                            </div>
+                        </div>
+                    </template>
+
                     <!-- DATOS DEL LUGAR DE LOS HECHOS -->
                     <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Lugar de los Hechos</h3>
                     <div class="grid grid-cols-4 gap-4 border p-4 rounded-lg">
@@ -218,27 +296,6 @@ function getIdentificationYear(validDate) {
                         }" :key="key">
                             <p class="font-semibold">{{ key }}</p>
                             <p>{{ value }}</p>
-                        </div>
-                    </div>
-
-                    <!-- DOCUMENTOS EXTRAVIADOS -->
-                    <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Documentos Extraviados</h3>
-                    <div v-for="doc in documents" :key="doc.id" class="grid grid-cols-3 gap-4 border p-4 rounded-lg">
-                        <div>
-                            <p class="font-semibold">Documento</p>
-                            <p>{{ doc.document_type.name }}</p>
-                        </div>
-                        <div v-if="doc.specification">
-                            <p class="font-semibold">Especificación</p>
-                            <p>{{ doc.specification }}</p>
-                        </div>
-                        <div>
-                            <p class="font-semibold">Folio</p>
-                            <p>{{ doc.document_number ?? 'No proporcionado' }}</p>
-                        </div>
-                        <div>
-                            <p class="font-semibold">Titular</p>
-                            <p>{{ doc.document_owner }}</p>
                         </div>
                     </div>
 
