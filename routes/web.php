@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleBrandController;
 use App\Http\Controllers\VehicleModelController;
 use App\Http\Controllers\VehicleTypeController;
+use App\Http\Controllers\VehicleSubBrandController;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -82,6 +83,15 @@ Route::middleware([
             Route::get('/edit/{vehicleBrand_id}', [VehicleBrandController::class, 'edit'])->name('vehicleBrand.edit');
             Route::post('/update/{vehicleBrand_id}', [VehicleBrandController::class, 'update'])->name('vehicleBrand.update');
             Route::delete('/delete/{vehicleBrand_id}', [VehicleBrandController::class, 'delete'])->name('vehicleBrand.delete');
+        });
+
+        Route::prefix('/vehiculos-submarcas')->group(function () {
+            Route::get('/', [VehicleSubBrandController::class, 'index'])->name('vehicleSubBrand.index');
+            Route::get('/create', [VehicleSubBrandController::class, 'create'])->name('vehicleSubBrand.create');
+            Route::post('/store', [VehicleSubBrandController::class, 'store'])->name('vehicleSubBrand.store');
+            Route::get('/edit/{vehicleBrand_id}', [VehicleSubBrandController::class, 'edit'])->name('vehicleSubBrand.edit');
+            Route::post('/update/{vehicleBrand_id}', [VehicleSubBrandController::class, 'update'])->name('vehicleSubBrand.update');
+            Route::delete('/delete/{vehicleBrand_id}', [VehicleSubBrandController::class, 'destroy'])->name('vehicleSubBrand.delete');
         });
 
         Route::prefix('/vehiculos-modelos')->group(function () {
