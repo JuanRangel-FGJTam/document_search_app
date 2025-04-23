@@ -1,0 +1,100 @@
+<script setup>
+import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
+import { Link, router } from '@inertiajs/vue3';
+import { defineProps, ref } from 'vue';
+import { useToast } from 'vue-toastification';
+const props = defineProps({
+    types: {
+        type: Object,
+    },
+});
+
+const toast = useToast();
+
+</script>
+
+<template>
+    <AppLayout title="Marcas de vehículos">
+        <div class="py-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                    <!-- component -->
+                    <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <!-- Encabezado y contador -->
+                        <div class="flex items-center gap-x-3">
+                            <h2 class="text-lg font-semibold leading-tight text-gray-800 uppercase dark:text-gray-200">
+                                Tipos de vehículos
+                            </h2>
+                        </div>
+                    </div>
+                    <section>
+                        <div class="mx-auto max-w-screen-xl">
+                            <!-- Start coding here -->
+                            <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+                                <div>
+                                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                        <thead
+                                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                            <tr class="text-center">
+                                                <th scope="col" class="px-4 py-3">Nombre</th>
+                                                <th scope="col" class="px-4 py-3">
+                                                    Acciones
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template v-if="types.data.length > 0">
+                                                <tr class="text-center border-b dark:border-gray-700"
+                                                    v-for="type in types.data" :key="type.id">
+                                                    <th scope="row"
+                                                        class="px-4 py-3 font-medium text-gray-900 whitespace-wrap dark:text-white">
+                                                        {{ type.name }}
+                                                    </th>
+                                                    <td class="px-4 py-3 items-center justify-center">
+                                                        <div class="flex justify-center gap-2">
+                                                            <button @click="edittype(type.id)"
+                                                                class="inline-flex items-center px-4 py-2 bg-yellow-500 transition ease-in-out hover:bg-yellow-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
+                                                                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                                    viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path
+                                                                        d="M14.06 2.94a1.5 1.5 0 0 1 2.12 0l4.88 4.88a1.5 1.5 0 0 1 0 2.12l-10 10a1.5 1.5 0 0 1-1.06.44H5.5a1.5 1.5 0 0 1-1.5-1.5v-4.5c0-.4.16-.78.44-1.06l10-10ZM15 5.12 18.88 9 17 10.88 13.12 7 15 5.12ZM12 8.12 4 16.12V19h2.88l8-8L12 8.12Z" />
+                                                                </svg>
+                                                                Editar
+                                                            </button>
+                                                            <button @click="deletetype(type.id)"
+                                                                class="inline-flex items-center px-4 py-2 bg-red-500 transition ease-in-out hover:bg-red-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
+                                                                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                                    viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path
+                                                                        d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z" />
+                                                                </svg>
+                                                                Eliminar
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <template v-else>
+                                                <tr>
+                                                    <td colspan="2"
+                                                        class="px-6 py-4 text-center font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        No hay typeos de vehículos que mostrar.
+                                                    </td>
+                                                </tr>
+                                            </template>
+
+                                        </tbody>
+                                        <tfoot>
+                                            <Pagination :colspan="2" :ObjectData="types"></Pagination>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>

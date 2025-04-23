@@ -5,6 +5,10 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleBrandController;
+use App\Http\Controllers\VehicleModelController;
+use App\Http\Controllers\VehicleTypeController;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -38,7 +42,6 @@ Route::middleware([
         Route::post('/store-accept-request/{misplacement_id}', [RequestController::class, 'storeAcceptRequest'])->name('misplacement.store.accept');
 
         Route::get('/resend-request/{misplacement_id}', [RequestController::class, 'reSendDocument'])->name('misplacement.reSendDocument');
-
     });
 
     Route::prefix('/admin/reports')->group(function () {
@@ -67,12 +70,45 @@ Route::middleware([
         Route::get('/reintegrar/{user_id}', [UserController::class, 'refund'])->name('users.refund');
     });
 
+    Route::prefix('/admin/catalogos')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Catalogs/Index');
+        })->name('catalogs.index');
+
+        Route::prefix('/vehiculos-marcas')->group(function () {
+            Route::get('/', [VehicleBrandController::class, 'index'])->name('vehicleBrand.index');
+            Route::get('/create', [VehicleBrandController::class, 'create'])->name('vehicleBrand.create');
+            Route::post('/store', [VehicleBrandController::class, 'store'])->name('vehicleBrand.store');
+            Route::get('/edit/{vehicleBrand_id}', [VehicleBrandController::class, 'edit'])->name('vehicleBrand.edit');
+            Route::post('/update/{vehicleBrand_id}', [VehicleBrandController::class, 'update'])->name('vehicleBrand.update');
+            Route::delete('/delete/{vehicleBrand_id}', [VehicleBrandController::class, 'delete'])->name('vehicleBrand.delete');
+        });
+
+        Route::prefix('/vehiculos-modelos')->group(function () {
+            Route::get('/', [VehicleModelController::class, 'index'])->name('vehicleModel.index');
+            Route::get('/create', [VehicleModelController::class, 'create'])->name('vehicleModel.create');
+            Route::post('/store', [VehicleModelController::class, 'store'])->name('vehicleModel.store');
+            Route::get('/edit/{vehicleModel_id}', [VehicleModelController::class, 'edit'])->name('vehicleModel.edit');
+            Route::post('/update/{vehicleModel_id}', [VehicleModelController::class, 'update'])->name('vehicleModel.update');
+            Route::get('/delete/{vehicleModel_id}', [VehicleModelController::class, 'delete'])->name('vehicleModel.delete');
+        });
+
+        Route::prefix('/vehiculos-tipos')->group(function () {
+            Route::get('/', [VehicleTypeController::class, 'index'])->name('vehicle.index');
+            Route::get('/create', [VehicleTypeController::class, 'create'])->name('vehicle.create');
+            Route::post('/store', [VehicleTypeController::class, 'store'])->name('vehicle.store');
+            Route::get('/edit/{vehicle_id}', [VehicleTypeController::class, 'edit'])->name('vehicle.edit');
+            Route::post('/update/{vehicle_id}', [VehicleTypeController::class, 'update'])->name('vehicle.update');
+            Route::get('/delete/{vehicle_id}', [VehicleTypeController::class, 'delete'])->name('vehicle.delete');
+        });
+
+    });
+
+
+
     Route::get('/download/{id}', [RequestController::class, 'downloadPDF'])->name('downloadPDF');
-
-
 });
 
 Route::get('/register', function () {
     abort(404);
 });
-
