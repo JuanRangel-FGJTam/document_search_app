@@ -4,6 +4,7 @@ import Pagination from '@/Components/Pagination.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
 import { useToast } from 'vue-toastification';
+import BackButton from '@/Components/BackButton.vue';
 const props = defineProps({
     models: {
         type: Object,
@@ -22,11 +23,11 @@ function deleteModel(id) {
 function confirmDeleteBrand() {
     router.delete(route('vehicleModel.delete', selectedModelId.value), {
         onSuccess: () => {
-            toast.success('Marca eliminada correctamente');
+            toast.success('Modelo eliminada correctamente');
             confirmDelete.value = false;
         },
         onError: (errors) => {
-            toast.error(errors.message || 'No se pudo eliminar la marca.');
+            toast.error(errors.message || 'No se pudo eliminar el modelo.');
             confirmDelete.value = false;
         }
     });
@@ -34,7 +35,7 @@ function confirmDeleteBrand() {
 </script>
 
 <template>
-    <AppLayout title="Marcas de vehículos">
+    <AppLayout title="Modelos de vehículos">
         <div class="py-6">
             <div class="max-w-7xl mx-auto">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -42,6 +43,7 @@ function confirmDeleteBrand() {
                     <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                         <!-- Encabezado y contador -->
                         <div class="flex items-center gap-x-3">
+                            <BackButton class="mr-2" :href="route('catalogs.index')" />
                             <h2 class="text-lg font-semibold leading-tight text-gray-800 uppercase dark:text-gray-200">
                                 Modelos de vehículos
                             </h2>
@@ -127,8 +129,8 @@ function confirmDeleteBrand() {
                     <div v-if="confirmDelete"
                         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                         <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">¿Estás seguro que deseas eliminar esta
-                                marca?</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">¿Estás seguro que deseas eliminar este
+                                modelo?</h3>
                             <p class="text-sm text-gray-600 mb-6">Esta acción no se puede deshacer.</p>
                             <div class="flex justify-end gap-2">
                                 <button @click="confirmDelete = false"

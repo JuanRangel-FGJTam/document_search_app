@@ -12,4 +12,9 @@ class VehicleType extends Model
     protected $fillable = [
         'name',
     ];
+
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class);
+    }
 }

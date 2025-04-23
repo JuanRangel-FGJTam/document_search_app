@@ -94,12 +94,12 @@ Route::middleware([
         });
 
         Route::prefix('/vehiculos-tipos')->group(function () {
-            Route::get('/', [VehicleTypeController::class, 'index'])->name('vehicle.index');
-            Route::get('/create', [VehicleTypeController::class, 'create'])->name('vehicle.create');
-            Route::post('/store', [VehicleTypeController::class, 'store'])->name('vehicle.store');
-            Route::get('/edit/{vehicle_id}', [VehicleTypeController::class, 'edit'])->name('vehicle.edit');
-            Route::post('/update/{vehicle_id}', [VehicleTypeController::class, 'update'])->name('vehicle.update');
-            Route::get('/delete/{vehicle_id}', [VehicleTypeController::class, 'delete'])->name('vehicle.delete');
+            Route::get('/', [VehicleTypeController::class, 'index'])->name('vehicleType.index');
+            Route::get('/create', [VehicleTypeController::class, 'create'])->name('vehicleType.create');
+            Route::post('/store', [VehicleTypeController::class, 'store'])->name('vehicleType.store');
+            Route::get('/edit/{vehicle_id}', [VehicleTypeController::class, 'edit'])->name('vehicleType.edit');
+            Route::post('/update/{vehicle_id}', [VehicleTypeController::class, 'update'])->name('vehicleType.update');
+            Route::delete('/delete/{vehicle_id}', [VehicleTypeController::class, 'destroy'])->name('vehicleType.delete');
         });
 
     });

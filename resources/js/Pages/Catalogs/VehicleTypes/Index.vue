@@ -11,11 +11,31 @@ const props = defineProps({
 });
 
 const toast = useToast();
+const confirmDelete = ref(false);
+const selectedTypeId = ref(null);
+
+function deletetype(id) {
+    selectedTypeId.value = id;
+    confirmDelete.value = true;
+}
+
+function confirmDeleteBrand() {
+    router.delete(route('vehicleType.delete', selectedTypeId.value), {
+        onSuccess: () => {
+            toast.success('Tipo eliminado correctamente');
+            confirmDelete.value = false;
+        },
+        onError: (errors) => {
+            toast.error(errors.message || 'No se pudo eliminar el tipo.');
+            confirmDelete.value = false;
+        }
+    });
+}
 
 </script>
 
 <template>
-    <AppLayout title="Marcas de vehículos">
+    <AppLayout title="Tipos de vehículos">
         <div class="py-6">
             <div class="max-w-7xl mx-auto">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -26,6 +46,17 @@ const toast = useToast();
                             <h2 class="text-lg font-semibold leading-tight text-gray-800 uppercase dark:text-gray-200">
                                 Tipos de vehículos
                             </h2>
+                        </div>
+                        <div>
+                            <Link :href="route('vehicleType.create')"
+                                class="inline-flex items-center px-4 py-2 bg-blue-500 transition ease-in-out hover:bg-blue-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
+                            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path
+                                    d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1z" />
+                            </svg>
+                            Agregar tipo
+                            </Link>
                         </div>
                     </div>
                     <section>
@@ -53,18 +84,19 @@ const toast = useToast();
                                                     </th>
                                                     <td class="px-4 py-3 items-center justify-center">
                                                         <div class="flex justify-center gap-2">
-                                                            <button @click="edittype(type.id)"
+                                                            <Link :href="route('vehicleType.edit', type.id)"
                                                                 class="inline-flex items-center px-4 py-2 bg-yellow-500 transition ease-in-out hover:bg-yellow-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
-                                                                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
-                                                                    viewBox="0 0 24 24" fill="currentColor">
-                                                                    <path
-                                                                        d="M14.06 2.94a1.5 1.5 0 0 1 2.12 0l4.88 4.88a1.5 1.5 0 0 1 0 2.12l-10 10a1.5 1.5 0 0 1-1.06.44H5.5a1.5 1.5 0 0 1-1.5-1.5v-4.5c0-.4.16-.78.44-1.06l10-10ZM15 5.12 18.88 9 17 10.88 13.12 7 15 5.12ZM12 8.12 4 16.12V19h2.88l8-8L12 8.12Z" />
-                                                                </svg>
-                                                                Editar
-                                                            </button>
+                                                            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 24 24" fill="currentColor">
+                                                                <path
+                                                                    d="M14.06 2.94a1.5 1.5 0 0 1 2.12 0l4.88 4.88a1.5 1.5 0 0 1 0 2.12l-10 10a1.5 1.5 0 0 1-1.06.44H5.5a1.5 1.5 0 0 1-1.5-1.5v-4.5c0-.4.16-.78.44-1.06l10-10ZM15 5.12 18.88 9 17 10.88 13.12 7 15 5.12ZM12 8.12 4 16.12V19h2.88l8-8L12 8.12Z" />
+                                                            </svg>
+                                                            Editar
+                                                            </Link>
                                                             <button @click="deletetype(type.id)"
                                                                 class="inline-flex items-center px-4 py-2 bg-red-500 transition ease-in-out hover:bg-red-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
-                                                                <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                                <svg class="w-5 h-5 mr-2"
+                                                                    xmlns="http://www.w3.org/2000/svg"
                                                                     viewBox="0 0 24 24" fill="currentColor">
                                                                     <path
                                                                         d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z" />
@@ -93,6 +125,20 @@ const toast = useToast();
                             </div>
                         </div>
                     </section>
+                    <div v-if="confirmDelete"
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">¿Estás seguro que deseas eliminar esta
+                                tipo de vehículo?</h3>
+                            <p class="text-sm text-gray-600 mb-6">Esta acción no se puede deshacer.</p>
+                            <div class="flex justify-end gap-2">
+                                <button @click="confirmDelete = false"
+                                    class="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-sm">Cancelar</button>
+                                <button @click="confirmDeleteBrand"
+                                    class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm">Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

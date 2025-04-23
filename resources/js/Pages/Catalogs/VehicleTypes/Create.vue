@@ -1,54 +1,62 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { useForm } from '@inertiajs/vue3';
+import { defineProps, ref } from 'vue';
 import BackButton from '@/Components/BackButton.vue';
-import { defineProps } from 'vue';
+import InputError from '@/Components/InputError.vue';
 import { useToast } from 'vue-toastification';
+import { useForm } from '@inertiajs/vue3';
 const props = defineProps({
-    model: Object,
+    errors: Object,
 });
 const toast = useToast();
 const form = useForm({
-    name: props.model.name,
+    name: '',
 });
 
 const submit = () => {
-    form.post(route('vehicleModel.update', props.model.id), {
+    form.post(route('vehicleType.store'), {
         onSuccess: () => {
-            toast.success('Modelo de vehículo actualizada correctamente');
+            toast.success('Tipo de vehículo agregado correctamente');
         },
         onError: (errors) => {
-            toast.error('Error al actualizar el modelo del vehículo');
+            toast.error('Error al agregar el tipo de vehículo');
         },
     });
 };
 </script>
 
 <template>
-    <AppLayout title="Agregar Modelo de Vehículo">
+    <AppLayout title="Agregar Tipo de Vehículo">
         <div class="py-6 px-4 sm:px-6 lg:px-8">
             <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
                 <div class="flex items-center mb-4">
-                    <BackButton class="mr-2" :href="route('vehicleBrand.index')" />
+                    <BackButton class="mr-2" :href="route('catalogs.index')" />
                     <h2 class="text-xl font-semibold text-gray-800">
-                        Editar Modelo de Vehículo
+                        Agregar Tipo de Vehículo
                     </h2>
                 </div>
 
                 <form @submit.prevent="submit" class="space-y-6">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del modelo</label>
-                        <input id="name" v-model="form.name" type="text"
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del tipo de vehículo</label>
+                        <input
+                            id="name"
+                            v-model="form.name"
+                            type="text"
                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                            :class="{ 'border-red-500': form.errors.name }" />
+                            :class="{ 'border-red-500': form.errors.name }"
+                            placeholder="Ingrese el nombre del tipo de vehículo"
+                        />
                         <p v-if="form.errors.name" class="text-red-600 text-sm mt-1">{{ form.errors.name }}</p>
                     </div>
 
                     <div class="flex justify-end">
-                        <button type="submit"
+                        <button
+                            type="submit"
                             class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
-                            :disabled="form.processing">
-                            Actualizar
+                            :disabled="form.processing"
+                        >
+                            Guardar
                         </button>
                     </div>
                 </form>

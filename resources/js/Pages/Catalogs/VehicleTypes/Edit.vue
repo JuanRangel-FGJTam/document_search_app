@@ -5,39 +5,39 @@ import BackButton from '@/Components/BackButton.vue';
 import { defineProps } from 'vue';
 import { useToast } from 'vue-toastification';
 const props = defineProps({
-    model: Object,
+    type: Object,
 });
 const toast = useToast();
 const form = useForm({
-    name: props.model.name,
+    name: props.type.name,
 });
 
 const submit = () => {
-    form.post(route('vehicleModel.update', props.model.id), {
+    form.post(route('vehicleType.update', props.type.id), {
         onSuccess: () => {
-            toast.success('Modelo de vehículo actualizada correctamente');
+            toast.success('Tipo de vehículo actualizada correctamente');
         },
         onError: (errors) => {
-            toast.error('Error al actualizar el modelo del vehículo');
+            toast.error('Error al actualizar el tipo del vehículo');
         },
     });
 };
 </script>
 
 <template>
-    <AppLayout title="Agregar Modelo de Vehículo">
+    <AppLayout title="Actualizar Tipo de Vehículo">
         <div class="py-6 px-4 sm:px-6 lg:px-8">
             <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
                 <div class="flex items-center mb-4">
                     <BackButton class="mr-2" :href="route('vehicleBrand.index')" />
                     <h2 class="text-xl font-semibold text-gray-800">
-                        Editar Modelo de Vehículo
+                        Editar Tipo de Vehículo
                     </h2>
                 </div>
 
                 <form @submit.prevent="submit" class="space-y-6">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del modelo</label>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del tipo</label>
                         <input id="name" v-model="form.name" type="text"
                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
                             :class="{ 'border-red-500': form.errors.name }" />

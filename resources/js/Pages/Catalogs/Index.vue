@@ -46,7 +46,7 @@ import { Link } from '@inertiajs/vue3';
                     </p>
                 </div>
                 </Link>
-                <Link :href="route('reports.index')"
+                <Link :href="route('vehicleType.index')"
                     class="flex items-center p-4 bg-white rounded-lg shadow-lg dark:bg-gray-800 transition duration-300 ease-in-out transform hover:scale-105 hover:bg-gray-100">
                 <div class="p-3 mr-4 text-green-500 bg-green-100 rounded-full dark:text-green-100 dark:bg-green-500">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
