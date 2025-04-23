@@ -4,6 +4,7 @@ import Pagination from '@/Components/Pagination.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
 import { useToast } from 'vue-toastification';
+import BackButton from '@/Components/BackButton.vue';
 const props = defineProps({
     types: {
         type: Object,
@@ -43,6 +44,7 @@ function confirmDeleteBrand() {
                     <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                         <!-- Encabezado y contador -->
                         <div class="flex items-center gap-x-3">
+                            <BackButton class="mr-2" :href="route('catalogs.index')" />
                             <h2 class="text-lg font-semibold leading-tight text-gray-800 uppercase dark:text-gray-200">
                                 Tipos de vehículos
                             </h2>
