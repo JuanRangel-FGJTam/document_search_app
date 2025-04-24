@@ -62,14 +62,16 @@ class VehicleSubBrandController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request, string $id)
     {
         //
+        $view = $request->query('view');
         $subBrand = \App\Models\VehicleSubBrand::findOrFail($id);
         $brands = \App\Models\VehicleBrand::orderBy('name', 'asc')->get();
         return Inertia::render('Catalogs/VehicleSubBrands/Edit', [
             'subBrand' => $subBrand,
             'brands' => $brands,
+            'view' => $view,
         ]);
     }
 
@@ -79,6 +81,7 @@ class VehicleSubBrandController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $view = $request->query('view');
         $request->validate([
             'name' => 'required|string|max:255|unique:vehicle_sub_brands,name,' . $id,
             'brand' => 'required|exists:vehicle_brands,id',
@@ -87,6 +90,11 @@ class VehicleSubBrandController extends Controller
         $subBrand->name = $request->name;
         $subBrand->vehicle_brand_id = $request->brand;
         $subBrand->save();
+
+        if($view == 'vehicleBrand.show'){
+            return redirect()->route('vehicleBrand.show', $subBrand->vehicle_brand_id)->with('success', 'Sub-brand updated successfully.');
+        }
+
         return redirect()->route('vehicleSubBrand.index')->with('success', 'Sub-brand updated successfully.');
     }
 

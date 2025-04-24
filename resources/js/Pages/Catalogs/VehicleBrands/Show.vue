@@ -171,20 +171,20 @@ const saveModal = () => {
                                                 <tbody>
                                                     <template v-if="brand.sub_brands.length > 0">
                                                         <tr class="text-center border-b dark:border-gray-700"
-                                                            v-for="model in brand.sub_brands"
-                                                            :key="model.id">
+                                                            v-for="subBrand in brand.sub_brands"
+                                                            :key="subBrand.id">
                                                             <td class="text-start px-4 py-3 whitespace-nowrap">
                                                                 <div class="text-center">
                                                                     <h4
                                                                         class="font-bold text-gray-700 dark:text-gray-200">
-                                                                        {{ model.name }}
+                                                                        {{ subBrand.name }}
                                                                     </h4>
                                                                 </div>
                                                             </td>
                                                             <td class="px-4 py-3">
                                                                 <div class="flex justify-center items-center gap-2">
                                                                     <Link
-                                                                        :href="route('vehicleSubBrand.edit', model.id)"
+                                                                        :href="route('vehicleSubBrand.edit', {'vehicleBrand_id':subBrand.id, 'view':'vehicleBrand.show'})"
                                                                         class="bg-blue-500 text-white flex items-center py-2 px-4 rounded-md hover:bg-blue-600 dark:hover:bg-blue-400 dark:hover:text-white transition">
                                                                     <svg class="w-5 h-5 mr-2"
                                                                         xmlns="http://www.w3.org/2000/svg"
@@ -194,7 +194,7 @@ const saveModal = () => {
                                                                     </svg>
                                                                     Editar
                                                                     </Link>
-                                                                    <button @click="openModal(model.id)"
+                                                                    <button @click="openModal(subBrand.id)"
                                                                         class="bg-red-500 text-white flex items-center py-2 px-4 rounded-md hover:bg-red-600 dark:hover:bg-red-400 dark:hover:text-white transition">
                                                                         <svg class="w-5 h-5 mr-2"
                                                                             xmlns="http://www.w3.org/2000/svg"
@@ -207,7 +207,6 @@ const saveModal = () => {
                                                                     </button>
                                                                 </div>
                                                             </td>
-
                                                         </tr>
                                                     </template>
                                                     <template v-else>

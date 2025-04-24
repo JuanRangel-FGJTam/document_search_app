@@ -13,6 +13,9 @@ const props = defineProps({
     subBrand: {
         type: Object,
     },
+    view: {
+        type: String,
+    },
 });
 const toast = useToast();
 const form = useForm({
@@ -21,7 +24,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('vehicleSubBrand.update',props.subBrand.id), {
+    form.post(route('vehicleSubBrand.update',{'vehicleBrand_id':props.subBrand.id, 'view':props.view}), {
         onSuccess: () => {
             toast.success('Submarca de vehículo actualizada correctamente');
         },

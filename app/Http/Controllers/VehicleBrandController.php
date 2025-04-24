@@ -96,7 +96,7 @@ class VehicleBrandController extends Controller
         //
         $brand = VehicleBrand::findOrFail($id);
         if ($brand->vehicles()->exists()) {
-            return back()->with('error', 'No se puede eliminar esta marca porque está asociada a uno o más vehículos.');
+            return back()->withErrors(['error'=> 'No se puede eliminar esta marca porque está asociada a uno o más vehículos.']);
         }
 
         $brand->delete();
