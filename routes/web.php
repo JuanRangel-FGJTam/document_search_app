@@ -80,9 +80,12 @@ Route::middleware([
             Route::get('/', [VehicleBrandController::class, 'index'])->name('vehicleBrand.index');
             Route::get('/create', [VehicleBrandController::class, 'create'])->name('vehicleBrand.create');
             Route::post('/store', [VehicleBrandController::class, 'store'])->name('vehicleBrand.store');
+            Route::get('/show/{vehicleBrand_id}', [VehicleBrandController::class, 'show'])->name('vehicleBrand.show');
             Route::get('/edit/{vehicleBrand_id}', [VehicleBrandController::class, 'edit'])->name('vehicleBrand.edit');
             Route::post('/update/{vehicleBrand_id}', [VehicleBrandController::class, 'update'])->name('vehicleBrand.update');
             Route::delete('/delete/{vehicleBrand_id}', [VehicleBrandController::class, 'delete'])->name('vehicleBrand.delete');
+
+            Route::post('/store-sub-brand/{vehicleBrand_id}', [VehicleBrandController::class, 'storeSubBrand'])->name('vehicleBrand.storeSubBrand');
         });
 
         Route::prefix('/vehiculos-submarcas')->group(function () {

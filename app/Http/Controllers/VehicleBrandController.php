@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\VehicleBrand;
+use App\Models\VehicleSubBrand;
+
 class VehicleBrandController extends Controller
 {
     /**
@@ -41,9 +43,9 @@ class VehicleBrandController extends Controller
             'name' => 'required|string|unique:vehicle_brands,name',
         ]);
 
-        VehicleBrand::create($validated);
+        $brand = VehicleBrand::create($validated);
 
-        return redirect()->route('vehicleBrand.index')->with('success', 'Marca agregada correctamente.');
+        return redirect()->route('vehicleBrand.show',$brand->id)->with('success', 'Marca agregada correctamente.');
     }
 
     /**
@@ -52,6 +54,11 @@ class VehicleBrandController extends Controller
     public function show(string $id)
     {
         //
+        $brand = VehicleBrand::findOrFail($id);
+        $brand->load('subBrands');
+        return Inertia::render('Catalogs/VehicleBrands/Show', [
+            'brand' => $brand,
+        ]);
     }
 
     /**
@@ -78,7 +85,7 @@ class VehicleBrandController extends Controller
         $brand = VehicleBrand::findOrFail($id);
         $brand->update($validated);
 
-        return redirect()->route('vehicleBrand.index')->with('success', 'Marca actualizada correctamente.');
+        return redirect()->route('vehicleBrand.show',$id)->with('success', 'Marca actualizada correctamente.');
     }
 
     /**
@@ -89,13 +96,27 @@ class VehicleBrandController extends Controller
         //
         $brand = VehicleBrand::findOrFail($id);
         if ($brand->vehicles()->exists()) {
-            return response()->json([
-                'message' => 'No se puede eliminar esta marca porque está asociada a uno o más vehículos.',
-            ], 422);
+            return back()->with('error', 'No se puede eliminar esta marca porque está asociada a uno o más vehículos.');
         }
 
         $brand->delete();
 
         return redirect()->back()->with('success', 'Marca eliminada correctamente.');
+    }
+
+    public function storeSubBrand(Request $request, string $brand_id)
+    {
+        $request->validate([
+            'name' => 'required|unique:vehicle_sub_brands,name',
+        ]);
+
+        $RequestData = [
+            'name' => $request->name,
+            'vehicle_brand_id' => $brand_id,
+        ];
+
+        VehicleSubBrand::create($RequestData);
+
+        return redirect()->back();
     }
 }

@@ -3,37 +3,12 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { Link, router } from '@inertiajs/vue3';
 import { defineProps, ref } from 'vue';
-import { useToast } from 'vue-toastification';
 import BackButton from '@/Components/BackButton.vue';
 const props = defineProps({
     brands: {
         type: Object,
     },
 });
-
-const toast = useToast();
-
-const confirmDelete = ref(false);
-const selectedBrandId = ref(null);
-
-function deleteBrand(id) {
-    selectedBrandId.value = id;
-    confirmDelete.value = true;
-}
-
-function confirmDeleteBrand() {
-    router.delete(route('vehicleBrand.delete', selectedBrandId.value), {
-        onSuccess: () => {
-            toast.success('Marca eliminada correctamente');
-            confirmDelete.value = false;
-        },
-        onError: (errors) => {
-            toast.error(errors.message || 'No se pudo eliminar la marca.');
-            confirmDelete.value = false;
-        }
-    });
-}
-
 </script>
 
 <template>
@@ -87,27 +62,16 @@ function confirmDeleteBrand() {
                                                         {{ brand.name }}
                                                     </th>
                                                     <td class="px-4 py-3 items-center justify-center">
-                                                        <div class="flex justify-center gap-2">
-                                                            <Link :href="route('vehicleBrand.edit', brand.id)"
-                                                                class="inline-flex items-center px-4 py-2 bg-yellow-500 transition ease-in-out hover:bg-yellow-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
-                                                            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 24 24" fill="currentColor">
-                                                                <path
-                                                                    d="M14.06 2.94a1.5 1.5 0 0 1 2.12 0l4.88 4.88a1.5 1.5 0 0 1 0 2.12l-10 10a1.5 1.5 0 0 1-1.06.44H5.5a1.5 1.5 0 0 1-1.5-1.5v-4.5c0-.4.16-.78.44-1.06l10-10ZM15 5.12 18.88 9 17 10.88 13.12 7 15 5.12ZM12 8.12 4 16.12V19h2.88l8-8L12 8.12Z" />
-                                                            </svg>
-                                                            Editar
-                                                            </Link>
-                                                            <button @click="deleteBrand(brand.id)"
-                                                                class="inline-flex items-center px-4 py-2 bg-red-500 transition ease-in-out hover:bg-red-700 text-white text-sm font-medium rounded-md hover:-translate-y-1 hover:scale-105">
-                                                                <svg class="w-5 h-5 mr-2"
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    viewBox="0 0 24 24" fill="currentColor">
-                                                                    <path
-                                                                        d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6ZM9 8V17H11V8H9ZM13 8V17H15V8H13Z" />
-                                                                </svg>
-                                                                Eliminar
-                                                            </button>
-                                                        </div>
+                                                        <Link :href="route('vehicleBrand.show', brand.id)"
+                                                            class="inline-flex items-center px-2 py-2 bg-gray-800 border border-transparent rounded-md text-base text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition ease-in-out duration-500 hover:-translate-y-2">
+                                                        <svg class="w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                            height="24px" viewBox="0 -960 960 960" width="24px"
+                                                            fill="currentColor">
+                                                            <path
+                                                                d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
+                                                        </svg>
+                                                        Ver detalles
+                                                        </Link>
                                                     </td>
                                                 </tr>
                                             </template>
@@ -128,22 +92,6 @@ function confirmDeleteBrand() {
                             </div>
                         </div>
                     </section>
-                    <!-- Modal de confirmación -->
-                    <div v-if="confirmDelete"
-                        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">¿Estás seguro que deseas eliminar esta
-                                marca?</h3>
-                            <p class="text-sm text-gray-600 mb-6">Esta acción no se puede deshacer.</p>
-                            <div class="flex justify-end gap-2">
-                                <button @click="confirmDelete = false"
-                                    class="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-sm">Cancelar</button>
-                                <button @click="confirmDeleteBrand"
-                                    class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm">Eliminar</button>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>

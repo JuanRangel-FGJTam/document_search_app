@@ -93,9 +93,10 @@ class VehicleSubBrandController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         //
+        $view = $request->query('view');
         $subBrand = \App\Models\VehicleSubBrand::findOrFail($id);
         /*
         if ($subBrand->vehicles()->count() > 0) {
@@ -103,6 +104,10 @@ class VehicleSubBrandController extends Controller
         }
             */
         $subBrand->delete();
+
+        if($view == 'vehicleBrand.show'){
+            return redirect()->route('vehicleBrand.show', $subBrand->vehicle_brand_id)->with('success', 'Sub-brand deleted successfully.');
+        }
         return redirect()->route('vehicleSubBrand.index')->with('success', 'Sub-brand deleted successfully.');
     }
 }
