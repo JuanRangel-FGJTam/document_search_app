@@ -41,7 +41,7 @@ class VehicleModelController extends Controller
         ]);
 
         $model = new \App\Models\VehicleModel();
-        $model->name = $request->name;
+        $model->name =strtoupper($request->name);
         $model->save();
 
         return redirect()->route('vehicleModel.index')->with('success', 'Modelo de vehículo creado correctamente.');
@@ -77,7 +77,7 @@ class VehicleModelController extends Controller
             'name' => 'required|string|unique:vehicle_models,name,' . $id,
         ]);
         $model = \App\Models\VehicleModel::findOrFail($id);
-        $model->name = $request->name;
+        $model->name = strtoupper($request->name);
         $model->save();
         return redirect()->route('vehicleModel.index')->with('success', 'Modelo de vehículo actualizado correctamente.');
     }
@@ -90,7 +90,7 @@ class VehicleModelController extends Controller
         //
         $model = \App\Models\VehicleModel::findOrFail($id);
         if ($model->vehicles()->count() > 0) {
-            return redirect()->route('vehicleModel.index')->with('error', 'No se puede eliminar el modelo de vehículo porque está asociado a vehículos.');
+            return redirect()->route('vehicleModel.index')->withErrors(['error'=> 'No se puede eliminar el modelo de vehículo porque está asociado a vehículos.']);
         }
         $model->delete();
         return redirect()->route('vehicleModel.index')->with('success', 'Modelo de vehículo eliminado correctamente.');

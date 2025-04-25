@@ -42,7 +42,7 @@ class VehicleBrandController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|unique:vehicle_brands,name',
         ]);
-
+        $validated['name'] = strtoupper($validated['name']);
         $brand = VehicleBrand::create($validated);
 
         return redirect()->route('vehicleBrand.show',$brand->id)->with('success', 'Marca agregada correctamente.');
@@ -83,6 +83,7 @@ class VehicleBrandController extends Controller
             'name' => 'required|string|unique:vehicle_brands,name,' . $id,
         ]);
         $brand = VehicleBrand::findOrFail($id);
+        $validated['name'] = strtoupper($validated['name']);
         $brand->update($validated);
 
         return redirect()->route('vehicleBrand.show',$id)->with('success', 'Marca actualizada correctamente.');

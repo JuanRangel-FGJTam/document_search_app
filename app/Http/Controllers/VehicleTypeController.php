@@ -42,7 +42,7 @@ class VehicleTypeController extends Controller
         ]);
 
         $type = new \App\Models\VehicleType();
-        $type->name = $request->name;
+        $type->name = strtoupper($request->name);
         $type->save();
 
         return redirect()->route('vehicleType.index')->with('success', 'Tipo de vehículo creado correctamente.');
@@ -78,7 +78,7 @@ class VehicleTypeController extends Controller
             'name' => 'required|string|unique:vehicle_types,name,' . $id,
         ]);
         $type = VehicleType::findOrFail($id);
-        $type->name = $request->name;
+        $type->name =strtoupper($request->name);
         $type->save();
         return redirect()->route('vehicleType.index')->with('success', 'Tipo de vehículo actualizado correctamente.');
     }
@@ -91,7 +91,7 @@ class VehicleTypeController extends Controller
         //
         $type = \App\Models\VehicleType::findOrFail($id);
         if ($type->vehicles()->count() > 0) {
-            return redirect()->route('vehicleModel.index')->with('error', 'No se puede eliminar el tipo de vehículo porque está asociado a vehículos.');
+            return redirect()->route('vehicleModel.index')->withErrors(['error'=>'No se puede eliminar el tipo de vehículo porque está asociado a vehículos.']);
         }
         $type->delete();
         return redirect()->route('vehicleType.index')->with('success', 'Tipo de vehículo eliminado correctamente.');

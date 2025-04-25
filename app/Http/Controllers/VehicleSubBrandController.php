@@ -45,7 +45,7 @@ class VehicleSubBrandController extends Controller
             'brand' => 'required|exists:vehicle_brands,id',
         ]);
         $subBrand = new \App\Models\VehicleSubBrand();
-        $subBrand->name = $request->name;
+        $subBrand->name = strtoupper($request->name);
         $subBrand->vehicle_brand_id = $request->brand;
         $subBrand->save();
         return redirect()->route('vehicleSubBrand.index')->with('success', 'Sub-brand created successfully.');
@@ -87,7 +87,7 @@ class VehicleSubBrandController extends Controller
             'brand' => 'required|exists:vehicle_brands,id',
         ]);
         $subBrand = \App\Models\VehicleSubBrand::findOrFail($id);
-        $subBrand->name = $request->name;
+        $subBrand->name = strtoupper($request->name);
         $subBrand->vehicle_brand_id = $request->brand;
         $subBrand->save();
 
@@ -106,11 +106,9 @@ class VehicleSubBrandController extends Controller
         //
         $view = $request->query('view');
         $subBrand = \App\Models\VehicleSubBrand::findOrFail($id);
-        /*
         if ($subBrand->vehicles()->count() > 0) {
-            return redirect()->route('vehicleSubBrand.index')->with('error', 'Cannot delete sub-brand with associated vehicles or brands.');
+            return redirect()->route('vehicleSubBrand.index')->withErrors(['error'=>'Error al eliminar la sub-marca, ya que tiene vehículos asociados.']);
         }
-            */
         $subBrand->delete();
 
         if($view == 'vehicleBrand.show'){
