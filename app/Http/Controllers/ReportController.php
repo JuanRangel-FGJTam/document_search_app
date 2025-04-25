@@ -16,6 +16,7 @@ use App\Models\Legacy\Identificacion;
 use App\Models\Legacy\Objeto;
 use App\Models\Legacy\TipoDocumento;
 use App\Models\LostStatus;
+use App\Models\PlateType;
 use App\Models\ReportType;
 use App\Models\Survey;
 use App\Services\AuthApiService;
@@ -39,6 +40,7 @@ class ReportController extends Controller
     const LEGACY_PASAPORT_ID = 2;
     const LEGACY_LICENSE_ID = 4;
 
+    const REPORT_TYPE_PLATE = 1;
 
     public function __construct(AuthApiService $authApiService)
     {
@@ -153,6 +155,18 @@ class ReportController extends Controller
                     'date_range' => null, // No se filtra por fecha en este caso
                 ];
                 break;
+
+            case 6:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'type_document' => SELF::REPORT_TYPE_PLATE,
+                    'municipio' => null, // No se filtra por municipio en este caso
+                    'date_range' => null, // No se filtra por fecha en este caso
+                ];
+                $filters['download'] = $request->download ?? null;
+                return $this->getPlateReport($filters);
+                break;
             default:
                 abort(400, 'Tipo de reporte no válido');
         }
@@ -160,6 +174,70 @@ class ReportController extends Controller
 
         return $this->getReport($filters);
     }
+
+    public function getPlateReport(array $filters)
+    {
+        $status_name = null;
+        $plate_types = PlateType::pluck('name', 'id');
+        if ($filters['status']) {
+            $lost_status = LostStatus::find($filters['status']);
+            $status_name = $lost_status->name ?? null;
+        }
+        // Obtener datos
+        $report = $this->getPlateData($filters, $plate_types);
+        $data = [
+            'year' => $filters['year'],
+            'data' => $report,
+            'status_name' => $status_name,
+            'plate_document'=> true,
+        ];
+        Log::info('Reporte exportado por usuario: ' . Auth::id());
+        return (new ExcelRequest())->create($data);
+    }
+
+    public function getPlateData(array $filters, Object $plate_types)
+    {
+        $currentYear = Carbon::now()->year;
+        $maxMonths = ($filters['year'] == $currentYear) ? Carbon::now()->month : 12;
+
+        $report = collect(range(1, $maxMonths))->mapWithKeys(fn($m) => [
+            Carbon::create()->month($m)->format('F') => [
+                'total_solicitudes' => 0,
+                'identifications_count' => $plate_types->mapWithKeys(fn($name) => [$name => 0])->toArray(),
+            ]
+        ])->toArray();
+
+        // Nuevo query: contar los misplacements vinculados a vehicles
+        $queryMisplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, vehicles.plate_type_id, COUNT(*) as total')
+            ->join('vehicles', 'misplacements.id', '=', 'vehicles.misplacement_id');
+
+        if ($filters['year']) {
+            $queryMisplacements->whereYear('misplacements.registration_date', $filters['year']);
+        }
+
+        if ($filters['municipio']) {
+            $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                ->where('place_events.municipality_api_id', $filters['municipio']);
+        }
+
+        if ($filters['status']) {
+            $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
+        }
+
+        $queryMisplacements->groupByRaw('MONTH(misplacements.registration_date), vehicles.plate_type_id');
+        $misplacements = $queryMisplacements->get();
+        foreach ($misplacements as $item) {
+            $mes = Carbon::create()->month((int) $item->mes)->format('F');
+            $plateTypeName = $plate_types[$item->plate_type_id];
+
+            $report[$mes]['identifications_count'][$plateTypeName] += $item->total;
+            $report[$mes]['total_solicitudes'] += $item->total;
+        }
+
+        return $report;
+    }
+
+
 
     /**
      * Genera el reporte basado en los filtros.

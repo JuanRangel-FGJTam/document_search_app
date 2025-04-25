@@ -101,7 +101,7 @@ watch(() => form.reportType, (newValue) => {
 });
 
 const validateForm = () => {
-    if ((form.reportType === 1 || form.reportType === 4) && !form.year) {
+    if ((form.reportType === 1 || form.reportType === 4 || form.reportType == 6) && !form.year) {
         toast.warning('Ingrese un año');
         return false;
     }
@@ -225,7 +225,7 @@ const generateChart = async () => {
                                 </div>
 
                                 <!-- Selección de año (solo si el reporte es por año) -->
-                                <div class="col-span-1" v-if="[1, 4].includes(form.reportType)">
+                                <div class="col-span-1" v-if="[1, 4, 6].includes(form.reportType)">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Seleccione Año
                                     </label>
@@ -306,13 +306,13 @@ const generateChart = async () => {
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div v-if="barChartData" class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden">
-                                    <Bar :data="barChartData" :options="barChartOptions"
-                                        class="w-full h-full" />
+                                <div v-if="barChartData"
+                                    class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden">
+                                    <Bar :data="barChartData" :options="barChartOptions" class="w-full h-full" />
                                 </div>
-                                <div v-if="doughnutData" class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden flex justify-center">
-                                    <Doughnut :data="doughnutData" :options="doughnutOptions"
-                                        class="w-full h-full" />
+                                <div v-if="doughnutData"
+                                    class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden flex justify-center">
+                                    <Doughnut :data="doughnutData" :options="doughnutOptions" class="w-full h-full" />
                                 </div>
                             </div>
                             <div class="flex items-center justify-end space-x-4 mt-4">
