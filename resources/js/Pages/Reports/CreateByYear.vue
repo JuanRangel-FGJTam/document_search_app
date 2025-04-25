@@ -225,7 +225,7 @@ const generateChart = async () => {
                                 </div>
 
                                 <!-- Selección de año (solo si el reporte es por año) -->
-                                <div class="col-span-1" v-if="[1, 4, 6].includes(form.reportType)">
+                                <div class="col-span-1" v-if="[1, 4, 6, 7].includes(form.reportType)">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Seleccione Año
                                     </label>
@@ -253,7 +253,7 @@ const generateChart = async () => {
                                 </div>
 
                                 <!-- Selección de Municipio (para reportes por municipio y municipio por días) -->
-                                <div v-if="[3, 4].includes(form.reportType)" class="col-span-1">
+                                <div v-if="[3, 4, 7].includes(form.reportType)" class="col-span-1">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Seleccione Municipio
                                     </label>

@@ -167,6 +167,16 @@ class ReportController extends Controller
                 $filters['download'] = $request->download ?? null;
                 return $this->getPlateReport($filters);
                 break;
+            case 7:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'municipio' => $request->municipality,
+                    'date_range' => null,
+                ];
+                $filters['download'] = $request->download ?? null;
+                return $this->getPlateReport($filters);
+                break;
             default:
                 abort(400, 'Tipo de reporte no válido');
         }
@@ -183,13 +193,20 @@ class ReportController extends Controller
             $lost_status = LostStatus::find($filters['status']);
             $status_name = $lost_status->name ?? null;
         }
+
+        if (isset($filters['municipio'])) {
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
+            $municipality_name = $municipality['name'] ?? null;
+        }
+
         // Obtener datos
         $report = $this->getPlateData($filters, $plate_types);
         $data = [
             'year' => $filters['year'],
             'data' => $report,
             'status_name' => $status_name,
-            'plate_document'=> true,
+            'municipality_name' => $municipality_name,
+            'plate_document' => true,
         ];
         Log::info('Reporte exportado por usuario: ' . Auth::id());
         return (new ExcelRequest())->create($data);
