@@ -118,6 +118,7 @@ class ReportController extends Controller
         ]);
 
         $filters = null;
+        $is_plate_report = false;
         switch ($request->reportType) {
             case 1:
                 $filters = [
@@ -164,8 +165,7 @@ class ReportController extends Controller
                     'municipio' => null, // No se filtra por municipio en este caso
                     'date_range' => null, // No se filtra por fecha en este caso
                 ];
-                $filters['download'] = $request->download ?? null;
-                return $this->getPlateReport($filters);
+                $is_plate_report = true;
                 break;
             case 7:
                 $filters = [
@@ -174,20 +174,23 @@ class ReportController extends Controller
                     'municipio' => $request->municipality,
                     'date_range' => null,
                 ];
-                $filters['download'] = $request->download ?? null;
-                return $this->getPlateReport($filters);
+                $is_plate_report = true;
                 break;
             default:
                 abort(400, 'Tipo de reporte no válido');
         }
         $filters['download'] = $request->download ?? null;
-
+        if ($is_plate_report) {
+            return $this->getPlateReport($filters);
+        }
         return $this->getReport($filters);
     }
 
     public function getPlateReport(array $filters)
     {
         $status_name = null;
+        $report = null;
+        $municipality_name = null;
         $plate_types = PlateType::pluck('name', 'id');
         if ($filters['status']) {
             $lost_status = LostStatus::find($filters['status']);
@@ -198,18 +201,58 @@ class ReportController extends Controller
             $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
         }
-
-        // Obtener datos
         $report = $this->getPlateData($filters, $plate_types);
-        $data = [
+
+        if ($filters['download']) {
+            // Obtener datos
+            $data = [
+                'year' => $filters['year'],
+                'data' => $report,
+                'status_name' => $status_name,
+                'municipality_name' => $municipality_name,
+                'plate_document' => true,
+            ];
+            Log::info('Reporte exportado por usuario: ' . Auth::id());
+            return (new ExcelRequest())->create($data);
+        }
+
+        $totalPerIdentification = [];
+        $totalPerMonth = [];
+
+        foreach ($report as $month => $data) {
+            // Total de solicitudes por mes
+            $monthInSpanish = match ($month) {
+                'January' => 'Enero',
+                'February' => 'Febrero',
+                'March' => 'Marzo',
+                'April' => 'Abril',
+                'May' => 'Mayo',
+                'June' => 'Junio',
+                'July' => 'Julio',
+                'August' => 'Agosto',
+                'September' => 'Septiembre',
+                'October' => 'Octubre',
+                'November' => 'Noviembre',
+                'December' => 'Diciembre',
+                default => $month,
+            };
+            $totalPerMonth[$monthInSpanish] = $data['total_solicitudes'];
+
+            // Inicializa los tipos de identificaciones si es la primera vez
+            foreach ($data['identifications_count'] as $type => $quantity) {
+                if (!isset($totalPerIdentification[$type])) {
+                    $totalPerIdentification[$type] = 0;
+                }
+                $totalPerIdentification[$type] += $quantity;
+            }
+        }
+        Log::info('Grafica generada por usuario: ' . Auth::id());
+        return response()->json([
             'year' => $filters['year'],
-            'data' => $report,
-            'status_name' => $status_name,
+            'totalPerMonth' => $totalPerMonth,
+            'totalPerIdentification' => $totalPerIdentification,
             'municipality_name' => $municipality_name,
-            'plate_document' => true,
-        ];
-        Log::info('Reporte exportado por usuario: ' . Auth::id());
-        return (new ExcelRequest())->create($data);
+        ]);
     }
 
     public function getPlateData(array $filters, Object $plate_types)

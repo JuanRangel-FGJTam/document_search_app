@@ -16,8 +16,23 @@ import {
     ArcElement
 } from 'chart.js';
 
+
+const form = useForm({
+    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
+    year: 2025,
+    status: null,
+    start_date: null,
+    end_date: null,
+    municipality: null,
+    document_type: null,
+    keyword: null,
+    download: false,
+});
+
+
 const barChartData = ref(null)
 const doughnutData = ref(null)
+const doughnutTitle = ref(null);
 // Registrar los componentes de Chart.js
 ChartJS.register(
     Title,
@@ -41,7 +56,7 @@ const doughnutOptions = {
     responsive: true,
     plugins: {
         legend: { position: 'bottom' },
-        title: { display: true, text: 'Identificaciones usadas' },
+        title: { display: true, text: 'Solicitudes por tipo de dato' },
     }
 }
 
@@ -56,17 +71,7 @@ const props = defineProps({
 });
 const loadingXLSX = ref(false);
 const loadingChart = ref(false);
-const form = useForm({
-    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
-    year: 2025,
-    status: null,
-    start_date: null,
-    end_date: null,
-    municipality: null,
-    document_type: null,
-    keyword: null,
-    download: false,
-});
+
 
 watch(() => form.reportType, (newValue) => {
     // Reiniciar valores al cambiar el tipo de reporte
@@ -162,7 +167,6 @@ const generateChart = async () => {
         console.log('Data for chart:', data);
         const perMonth = data.totalPerMonth || {};
         const perIdentification = data.totalPerIdentification || {};
-
         barChartData.value = {
             labels: Object.keys(perMonth),
             datasets: [
@@ -178,7 +182,7 @@ const generateChart = async () => {
             labels: Object.keys(perIdentification),
             datasets: [
                 {
-                    label: 'Tipo de identificación',
+                    label: [6, 7].includes(form.reportType) ? 'Tipo de placa' : 'Tipo de identificación',
                     data: Object.values(perIdentification),
                     backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#9C27B0'],
                 },
