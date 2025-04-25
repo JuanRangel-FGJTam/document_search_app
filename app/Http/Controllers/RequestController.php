@@ -513,7 +513,7 @@ class RequestController extends Controller
                     "fullName" => $person['fullName'] ?? 'Usuario',
                     "folio" => (string) $document_number,
                     "status" => $reason->name,
-                    "area" => "Trámite en Línea",
+                    "area" => "Fiscalía Digital",
                     "name" => "Constancia de Extravío de Documentos",
                     "observations" => $request->message ?? 'Sin observaciones',
                 ];
@@ -560,7 +560,7 @@ class RequestController extends Controller
                 "fullName" => $person['fullName'] ?? 'Usuario',
                 "folio" => (string) $misplacement->document_number,
                 "status" => 'VÁLIDA',
-                "area" => "Trámite en Línea",
+                "area" => "Fiscalía Digital",
                 "name" => "Constancia de Extravío de Documentos",
                 "observations" => $request->message ?? 'Sin observaciones'
             ];
