@@ -145,5 +145,14 @@ MEILISEARCH_HOST=
 MEILISEARCH_KEY=
 ```
 
+## Sync data to legacy DataBase (MySQL to MSSQL)
 
+The project has a job that daily migrates the data generated the previous day to the previous database to generate reports and statistics.
 
+Migrate previous day's data to the MSSQL database:
+
+`php artisan app:sync-records-to-legacy`
+
+Pass the day to migrate as an argument (optional):
+
+`php artisan app:sync-records-to-legacy 2025-04-21`
