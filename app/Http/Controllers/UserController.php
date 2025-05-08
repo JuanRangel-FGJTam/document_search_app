@@ -124,7 +124,7 @@ class UserController extends Controller
     public function getApi()
     {
         $user = \App\Models\User::where('email', auth()->user()->email)->first();
-        $token = JWTAuth::fromUser($user);
+        $token = JWTAuth::fromUser($user, ['exp' => now()->addYear()->timestamp]);
         return Inertia::render('API', [
             'token' => $token,
             'user' => $user,
