@@ -19,7 +19,8 @@
         "meilisearch/meilisearch-php": "^1.13",
         "phpoffice/phpspreadsheet": "^4.0",
         "socialiteproviders/authentik": "^5.2",
-        "tightenco/ziggy": "^2.0"
+        "tightenco/ziggy": "^2.0",
+        "tymon/jwt-auth": "^2.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

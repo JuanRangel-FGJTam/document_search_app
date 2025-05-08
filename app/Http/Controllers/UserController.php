@@ -12,7 +12,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-
+use Inertia\Response;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
@@ -28,7 +29,7 @@ class UserController extends Controller
     {
         $search = $request->search;
         $totalUsers = $this->userService->getAll(
-            ['id', 'name', 'email','is_admin'],
+            ['id', 'name', 'email', 'is_admin'],
         );
         $users = \App\Support\Pagination::paginate($totalUsers, $request);
         return Inertia::render('Users/Index', [
@@ -73,7 +74,7 @@ class UserController extends Controller
     {
         $user = $this->userService->getById(
             $user_id,
-            ['id', 'name', 'email','is_admin'],
+            ['id', 'name', 'email', 'is_admin'],
         );
 
         return Inertia::render('Users/Edit', [
@@ -92,7 +93,7 @@ class UserController extends Controller
         $user = $this->userService->update($request->all(), $user_id);
         $user = $this->userService->getById(
             $user_id,
-            ['id', 'name', 'email','is_admin']
+            ['id', 'name', 'email', 'is_admin']
         );
 
         if (!empty($request['password'])) {
@@ -118,5 +119,15 @@ class UserController extends Controller
             Log::info('User refunded', ['id' => $user_id]);
         }
         return to_route('users.index');
+    }
+
+    public function getApi()
+    {
+        $user = \App\Models\User::where('email', auth()->user()->email)->first();
+        $token = JWTAuth::fromUser($user);
+        return Inertia::render('API', [
+            'token' => $token,
+            'user' => $user,
+        ]);
     }
 }
