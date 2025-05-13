@@ -13,6 +13,7 @@ use App\Models\{
     LostStatus,
     ReportType,
     Survey,
+    VehicleBrand,
     VehicleType
 };
 use App\Models\Legacy\Encuesta;
@@ -206,6 +207,8 @@ class ReportController extends Controller
             $vehicle_type_name = $vehicle_type->name ?? null;
         }
 
+        $vechileBrands = VehicleBrand::pluck('name', 'id')->map(fn($item) => strtolower($item));
+
         if ($filters['download']) {
             if (isset($filters['date_range']) && !empty($filters['date_range'])) {
                 $data = $this->generateExcelPlateReport($filters);
@@ -215,17 +218,68 @@ class ReportController extends Controller
                 return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
             } else {
                 // Obtener datos
-                $report = $this->getData($filters, $identifications, $identifications_legacy);
+                $report = $this->getPlateData($filters, $vechileBrands);
                 $data = [
                     'year' => $filters['year'],
                     'data' => $report,
                     'status_name' => $status_name,
                     'municipality_name' => $municipality_name,
+                    'plate_document'=> 'Marca de Vehículo'
                 ];
                 Log::info('Reporte exportado por usuario: ' . Auth::id());
                 return (new ExcelRequest())->create($data);
             }
         }
+    }
+
+    public function getPlateData(array $filters, $brands)
+    {
+        // Inicializar estructura de la tabla
+        $currentYear = Carbon::now()->year;
+        $maxMonths = ($filters['year'] == $currentYear) ? Carbon::now()->month : 12;
+        $report = collect(range(1, $maxMonths))->mapWithKeys(fn($m) => [
+            Carbon::create()->month($m)->format('F') => [
+                'total_solicitudes' => 0,
+                'identifications_count' => $brands->mapWithKeys(fn($name) => [$name => 0])->toArray(),
+            ]
+        ])->toArray();
+
+        $queryMisplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, v.vehicle_brand_id, COUNT(*) as total')
+            ->join('vehicles as v', 'misplacements.id', '=', 'v.misplacement_id');
+
+        if ($filters['year']) {
+            $queryMisplacements->whereYear('misplacements.registration_date', $filters['year']);
+        }
+
+        if ($filters['municipio']) {
+            $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                ->where('place_events.municipality_api_id', $filters['municipio']);
+        }
+
+        if ($filters['status']) {
+            $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
+        }
+
+        $queryMisplacements->groupByRaw('MONTH(misplacements.registration_date), v.vehicle_brand_id');
+
+        $misplacements = $queryMisplacements->get();
+        // Se coloca el nombre del id guardado anteriormente
+        foreach ($misplacements as $item) {
+            $mes = Carbon::create()->month((int) $item->mes)->format('F');
+            $identification_name = $brands[$item->vehicle_brand_id];
+            $report[$mes]['identifications_count'][$identification_name] += $item->total;
+            $report[$mes]['total_solicitudes'] += $item->total;
+        }
+
+        // Filtrar identifications_count para dejar solo los que sean diferentes de 0
+        foreach ($report as $mes => &$data) {
+            $data['identifications_count'] = array_filter(
+            $data['identifications_count'],
+            fn($count) => $count != 0
+            );
+        }
+        unset($data);
+        return $report;
     }
 
 

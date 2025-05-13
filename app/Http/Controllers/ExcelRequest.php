@@ -76,7 +76,11 @@ class ExcelRequest
         $selectedMonths = array_slice($englishMonths, 0, $maxMonths);
 
         // Primera columna con los tipos de identificación
-        $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
+        if (isset($data['plate_document']) && $data['plate_document']) {
+            $sheet->setCellValue('A' . $row, 'Marca de Vehículo');
+        } else {
+            $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
+        }
         $col = 'B';
         foreach ($selectedMonths as $month) {
             $sheet->setCellValue($col . $row, $month);

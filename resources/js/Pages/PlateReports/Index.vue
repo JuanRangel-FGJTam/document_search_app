@@ -91,8 +91,8 @@ watch(() => form.reportType, (newValue) => {
         });
     }
 
-    if ([3, 4].includes(newValue)) {
-        router.get(route('reports.createByYear'), {
+    if ([7].includes(newValue)) {
+        router.get(route('reports.plates.index'), {
             municipality: newValue,
         },
             {
