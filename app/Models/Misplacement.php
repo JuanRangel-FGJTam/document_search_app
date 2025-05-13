@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Scout\Searchable;
 use App\Models\PlaceEvent;
+use App\Models\Vehicle;
 
 class Misplacement extends Model
 {
@@ -82,4 +83,8 @@ class Misplacement extends Model
         return $this->HasOne(SyncedMisplacement::class);
     }
 
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class, 'misplacement_id');
+    }
 }

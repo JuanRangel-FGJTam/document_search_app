@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\{
     CancellationReason,
     LostStatus,
-    Misplacement
+    Misplacement,
+    Vehicle
 };
 
 use App\Services\{
@@ -48,7 +49,7 @@ class RequestController extends Controller
     const DOCUMENT_TYPE_INE = 1;
 
     const LAST_FOLIO_LEGACY = 163191;
-
+    const DOCUMENT_TYPE_CIRCULACION_ID = 7;
     const LEGACY_MODE = 1;
 
     const LEGACY_URL = 'https://extraviodedocumentos.fgjtam.gob.mx/validacion/pagina/Validacion.aspx';
@@ -207,6 +208,10 @@ class RequestController extends Controller
         $person = null;
         $municipality = null;
         $colony = null;
+        $vehicle = null;
+        $identification = null;
+        $documents = null;
+        $circulationDocument = null;
         $misplacement = $this->misplacementService->getById($misplacement_id);
         if ($misplacement) {
             $personData = $this->authApiService->getPersonById($misplacement->people_id);
@@ -214,12 +219,26 @@ class RequestController extends Controller
             $misplacement->load('lostStatus', 'cancellationReason', 'misplacementIdentifications.identificationType', 'user');
             $documents = $this->lostDocumentService->getByMisplacementId($misplacement_id);
             $documents->load('documentType');
+            if ($documents->isEmpty()) {
+                $vehicle = Vehicle::where('misplacement_id', $misplacement_id)->first();
+                $vehicle->load('vehicleBrand', 'vehicleType', 'vehicleModel', 'plateType');
+                $circulationDocument = $this->authApiService->getDocumentById($misplacement->people_id, self::DOCUMENT_TYPE_CIRCULACION_ID);
+                try {
+                    $circulationContent = Http::get($circulationDocument['fileUrl'])->body();
+                    $base64Image = base64_encode($circulationContent);
+                    $circulationDocument['image'] = 'data:image/jpeg;base64,' . $base64Image;
+                } catch (\Exception $e) {
+                    Log::error("Error fetching circulation image: " . $e->getMessage());
+                    $circulationDocument['image'] = null; // Set to null if the image cannot be fetched
+                }
+            }
+
             $placeEvent = $this->placeEventService->getByMisplacementId($misplacement_id);
             $placeEvent->lost_date = Carbon::parse($placeEvent->lost_date)->locale('es')->isoFormat('D [de] MMMM [del] YYYY');
 
             $identification = $this->authApiService->getDocumentById($misplacement->people_id, $misplacement->misplacementIdentifications->identification_type_id);
-
             $zipCodes = $this->authApiService->getZipCode($placeEvent->zipcode);
+
             try {
                 $imageContent = Http::get($identification['fileUrl'])->body();
                 $base64Image = base64_encode($imageContent);
@@ -368,7 +387,9 @@ class RequestController extends Controller
             'misplacement' => $misplacement,
             'documents' => $documents,
             'placeEvent' => $placeEvent,
-            'identification' => $identification
+            'identification' => $identification,
+            'vehicle' => $vehicle,
+            'circulationDocument' => $circulationDocument,
         ]);
     }
 

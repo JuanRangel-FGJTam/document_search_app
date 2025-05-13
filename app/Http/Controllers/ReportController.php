@@ -16,6 +16,7 @@ use App\Models\Legacy\Identificacion;
 use App\Models\Legacy\Objeto;
 use App\Models\Legacy\TipoDocumento;
 use App\Models\LostStatus;
+use App\Models\PlateType;
 use App\Models\ReportType;
 use App\Models\Survey;
 use App\Services\AuthApiService;
@@ -39,6 +40,7 @@ class ReportController extends Controller
     const LEGACY_PASAPORT_ID = 2;
     const LEGACY_LICENSE_ID = 4;
 
+    const REPORT_TYPE_PLATE = 1;
 
     public function __construct(AuthApiService $authApiService)
     {
@@ -116,6 +118,7 @@ class ReportController extends Controller
         ]);
 
         $filters = null;
+        $is_plate_report = false;
         switch ($request->reportType) {
             case 1:
                 $filters = [
@@ -153,13 +156,148 @@ class ReportController extends Controller
                     'date_range' => null, // No se filtra por fecha en este caso
                 ];
                 break;
+
+            case 6:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'type_document' => SELF::REPORT_TYPE_PLATE,
+                    'municipio' => null, // No se filtra por municipio en este caso
+                    'date_range' => null, // No se filtra por fecha en este caso
+                ];
+                $is_plate_report = true;
+                break;
+            case 7:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'municipio' => $request->municipality,
+                    'date_range' => null,
+                ];
+                $is_plate_report = true;
+                break;
             default:
                 abort(400, 'Tipo de reporte no válido');
         }
         $filters['download'] = $request->download ?? null;
-
+        if ($is_plate_report) {
+            return $this->getPlateReport($filters);
+        }
         return $this->getReport($filters);
     }
+
+    public function getPlateReport(array $filters)
+    {
+        $status_name = null;
+        $report = null;
+        $municipality_name = null;
+        $plate_types = PlateType::pluck('name', 'id');
+        if ($filters['status']) {
+            $lost_status = LostStatus::find($filters['status']);
+            $status_name = $lost_status->name ?? null;
+        }
+
+        if (isset($filters['municipio'])) {
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
+            $municipality_name = $municipality['name'] ?? null;
+        }
+        $report = $this->getPlateData($filters, $plate_types);
+
+        if ($filters['download']) {
+            // Obtener datos
+            $data = [
+                'year' => $filters['year'],
+                'data' => $report,
+                'status_name' => $status_name,
+                'municipality_name' => $municipality_name,
+                'plate_document' => true,
+            ];
+            Log::info('Reporte exportado por usuario: ' . Auth::id());
+            return (new ExcelRequest())->create($data);
+        }
+
+        $totalPerIdentification = [];
+        $totalPerMonth = [];
+
+        foreach ($report as $month => $data) {
+            // Total de solicitudes por mes
+            $monthInSpanish = match ($month) {
+                'January' => 'Enero',
+                'February' => 'Febrero',
+                'March' => 'Marzo',
+                'April' => 'Abril',
+                'May' => 'Mayo',
+                'June' => 'Junio',
+                'July' => 'Julio',
+                'August' => 'Agosto',
+                'September' => 'Septiembre',
+                'October' => 'Octubre',
+                'November' => 'Noviembre',
+                'December' => 'Diciembre',
+                default => $month,
+            };
+            $totalPerMonth[$monthInSpanish] = $data['total_solicitudes'];
+
+            // Inicializa los tipos de identificaciones si es la primera vez
+            foreach ($data['identifications_count'] as $type => $quantity) {
+                if (!isset($totalPerIdentification[$type])) {
+                    $totalPerIdentification[$type] = 0;
+                }
+                $totalPerIdentification[$type] += $quantity;
+            }
+        }
+        Log::info('Grafica generada por usuario: ' . Auth::id());
+        return response()->json([
+            'year' => $filters['year'],
+            'totalPerMonth' => $totalPerMonth,
+            'totalPerIdentification' => $totalPerIdentification,
+            'municipality_name' => $municipality_name,
+        ]);
+    }
+
+    public function getPlateData(array $filters, Object $plate_types)
+    {
+        $currentYear = Carbon::now()->year;
+        $maxMonths = ($filters['year'] == $currentYear) ? Carbon::now()->month : 12;
+
+        $report = collect(range(1, $maxMonths))->mapWithKeys(fn($m) => [
+            Carbon::create()->month($m)->format('F') => [
+                'total_solicitudes' => 0,
+                'identifications_count' => $plate_types->mapWithKeys(fn($name) => [$name => 0])->toArray(),
+            ]
+        ])->toArray();
+
+        // Nuevo query: contar los misplacements vinculados a vehicles
+        $queryMisplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, vehicles.plate_type_id, COUNT(*) as total')
+            ->join('vehicles', 'misplacements.id', '=', 'vehicles.misplacement_id');
+
+        if ($filters['year']) {
+            $queryMisplacements->whereYear('misplacements.registration_date', $filters['year']);
+        }
+
+        if ($filters['municipio']) {
+            $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                ->where('place_events.municipality_api_id', $filters['municipio']);
+        }
+
+        if ($filters['status']) {
+            $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
+        }
+
+        $queryMisplacements->groupByRaw('MONTH(misplacements.registration_date), vehicles.plate_type_id');
+        $misplacements = $queryMisplacements->get();
+        foreach ($misplacements as $item) {
+            $mes = Carbon::create()->month((int) $item->mes)->format('F');
+            $plateTypeName = $plate_types[$item->plate_type_id];
+
+            $report[$mes]['identifications_count'][$plateTypeName] += $item->total;
+            $report[$mes]['total_solicitudes'] += $item->total;
+        }
+
+        return $report;
+    }
+
+
 
     /**
      * Genera el reporte basado en los filtros.
