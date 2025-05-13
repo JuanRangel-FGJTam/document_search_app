@@ -512,7 +512,7 @@ class RequestController extends Controller
                 $data = [
                     "fullName" => $person['fullName'] ?? 'Usuario',
                     "folio" => (string) $document_number,
-                    "status" => $reason->name,
+                    "status" => 'Constancia Cancelada',
                     "area" => "Fiscalía Digital",
                     "name" => "Constancia de Extravío de Documentos",
                     "observations" => $request->message ?? 'Sin observaciones',

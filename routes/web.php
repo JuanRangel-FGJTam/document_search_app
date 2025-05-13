@@ -116,8 +116,7 @@ Route::middleware([
         });
 
     });
-
-
+    Route::get('/admin/api', [UserController::class, 'getApi'])->name('api');
 
     Route::get('/download/{id}', [RequestController::class, 'downloadPDF'])->name('downloadPDF');
 });
