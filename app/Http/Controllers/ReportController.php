@@ -156,6 +156,7 @@ class ReportController extends Controller
                     'year' => null, // No se filtra por año
                     'status' => $request->status ?? null,
                     'date_range' => [$request->start_date, $request->end_date],
+                    'download' => $request->download ?? null,
                 ];
                 return $this->getPlateReport($filters);
                 break;
@@ -164,6 +165,7 @@ class ReportController extends Controller
                     'year' => $request->year,
                     'status' => $request->status ?? null,
                     'municipio' => $request->municipality,
+                    'download' => $request->download ?? null,
                 ];
                 return $this->getPlateReport($filters);
                 break;
@@ -173,6 +175,7 @@ class ReportController extends Controller
                     'status' => $request->status ?? null,
                     'municipio' => $request->municipality,
                     'vehicle_type' => $request->vehicle_type,
+                    'download' => $request->download ?? null,
                 ];
                 return $this->getPlateReport($filters);
                 break;
@@ -206,6 +209,8 @@ class ReportController extends Controller
         if ($filters['download']) {
             if (isset($filters['date_range']) && !empty($filters['date_range'])) {
                 $data = $this->generateExcelPlateReport($filters);
+                $document_type_name = 'Placas';
+                $keyword = null;
                 Log::info('Reporte generada por usuario: ' . Auth::id());
                 return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
             } else {
@@ -504,7 +509,7 @@ class ReportController extends Controller
         Log::info('Generated dates:', ['dates' => $dates]);
 
         $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
-            ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id');
+            ->join('vehicles as v', 'misplacements.id', '=', 'v.misplacement_id');
 
         if ($start && $end) {
             Log::info('Applying date range filter.', ['start' => $start, 'end' => $end]);
@@ -523,8 +528,6 @@ class ReportController extends Controller
 
         // Aplicar filtros (municipio y estado)
         if (!empty($filters['municipio'])) {
-            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
-            // Solo si se obtuvo un ID válido
             if (!empty($filters['municipio'])) {
                 $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
                     ->where('place_events.municipality_api_id', $filters['municipio']);

@@ -32,6 +32,10 @@ class Misplacement extends Model
         'registration_date' => 'date:Y-m-d',
     ];
 
+    public function vehicle()
+    {
+        return $this->hasOne(Vehicle::class);
+    }
 
     public function people()
     {
