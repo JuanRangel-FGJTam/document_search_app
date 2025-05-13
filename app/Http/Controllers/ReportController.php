@@ -151,6 +151,31 @@ class ReportController extends Controller
                     'date_range' => null, // No se filtra por fecha en este caso
                 ];
                 break;
+            case 6:
+                $filters = [
+                    'year' => null, // No se filtra por año
+                    'status' => $request->status ?? null,
+                    'date_range' => [$request->start_date, $request->end_date],
+                ];
+                return $this->getPlateReport($filters);
+                break;
+            case 7:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'municipio' => $request->municipality,
+                ];
+                return $this->getPlateReport($filters);
+                break;
+            case 8:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'municipio' => $request->municipality,
+                    'vehicle_type' => $request->vehicle_type,
+                ];
+                return $this->getPlateReport($filters);
+                break;
             default:
                 abort(400, 'Tipo de reporte no válido');
         }
@@ -158,6 +183,46 @@ class ReportController extends Controller
 
         return $this->getReport($filters);
     }
+
+    public function getPlateReport(array $filters)
+    {
+        $status_name = null;
+        $municipality_name = null;
+        if ($filters['status']) {
+            $lost_status = LostStatus::find($filters['status']);
+            $status_name = $lost_status->name ?? null;
+        }
+
+        if (isset($filters['municipio'])) {
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
+            $municipality_name = $municipality['name'] ?? null;
+        }
+
+        if (isset($filters['vehicle_type'])) {
+            $vehicle_type = VehicleType::find($filters['vehicle_type']);
+            $vehicle_type_name = $vehicle_type->name ?? null;
+        }
+
+        if ($filters['download']) {
+            if (isset($filters['date_range']) && !empty($filters['date_range'])) {
+                $data = $this->generateExcelPlateReport($filters);
+                Log::info('Reporte generada por usuario: ' . Auth::id());
+                return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
+            } else {
+                // Obtener datos
+                $report = $this->getData($filters, $identifications, $identifications_legacy);
+                $data = [
+                    'year' => $filters['year'],
+                    'data' => $report,
+                    'status_name' => $status_name,
+                    'municipality_name' => $municipality_name,
+                ];
+                Log::info('Reporte exportado por usuario: ' . Auth::id());
+                return (new ExcelRequest())->create($data);
+            }
+        }
+    }
+
 
     /**
      * Genera el reporte basado en los filtros.
@@ -411,6 +476,86 @@ class ReportController extends Controller
         return $report;
     }
 
+
+    private function generateExcelPlateReport(array $filters)
+    {
+        // Validar rango de fechas
+        if (empty($filters['date_range'])) {
+            Log::error('Error: A date range is required.');
+            throw new \Exception('A date range is required.');
+        }
+
+        [$start, $end] = $filters['date_range'];
+        $dates = collect();
+
+        if ($start && !$end) {
+            Log::info('Generating dates: Only start date provided.', ['start' => $start]);
+            $dates->put(Carbon::parse($start)->format('Y-m-d'), 0); // Only start
+        } elseif (!$start && $end) {
+            Log::info('Generating dates: Only end date provided.', ['end' => $end]);
+            $dates->put(Carbon::parse($end)->format('Y-m-d'), 0); // Only end
+        } elseif ($start && $end) {
+            Log::info('Generating dates: Full range provided.', ['start' => $start, 'end' => $end]);
+            for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
+                $dates->put($date->format('Y-m-d'), 0); // Initialize to 0
+            }
+        }
+
+        Log::info('Generated dates:', ['dates' => $dates]);
+
+        $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
+            ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id');
+
+        if ($start && $end) {
+            Log::info('Applying date range filter.', ['start' => $start, 'end' => $end]);
+            $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
+        } elseif ($start) {
+            Log::info('Applying start date filter.', ['start' => $start]);
+            $queryMisplacements->whereDate('misplacements.registration_date', $start);
+        } elseif ($end) {
+            Log::info('Applying end date filter.', ['end' => $end]);
+            $queryMisplacements->whereDate('misplacements.registration_date', $end);
+        }
+
+
+        Log::info('Grouping queries by date.');
+        $queryMisplacements->groupByRaw('DATE(misplacements.registration_date)');
+
+        // Aplicar filtros (municipio y estado)
+        if (!empty($filters['municipio'])) {
+            $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
+            // Solo si se obtuvo un ID válido
+            if (!empty($filters['municipio'])) {
+                $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                    ->where('place_events.municipality_api_id', $filters['municipio']);
+            }
+        } else {
+            $queryMisplacements->leftJoin('place_events', 'misplacements.id', '=', 'place_events.misplacement_id');
+        }
+
+
+        if (!empty($filters['status'])) {
+            $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
+        }
+
+        $misplacements = $queryMisplacements->get();
+        // Procesar resultados y calcular totales
+        $grandTotal = 0;
+
+        foreach ($misplacements as $item) {
+            if ($dates->has($item->fecha)) {
+                $dates[$item->fecha] += $item->total;
+                $grandTotal += $item->total;
+            }
+        }
+
+        // Añadir el gran total como último elemento (clave "total_general")
+        $dates->put('total_general', $grandTotal);
+        return $dates;
+    }
+
+
+
     private function generateExcelReport(array $filters)
     {
         // Validar rango de fechas
@@ -636,7 +781,7 @@ class ReportController extends Controller
             ])
             ->with(['extravio.hechosCP', 'extravio.domicilioCP'])
             ->get();
-*/
+        */
         try {
             $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1")
                 ->whereRaw("CONVERT(varchar(8),fechaRegistro, 112) BETWEEN ? AND ?", [

@@ -58,7 +58,7 @@ const props = defineProps({
 const loadingXLSX = ref(false);
 const loadingChart = ref(false);
 const form = useForm({
-    reportType: '',
+    reportType: null,
     year: 2025,
     status: null,
     start_date: null,
@@ -111,6 +111,12 @@ const validateForm = () => {
         toast.warning('Seleccione al menos una fecha.');
         return false;
     }
+
+    if (form.reportType == null) {
+        toast.warning('Seleccione un reporte a exportar.');
+        return false;
+    }
+
     return true;
 };
 
@@ -220,7 +226,7 @@ const generateChart = async () => {
                                     </label>
                                     <select v-model="form.reportType"
                                         class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
-                                        <option disabled value="">Seleccione un tipo de reporte</option>
+                                        <option disabled :value="null">Seleccione un tipo de reporte</option>
                                         <option v-for="(label, key) in report_types" :key="label.id" :value="label.id">
                                             {{ label.name }}
                                         </option>
