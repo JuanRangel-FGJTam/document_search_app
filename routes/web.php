@@ -38,7 +38,6 @@ Route::middleware([
         Route::post('/store-accept-request/{misplacement_id}', [RequestController::class, 'storeAcceptRequest'])->name('misplacement.store.accept');
 
         Route::get('/resend-request/{misplacement_id}', [RequestController::class, 'reSendDocument'])->name('misplacement.reSendDocument');
-
     });
 
     Route::prefix('/admin/reports')->group(function () {
@@ -51,6 +50,11 @@ Route::middleware([
 
         Route::post('/generate', [ReportController::class, 'generateReport'])->name('reports.generate');
     });
+
+    Route::prefix('/admin/plates/reports')->group(function () {
+        Route::get('/', [ReportController::class, 'indexReportPlates'])->name('reports.plates.index');
+    });
+
 
     Route::prefix('/admin/surveys')->group(function () {
         Route::get('/', [SurveyController::class, 'index'])->name('surveys.index');
@@ -68,11 +72,8 @@ Route::middleware([
     });
 
     Route::get('/download/{id}', [RequestController::class, 'downloadPDF'])->name('downloadPDF');
-
-
 });
 
 Route::get('/register', function () {
     abort(404);
 });
-

@@ -8,19 +8,17 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
-use App\Models\DocumentType;
-use App\Models\IdentificationType;
+use App\Models\{
+    DocumentType,
+    LostStatus,
+    ReportType,
+    Survey,
+    VehicleType
+};
 use App\Models\Legacy\Encuesta;
 use App\Models\Legacy\Extravio;
-use App\Models\Legacy\Identificacion;
-use App\Models\Legacy\Objeto;
 use App\Models\Legacy\TipoDocumento;
-use App\Models\LostStatus;
-use App\Models\ReportType;
-use App\Models\Survey;
 use App\Services\AuthApiService;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -737,35 +735,50 @@ class ReportController extends Controller
         return $excelRequest->create($formattedData, $request->start_date, $request->end_date);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function indexReportPlates(Request $request)
     {
-        //
-    }
+        $currentYear = date('Y');
+        $currentMonth = date('n');
+        $municipalities = null;
+        $years = range($currentYear, 2022);
+        $months = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
+        ];
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        if ($request->query('year') == $currentYear) {
+            $months = array_slice($months, 0, $currentMonth, true);
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        if ($request->municipality) {
+            $municipalities = $this->authApiService->getMunicipalities();
+        }
+
+
+        $lost_statuses = LostStatus::whereNotIn('id', [1, 2])->get();
+        $report_types = ReportType::whereIn('id', [6, 7, 8])->get();
+        $document_types = DocumentType::all();
+        $vehicle_types = VehicleType::all();
+
+        return Inertia::render('PlateReports/Index', [
+            'years' => $years,
+            'months' => $months,
+            'lost_statuses' => $lost_statuses,
+            'report_types' => $report_types,
+            'municipalities' => $municipalities,
+            'document_types' => $document_types,
+            'vehicle_types' => $vehicle_types,
+        ]);
     }
 }
