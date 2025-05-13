@@ -33,6 +33,10 @@ class Misplacement extends Model
         'registration_date' => 'date:Y-m-d',
     ];
 
+    public function vehicle()
+    {
+        return $this->hasOne(Vehicle::class);
+    }
 
     public function people()
     {
@@ -83,8 +87,4 @@ class Misplacement extends Model
         return $this->HasOne(SyncedMisplacement::class);
     }
 
-    public function vehicle()
-    {
-        return $this->belongsTo(Vehicle::class, 'misplacement_id');
-    }
 }

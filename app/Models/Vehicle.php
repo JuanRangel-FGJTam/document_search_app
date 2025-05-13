@@ -12,6 +12,7 @@ class Vehicle extends Model
     protected $fillable = [
         'misplacement_id',
         'vehicle_brand_id',
+        'vehicle_sub_brand_id',
         'vehicle_type_id',
         'vehicle_model_id',
         'plate_type_id',
@@ -28,6 +29,11 @@ class Vehicle extends Model
     public function vehicleBrand()
     {
         return $this->belongsTo(VehicleBrand::class);
+    }
+
+    public function vehicleSubBrand()
+    {
+        return $this->belongsTo(VehicleSubBrand::class);
     }
 
     public function vehicleType()

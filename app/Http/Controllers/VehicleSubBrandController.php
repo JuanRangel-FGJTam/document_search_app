@@ -13,7 +13,7 @@ class VehicleSubBrandController extends Controller
     public function index(Request $request)
     {
         //
-        $totalSubBrand = \App\Models\VehicleSubBrand::with('brand')->orderBy('name', 'asc')
+        $totalSubBrand = \App\Models\VehicleSubBrand::with('vehicleBrand')->orderBy('name', 'asc')
             ->get();
         $subBrands = \App\Support\Pagination::paginate($totalSubBrand, $request);
 

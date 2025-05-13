@@ -77,8 +77,8 @@ class ExcelRequest
 
         // Primera columna con los tipos de identificación
         if (isset($data['plate_document']) && $data['plate_document']) {
-            $sheet->setCellValue('A' . $row, 'Tipo de Placa');
-        }else{
+            $sheet->setCellValue('A' . $row, 'Marca de Vehículo');
+        } else {
             $sheet->setCellValue('A' . $row, 'Tipo de Identificación');
         }
         $col = 'B';

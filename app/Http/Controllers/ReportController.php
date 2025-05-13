@@ -8,20 +8,19 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ExcelRequest;
-use App\Models\DocumentType;
-use App\Models\IdentificationType;
+use App\Models\{
+    DocumentType,
+    LostStatus,
+    ReportType,
+    Survey,
+    VehicleBrand,
+    VehicleSubBrand,
+    VehicleType
+};
 use App\Models\Legacy\Encuesta;
 use App\Models\Legacy\Extravio;
-use App\Models\Legacy\Identificacion;
-use App\Models\Legacy\Objeto;
 use App\Models\Legacy\TipoDocumento;
-use App\Models\LostStatus;
-use App\Models\PlateType;
-use App\Models\ReportType;
-use App\Models\Survey;
 use App\Services\AuthApiService;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -156,25 +155,35 @@ class ReportController extends Controller
                     'date_range' => null, // No se filtra por fecha en este caso
                 ];
                 break;
-
             case 6:
                 $filters = [
-                    'year' => $request->year,
+                    'year' => null, // No se filtra por año
                     'status' => $request->status ?? null,
-                    'type_document' => SELF::REPORT_TYPE_PLATE,
-                    'municipio' => null, // No se filtra por municipio en este caso
-                    'date_range' => null, // No se filtra por fecha en este caso
+                    'date_range' => [$request->start_date, $request->end_date],
+                    'download' => $request->download ?? null,
+                    'vehicle_type' => $request->vehicle_type ?? null,
                 ];
-                $is_plate_report = true;
+                return $this->getPlateReport($filters);
                 break;
             case 7:
                 $filters = [
                     'year' => $request->year,
                     'status' => $request->status ?? null,
                     'municipio' => $request->municipality,
-                    'date_range' => null,
+                    'download' => $request->download ?? null,
+                    'vehicle_type' => $request->vehicle_type ?? null,
                 ];
-                $is_plate_report = true;
+                return $this->getPlateReport($filters);
+                break;
+            case 8:
+                $filters = [
+                    'year' => $request->year,
+                    'status' => $request->status ?? null,
+                    'municipio' => $request->municipality,
+                    'vehicle_type' => $request->vehicle_type,
+                    'download' => $request->download ?? null,
+                ];
+                return $this->getPlateReport($filters);
                 break;
             default:
                 abort(400, 'Tipo de reporte no válido');
@@ -189,9 +198,8 @@ class ReportController extends Controller
     public function getPlateReport(array $filters)
     {
         $status_name = null;
-        $report = null;
         $municipality_name = null;
-        $plate_types = PlateType::pluck('name', 'id');
+        $vechileBrands = null;
         if ($filters['status']) {
             $lost_status = LostStatus::find($filters['status']);
             $status_name = $lost_status->name ?? null;
@@ -201,75 +209,53 @@ class ReportController extends Controller
             $municipality = $this->authApiService->getMunicipalityById($filters['municipio']);
             $municipality_name = $municipality['name'] ?? null;
         }
-        $report = $this->getPlateData($filters, $plate_types);
+
+        if (isset($filters['vehicle_type'])) {
+            $vehicle_type = VehicleType::find($filters['vehicle_type']);
+            $vehicle_type_name = $vehicle_type->name ?? null;
+            $subBrands = VehicleSubBrand::where('vehicle_type_id', $filters['vehicle_type'])->pluck('vehicle_brand_id')->unique();
+            $vechileBrands = VehicleBrand::whereIn('id', $subBrands)->pluck('name', 'id')->map(fn($item) => strtolower($item));
+        } else {
+            $vechileBrands = VehicleBrand::pluck('name', 'id')->map(fn($item) => strtolower($item));
+        }
 
         if ($filters['download']) {
-            // Obtener datos
-            $data = [
-                'year' => $filters['year'],
-                'data' => $report,
-                'status_name' => $status_name,
-                'municipality_name' => $municipality_name,
-                'plate_document' => true,
-            ];
-            Log::info('Reporte exportado por usuario: ' . Auth::id());
-            return (new ExcelRequest())->create($data);
-        }
-
-        $totalPerIdentification = [];
-        $totalPerMonth = [];
-
-        foreach ($report as $month => $data) {
-            // Total de solicitudes por mes
-            $monthInSpanish = match ($month) {
-                'January' => 'Enero',
-                'February' => 'Febrero',
-                'March' => 'Marzo',
-                'April' => 'Abril',
-                'May' => 'Mayo',
-                'June' => 'Junio',
-                'July' => 'Julio',
-                'August' => 'Agosto',
-                'September' => 'Septiembre',
-                'October' => 'Octubre',
-                'November' => 'Noviembre',
-                'December' => 'Diciembre',
-                default => $month,
-            };
-            $totalPerMonth[$monthInSpanish] = $data['total_solicitudes'];
-
-            // Inicializa los tipos de identificaciones si es la primera vez
-            foreach ($data['identifications_count'] as $type => $quantity) {
-                if (!isset($totalPerIdentification[$type])) {
-                    $totalPerIdentification[$type] = 0;
-                }
-                $totalPerIdentification[$type] += $quantity;
+            if (isset($filters['date_range']) && !empty($filters['date_range'])) {
+                $data = $this->generateExcelPlateReport($filters);
+                $document_type_name = 'Placas';
+                $keyword = null;
+                Log::info('Reporte generada por usuario: ' . Auth::id());
+                return (new ExcelForDays())->create($data, $status_name, $municipality_name, $document_type_name, $keyword, $filters['date_range'][0], $filters['date_range'][1]);
+            } else {
+                // Obtener datos
+                $report = $this->getPlateData($filters, $vechileBrands);
+                $data = [
+                    'year' => $filters['year'],
+                    'data' => $report,
+                    'status_name' => $status_name,
+                    'municipality_name' => $municipality_name,
+                    'plate_document' => 'Marca de Vehículo'
+                ];
+                Log::info('Reporte exportado por usuario: ' . Auth::id());
+                return (new ExcelRequest())->create($data);
             }
         }
-        Log::info('Grafica generada por usuario: ' . Auth::id());
-        return response()->json([
-            'year' => $filters['year'],
-            'totalPerMonth' => $totalPerMonth,
-            'totalPerIdentification' => $totalPerIdentification,
-            'municipality_name' => $municipality_name,
-        ]);
     }
 
-    public function getPlateData(array $filters, Object $plate_types)
+    public function getPlateData(array $filters, $brands)
     {
+        // Inicializar estructura de la tabla
         $currentYear = Carbon::now()->year;
         $maxMonths = ($filters['year'] == $currentYear) ? Carbon::now()->month : 12;
-
         $report = collect(range(1, $maxMonths))->mapWithKeys(fn($m) => [
             Carbon::create()->month($m)->format('F') => [
                 'total_solicitudes' => 0,
-                'identifications_count' => $plate_types->mapWithKeys(fn($name) => [$name => 0])->toArray(),
+                'identifications_count' => $brands->mapWithKeys(fn($name) => [$name => 0])->toArray(),
             ]
         ])->toArray();
 
-        // Nuevo query: contar los misplacements vinculados a vehicles
-        $queryMisplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, vehicles.plate_type_id, COUNT(*) as total')
-            ->join('vehicles', 'misplacements.id', '=', 'vehicles.misplacement_id');
+        $queryMisplacements = Misplacement::selectRaw('MONTH(misplacements.registration_date) as mes, v.vehicle_brand_id, COUNT(*) as total')
+            ->join('vehicles as v', 'misplacements.id', '=', 'v.misplacement_id');
 
         if ($filters['year']) {
             $queryMisplacements->whereYear('misplacements.registration_date', $filters['year']);
@@ -280,23 +266,37 @@ class ReportController extends Controller
                 ->where('place_events.municipality_api_id', $filters['municipio']);
         }
 
+        if($filters['vehicle_type']) {
+            $queryMisplacements->where('v.vehicle_type_id', $filters['vehicle_type']);
+        }
+
         if ($filters['status']) {
             $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
 
-        $queryMisplacements->groupByRaw('MONTH(misplacements.registration_date), vehicles.plate_type_id');
+        $queryMisplacements->groupByRaw('MONTH(misplacements.registration_date), v.vehicle_brand_id');
+
         $misplacements = $queryMisplacements->get();
+
+        // Se coloca el nombre del id guardado anteriormente
         foreach ($misplacements as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
-            $plateTypeName = $plate_types[$item->plate_type_id];
-
-            $report[$mes]['identifications_count'][$plateTypeName] += $item->total;
+            $identification_name = $brands[$item->vehicle_brand_id];
+            $report[$mes]['identifications_count'][$identification_name] += $item->total;
             $report[$mes]['total_solicitudes'] += $item->total;
         }
 
+
+        // Filtrar identifications_count para dejar solo los que sean diferentes de 0
+        foreach ($report as $mes => &$data) {
+            $data['identifications_count'] = array_filter(
+                $data['identifications_count'],
+                fn($count) => $count != 0
+            );
+        }
+        unset($data);
         return $report;
     }
-
 
 
     /**
@@ -551,6 +551,84 @@ class ReportController extends Controller
         return $report;
     }
 
+
+    private function generateExcelPlateReport(array $filters)
+    {
+        // Validar rango de fechas
+        if (empty($filters['date_range'])) {
+            Log::error('Error: A date range is required.');
+            throw new \Exception('A date range is required.');
+        }
+
+        [$start, $end] = $filters['date_range'];
+        $dates = collect();
+
+        if ($start && !$end) {
+            Log::info('Generating dates: Only start date provided.', ['start' => $start]);
+            $dates->put(Carbon::parse($start)->format('Y-m-d'), 0); // Only start
+        } elseif (!$start && $end) {
+            Log::info('Generating dates: Only end date provided.', ['end' => $end]);
+            $dates->put(Carbon::parse($end)->format('Y-m-d'), 0); // Only end
+        } elseif ($start && $end) {
+            Log::info('Generating dates: Full range provided.', ['start' => $start, 'end' => $end]);
+            for ($date = Carbon::parse($start); $date->lte(Carbon::parse($end)); $date->addDay()) {
+                $dates->put($date->format('Y-m-d'), 0); // Initialize to 0
+            }
+        }
+
+        Log::info('Generated dates:', ['dates' => $dates]);
+
+        $queryMisplacements = Misplacement::selectRaw('DATE(misplacements.registration_date) as fecha, COUNT(*) as total')
+            ->join('vehicles as v', 'misplacements.id', '=', 'v.misplacement_id');
+
+        if ($start && $end) {
+            Log::info('Applying date range filter.', ['start' => $start, 'end' => $end]);
+            $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
+        } elseif ($start) {
+            Log::info('Applying start date filter.', ['start' => $start]);
+            $queryMisplacements->whereDate('misplacements.registration_date', $start);
+        } elseif ($end) {
+            Log::info('Applying end date filter.', ['end' => $end]);
+            $queryMisplacements->whereDate('misplacements.registration_date', $end);
+        }
+
+
+        Log::info('Grouping queries by date.');
+        $queryMisplacements->groupByRaw('DATE(misplacements.registration_date)');
+
+        // Aplicar filtros (municipio y estado)
+        if (!empty($filters['municipio'])) {
+            if (!empty($filters['municipio'])) {
+                $queryMisplacements->join('place_events', 'misplacements.id', '=', 'place_events.misplacement_id')
+                    ->where('place_events.municipality_api_id', $filters['municipio']);
+            }
+        } else {
+            $queryMisplacements->leftJoin('place_events', 'misplacements.id', '=', 'place_events.misplacement_id');
+        }
+
+
+        if (!empty($filters['status'])) {
+            $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
+        }
+
+        $misplacements = $queryMisplacements->get();
+        // Procesar resultados y calcular totales
+        $grandTotal = 0;
+
+        foreach ($misplacements as $item) {
+            if ($dates->has($item->fecha)) {
+                $dates[$item->fecha] += $item->total;
+                $grandTotal += $item->total;
+            }
+        }
+
+        // Añadir el gran total como último elemento (clave "total_general")
+        $dates->put('total_general', $grandTotal);
+        return $dates;
+    }
+
+
+
     private function generateExcelReport(array $filters)
     {
         // Validar rango de fechas
@@ -776,7 +854,7 @@ class ReportController extends Controller
             ])
             ->with(['extravio.hechosCP', 'extravio.domicilioCP'])
             ->get();
-*/
+        */
         try {
             $surveysLegacy = Encuesta::whereRaw("ISDATE(fechaRegistro) = 1")
                 ->whereRaw("CONVERT(varchar(8),fechaRegistro, 112) BETWEEN ? AND ?", [
@@ -875,35 +953,50 @@ class ReportController extends Controller
         return $excelRequest->create($formattedData, $request->start_date, $request->end_date);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function indexReportPlates(Request $request)
     {
-        //
-    }
+        $currentYear = date('Y');
+        $currentMonth = date('n');
+        $municipalities = null;
+        $years = range($currentYear, 2022);
+        $months = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
+        ];
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        if ($request->query('year') == $currentYear) {
+            $months = array_slice($months, 0, $currentMonth, true);
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        if ($request->municipality) {
+            $municipalities = $this->authApiService->getMunicipalities();
+        }
+
+
+        $lost_statuses = LostStatus::whereNotIn('id', [1, 2])->get();
+        $report_types = ReportType::whereIn('id', [6, 7, 8])->get();
+        $document_types = DocumentType::all();
+        $vehicle_types = VehicleType::all();
+
+        return Inertia::render('PlateReports/Index', [
+            'years' => $years,
+            'months' => $months,
+            'lost_statuses' => $lost_statuses,
+            'report_types' => $report_types,
+            'municipalities' => $municipalities,
+            'document_types' => $document_types,
+            'vehicle_types' => $vehicle_types,
+        ]);
     }
 }

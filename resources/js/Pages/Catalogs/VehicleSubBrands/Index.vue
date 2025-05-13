@@ -10,7 +10,7 @@ const props = defineProps({
         type: Object,
     },
 });
-
+console.log(props.subBrands);
 const toast = useToast();
 const confirmDelete = ref(false);
 const selectedSubId = ref(null);
@@ -86,7 +86,7 @@ function confirmDeleteBrand() {
                                                     </th>
                                                     <th scope="row"
                                                         class="px-4 py-3 font-medium text-gray-900 whitespace-wrap dark:text-white">
-                                                        {{ subBrand.brand.name }}
+                                                        {{ subBrand.vehicle_brand.name }}
                                                     </th>
                                                     <td class="px-4 py-3 items-center justify-center">
                                                         <div class="flex justify-center gap-2">
