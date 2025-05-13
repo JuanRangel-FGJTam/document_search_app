@@ -5,6 +5,11 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleBrandController;
+use App\Http\Controllers\VehicleModelController;
+use App\Http\Controllers\VehicleTypeController;
+use App\Http\Controllers\VehicleSubBrandController;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -70,6 +75,53 @@ Route::middleware([
         Route::get('/delete/{user_id}', [UserController::class, 'delete'])->name('users.delete');
         Route::get('/reintegrar/{user_id}', [UserController::class, 'refund'])->name('users.refund');
     });
+
+    Route::prefix('/admin/catalogos')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Catalogs/Index');
+        })->name('catalogs.index');
+
+        Route::prefix('/vehiculos-marcas')->group(function () {
+            Route::get('/', [VehicleBrandController::class, 'index'])->name('vehicleBrand.index');
+            Route::get('/create', [VehicleBrandController::class, 'create'])->name('vehicleBrand.create');
+            Route::post('/store', [VehicleBrandController::class, 'store'])->name('vehicleBrand.store');
+            Route::get('/show/{vehicleBrand_id}', [VehicleBrandController::class, 'show'])->name('vehicleBrand.show');
+            Route::get('/edit/{vehicleBrand_id}', [VehicleBrandController::class, 'edit'])->name('vehicleBrand.edit');
+            Route::post('/update/{vehicleBrand_id}', [VehicleBrandController::class, 'update'])->name('vehicleBrand.update');
+            Route::delete('/delete/{vehicleBrand_id}', [VehicleBrandController::class, 'delete'])->name('vehicleBrand.delete');
+
+            Route::post('/store-sub-brand/{vehicleBrand_id}', [VehicleBrandController::class, 'storeSubBrand'])->name('vehicleBrand.storeSubBrand');
+        });
+
+        Route::prefix('/vehiculos-submarcas')->group(function () {
+            Route::get('/', [VehicleSubBrandController::class, 'index'])->name('vehicleSubBrand.index');
+            Route::get('/create', [VehicleSubBrandController::class, 'create'])->name('vehicleSubBrand.create');
+            Route::post('/store', [VehicleSubBrandController::class, 'store'])->name('vehicleSubBrand.store');
+            Route::get('/edit/{vehicleBrand_id}', [VehicleSubBrandController::class, 'edit'])->name('vehicleSubBrand.edit');
+            Route::post('/update/{vehicleBrand_id}', [VehicleSubBrandController::class, 'update'])->name('vehicleSubBrand.update');
+            Route::delete('/delete/{vehicleBrand_id}', [VehicleSubBrandController::class, 'destroy'])->name('vehicleSubBrand.delete');
+        });
+
+        Route::prefix('/vehiculos-modelos')->group(function () {
+            Route::get('/', [VehicleModelController::class, 'index'])->name('vehicleModel.index');
+            Route::get('/create', [VehicleModelController::class, 'create'])->name('vehicleModel.create');
+            Route::post('/store', [VehicleModelController::class, 'store'])->name('vehicleModel.store');
+            Route::get('/edit/{vehicleModel_id}', [VehicleModelController::class, 'edit'])->name('vehicleModel.edit');
+            Route::post('/update/{vehicleModel_id}', [VehicleModelController::class, 'update'])->name('vehicleModel.update');
+            Route::delete('/delete/{vehicleModel_id}', [VehicleModelController::class, 'destroy'])->name('vehicleModel.delete');
+        });
+
+        Route::prefix('/vehiculos-tipos')->group(function () {
+            Route::get('/', [VehicleTypeController::class, 'index'])->name('vehicleType.index');
+            Route::get('/create', [VehicleTypeController::class, 'create'])->name('vehicleType.create');
+            Route::post('/store', [VehicleTypeController::class, 'store'])->name('vehicleType.store');
+            Route::get('/edit/{vehicle_id}', [VehicleTypeController::class, 'edit'])->name('vehicleType.edit');
+            Route::post('/update/{vehicle_id}', [VehicleTypeController::class, 'update'])->name('vehicleType.update');
+            Route::delete('/delete/{vehicle_id}', [VehicleTypeController::class, 'destroy'])->name('vehicleType.delete');
+        });
+
+    });
+    Route::get('/admin/api', [UserController::class, 'getApi'])->name('api');
 
     Route::get('/download/{id}', [RequestController::class, 'downloadPDF'])->name('downloadPDF');
 });

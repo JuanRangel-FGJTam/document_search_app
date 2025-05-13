@@ -48,34 +48,46 @@ const logout = () => {
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-6 sm:flex">
                                 <NavLink :href="route('misplacement.index')"
                                     :active="$page.url.startsWith('/admin/request')">
                                     Solicitudes de Constancias
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex">
                                 <NavLink :href="route('reports.index')"
                                     :active="$page.url.startsWith('/admin/reports')">
                                     Reportes y Gráficas
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex">
+                                <NavLink :href="route('reports.plates.index')"
+                                    :active="$page.url.startsWith('/admin/plates/reports')">
+                                    Reportes de placas
+                                </NavLink>
+                            </div>
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex">
                                 <NavLink :href="route('surveys.index')"
                                     :active="$page.url.startsWith('/admin/surveys')">
                                     Encuestas
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex">
+                                <NavLink :href="route('catalogs.index')"
+                                    :active="$page.url.startsWith('/admin/catalogos')">
+                                    Catálogos
+                                </NavLink>
+                            </div>
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex"
                                 v-if="$page.props.auth.user.is_admin">
                                 <NavLink :href="route('users.index')" :active="$page.url.startsWith('/admin/usuarios')">
                                     Usuarios
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex"
                                 v-if="$page.props.auth.user.is_admin">
-                                <NavLink :href="route('reports.plates.index')" :active="$page.url.startsWith('/admin/plates/reports')">
-                                    Reportes de placas
+                                <NavLink :href="route('api')" :active="$page.url.startsWith('/admin/api')">
+                                    API
                                 </NavLink>
                             </div>
                         </div>

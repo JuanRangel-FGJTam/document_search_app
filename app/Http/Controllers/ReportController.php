@@ -39,6 +39,7 @@ class ReportController extends Controller
     const LEGACY_PASAPORT_ID = 2;
     const LEGACY_LICENSE_ID = 4;
 
+    const REPORT_TYPE_PLATE = 1;
 
     public function __construct(AuthApiService $authApiService)
     {
@@ -116,6 +117,7 @@ class ReportController extends Controller
         ]);
 
         $filters = null;
+        $is_plate_report = false;
         switch ($request->reportType) {
             case 1:
                 $filters = [
@@ -187,7 +189,9 @@ class ReportController extends Controller
                 abort(400, 'Tipo de reporte no válido');
         }
         $filters['download'] = $request->download ?? null;
-
+        if ($is_plate_report) {
+            return $this->getPlateReport($filters);
+        }
         return $this->getReport($filters);
     }
 

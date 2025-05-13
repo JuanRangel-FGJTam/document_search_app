@@ -16,8 +16,23 @@ import {
     ArcElement
 } from 'chart.js';
 
+
+const form = useForm({
+    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
+    year: 2025,
+    status: null,
+    start_date: null,
+    end_date: null,
+    municipality: null,
+    document_type: null,
+    keyword: null,
+    download: false,
+});
+
+
 const barChartData = ref(null)
 const doughnutData = ref(null)
+const doughnutTitle = ref(null);
 // Registrar los componentes de Chart.js
 ChartJS.register(
     Title,
@@ -41,7 +56,7 @@ const doughnutOptions = {
     responsive: true,
     plugins: {
         legend: { position: 'bottom' },
-        title: { display: true, text: 'Identificaciones usadas' },
+        title: { display: true, text: 'Solicitudes por tipo de dato' },
     }
 }
 
@@ -56,17 +71,7 @@ const props = defineProps({
 });
 const loadingXLSX = ref(false);
 const loadingChart = ref(false);
-const form = useForm({
-    reportType: 1, // 1: Por Año, 2: Por Días, 3: Municipio por Días, 4: Por Municipio
-    year: 2025,
-    status: null,
-    start_date: null,
-    end_date: null,
-    municipality: null,
-    document_type: null,
-    keyword: null,
-    download: false,
-});
+
 
 watch(() => form.reportType, (newValue) => {
     // Reiniciar valores al cambiar el tipo de reporte
@@ -89,7 +94,7 @@ watch(() => form.reportType, (newValue) => {
         });
     }
 
-    if ([3, 4].includes(newValue)) {
+    if ([3, 4, 7].includes(newValue)) {
         router.get(route('reports.createByYear'), {
             municipality: newValue,
         },
@@ -101,7 +106,7 @@ watch(() => form.reportType, (newValue) => {
 });
 
 const validateForm = () => {
-    if ((form.reportType === 1 || form.reportType === 4) && !form.year) {
+    if ((form.reportType === 1 || form.reportType === 4 || form.reportType == 6) && !form.year) {
         toast.warning('Ingrese un año');
         return false;
     }
@@ -162,7 +167,6 @@ const generateChart = async () => {
         console.log('Data for chart:', data);
         const perMonth = data.totalPerMonth || {};
         const perIdentification = data.totalPerIdentification || {};
-
         barChartData.value = {
             labels: Object.keys(perMonth),
             datasets: [
@@ -178,7 +182,7 @@ const generateChart = async () => {
             labels: Object.keys(perIdentification),
             datasets: [
                 {
-                    label: 'Tipo de identificación',
+                    label: [6, 7].includes(form.reportType) ? 'Tipo de placa' : 'Tipo de identificación',
                     data: Object.values(perIdentification),
                     backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#9C27B0'],
                 },
@@ -225,7 +229,7 @@ const generateChart = async () => {
                                 </div>
 
                                 <!-- Selección de año (solo si el reporte es por año) -->
-                                <div class="col-span-1" v-if="[1, 4].includes(form.reportType)">
+                                <div class="col-span-1" v-if="[1, 4, 6, 7].includes(form.reportType)">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Seleccione Año
                                     </label>
@@ -253,7 +257,7 @@ const generateChart = async () => {
                                 </div>
 
                                 <!-- Selección de Municipio (para reportes por municipio y municipio por días) -->
-                                <div v-if="[3, 4].includes(form.reportType)" class="col-span-1">
+                                <div v-if="[3, 4, 7].includes(form.reportType)" class="col-span-1">
                                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                         Seleccione Municipio
                                     </label>
@@ -306,13 +310,13 @@ const generateChart = async () => {
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div v-if="barChartData" class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden">
-                                    <Bar :data="barChartData" :options="barChartOptions"
-                                        class="w-full h-full" />
+                                <div v-if="barChartData"
+                                    class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden">
+                                    <Bar :data="barChartData" :options="barChartOptions" class="w-full h-full" />
                                 </div>
-                                <div v-if="doughnutData" class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden flex justify-center">
-                                    <Doughnut :data="doughnutData" :options="doughnutOptions"
-                                        class="w-full h-full" />
+                                <div v-if="doughnutData"
+                                    class="w-full h-80 p-4 bg-white rounded-xl shadow overflow-hidden flex justify-center">
+                                    <Doughnut :data="doughnutData" :options="doughnutOptions" class="w-full h-full" />
                                 </div>
                             </div>
                             <div class="flex items-center justify-end space-x-4 mt-4">
