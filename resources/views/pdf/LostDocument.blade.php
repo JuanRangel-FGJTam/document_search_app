@@ -193,6 +193,8 @@
                         <td>
                             @if (isset($identification['documentTypeId']) && $identification['documentTypeId'] == 1)
                                 {{ isset($identification['valid']) ? \Carbon\Carbon::parse($identification['valid'])->format('Y') : '' }}
+                            @elseif ($identification['documentTypeId'] == 6 && $identification['valid'] == null)
+                                PERMANENTE
                             @else
                                 {{ isset($identification['valid']) ? $identification['valid'] : '' }}
                             @endif
