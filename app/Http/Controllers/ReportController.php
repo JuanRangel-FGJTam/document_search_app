@@ -14,6 +14,7 @@ use App\Models\{
     ReportType,
     Survey,
     VehicleBrand,
+    VehicleSubBrand,
     VehicleType
 };
 use App\Models\Legacy\Encuesta;
@@ -158,6 +159,7 @@ class ReportController extends Controller
                     'status' => $request->status ?? null,
                     'date_range' => [$request->start_date, $request->end_date],
                     'download' => $request->download ?? null,
+                    'vehicle_type' => $request->vehicle_type ?? null,
                 ];
                 return $this->getPlateReport($filters);
                 break;
@@ -167,6 +169,7 @@ class ReportController extends Controller
                     'status' => $request->status ?? null,
                     'municipio' => $request->municipality,
                     'download' => $request->download ?? null,
+                    'vehicle_type' => $request->vehicle_type ?? null,
                 ];
                 return $this->getPlateReport($filters);
                 break;
@@ -192,6 +195,7 @@ class ReportController extends Controller
     {
         $status_name = null;
         $municipality_name = null;
+        $vechileBrands = null;
         if ($filters['status']) {
             $lost_status = LostStatus::find($filters['status']);
             $status_name = $lost_status->name ?? null;
@@ -205,9 +209,11 @@ class ReportController extends Controller
         if (isset($filters['vehicle_type'])) {
             $vehicle_type = VehicleType::find($filters['vehicle_type']);
             $vehicle_type_name = $vehicle_type->name ?? null;
+            $subBrands = VehicleSubBrand::where('vehicle_type_id', $filters['vehicle_type'])->pluck('vehicle_brand_id')->unique();
+            $vechileBrands = VehicleBrand::whereIn('id', $subBrands)->pluck('name', 'id')->map(fn($item) => strtolower($item));
+        } else {
+            $vechileBrands = VehicleBrand::pluck('name', 'id')->map(fn($item) => strtolower($item));
         }
-
-        $vechileBrands = VehicleBrand::pluck('name', 'id')->map(fn($item) => strtolower($item));
 
         if ($filters['download']) {
             if (isset($filters['date_range']) && !empty($filters['date_range'])) {
@@ -224,7 +230,7 @@ class ReportController extends Controller
                     'data' => $report,
                     'status_name' => $status_name,
                     'municipality_name' => $municipality_name,
-                    'plate_document'=> 'Marca de Vehículo'
+                    'plate_document' => 'Marca de Vehículo'
                 ];
                 Log::info('Reporte exportado por usuario: ' . Auth::id());
                 return (new ExcelRequest())->create($data);
@@ -256,6 +262,10 @@ class ReportController extends Controller
                 ->where('place_events.municipality_api_id', $filters['municipio']);
         }
 
+        if($filters['vehicle_type']) {
+            $queryMisplacements->where('v.vehicle_type_id', $filters['vehicle_type']);
+        }
+
         if ($filters['status']) {
             $queryMisplacements->where('misplacements.lost_status_id', $filters['status']);
         }
@@ -263,6 +273,7 @@ class ReportController extends Controller
         $queryMisplacements->groupByRaw('MONTH(misplacements.registration_date), v.vehicle_brand_id');
 
         $misplacements = $queryMisplacements->get();
+
         // Se coloca el nombre del id guardado anteriormente
         foreach ($misplacements as $item) {
             $mes = Carbon::create()->month((int) $item->mes)->format('F');
@@ -271,11 +282,12 @@ class ReportController extends Controller
             $report[$mes]['total_solicitudes'] += $item->total;
         }
 
+
         // Filtrar identifications_count para dejar solo los que sean diferentes de 0
         foreach ($report as $mes => &$data) {
             $data['identifications_count'] = array_filter(
-            $data['identifications_count'],
-            fn($count) => $count != 0
+                $data['identifications_count'],
+                fn($count) => $count != 0
             );
         }
         unset($data);
