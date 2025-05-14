@@ -20,6 +20,14 @@ const ratings = ref({
 });
 
 const ratingLabels = ['Difícil', 'Medianamente difícil', 'Fácil', 'Medianamente fácil', 'Muy fácil'];
+
+const satisfactionLabels = [
+    'Muy insatisfecho',
+    'Insatisfecho',
+    'Neutral',
+    'Satisfecho',
+    'Muy satisfecho'
+];
 </script>
 
 <template>
@@ -38,7 +46,6 @@ const ratingLabels = ['Difícil', 'Medianamente difícil', 'Fácil', 'Medianamen
                         <div v-for="(question, key) in [
                             { label: '¿Qué tan difícil fue ingresar al rubro de Extravío de Documentos?', model: 'rating_1' },
                             { label: '¿Qué tan difícil le fue generar su Constancia?', model: 'rating_2' },
-                            { label: '¿Qué tan satisfecho se encuentra con el servicio?', model: 'rating_3' }
                         ]" :key="key">
                             <p class="font-medium text-gray-700">{{ question.label }}</p>
                             <div class="flex space-x-2 mt-2 items-center">
@@ -53,6 +60,25 @@ const ratingLabels = ['Difícil', 'Medianamente difícil', 'Fácil', 'Medianamen
                                     <span class="text-xs text-gray-600">{{ label }}</span>
                                 </div>
                             </div>
+                        </div>
+                        <div v-for="(question, key) in [
+                            { label: '¿Qué tan satisfecho se encuentra con el servicio?', model: 'rating_3' }
+                        ]" :key="key">
+                            <p class="font-medium text-gray-700">{{ question.label }}</p>
+                            <div class="flex space-x-2 mt-2 items-center">
+                                <div v-for="(label, i) in satisfactionLabels" :key="i"
+                                    @click="setRating(question.model, i + 1)" class="p-2 flex flex-col items-center"
+                                    :class="{ 'text-yellow-400': ratings[question.model] >= i + 1, 'text-gray-300': ratings[question.model] < i + 1 }">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                        width="24px" fill="currentColor">
+                                        <path
+                                            d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z" />
+                                    </svg>
+                                    <span class="text-xs text-gray-600">{{ label }}</span>
+
+                                </div>
+                            </div>
+
                         </div>
 
                         <div>
@@ -88,7 +114,8 @@ const ratingLabels = ['Difícil', 'Medianamente difícil', 'Fácil', 'Medianamen
                         </div>
 
                         <div>
-                            <p class="font-medium text-gray-700 dark:text-gray-200">¿El servidor público le solicitó algún pago
+                            <p class="font-medium text-gray-700 dark:text-gray-200">¿El servidor público le solicitó
+                                algún pago
                                 a cambio?</p>
                             <div class="flex space-x-4 mt-2">
                                 <label class="flex items-center space-x-2">
@@ -105,7 +132,8 @@ const ratingLabels = ['Difícil', 'Medianamente difícil', 'Fácil', 'Medianamen
                         </div>
 
                         <div>
-                            <p class="font-medium text-gray-700 dark:text-gray-200">¿Sintió discriminación en algún momento?</p>
+                            <p class="font-medium text-gray-700 dark:text-gray-200">¿Sintió discriminación en algún
+                                momento?</p>
                             <div class="flex space-x-4 mt-2">
                                 <label class="flex items-center space-x-2">
                                     <input type="radio" v-model="ratings.question_4" :value="1" class="form-radio"
