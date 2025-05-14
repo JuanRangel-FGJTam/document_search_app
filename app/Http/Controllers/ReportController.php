@@ -39,8 +39,8 @@ class ReportController extends Controller
     const LEGACY_PASAPORT_ID = 2;
     const LEGACY_LICENSE_ID = 4;
 
-    const LEGACY_DATE = '2025-04-01';
-
+    // Day we switched to the new system
+    const LEGACY_DATE = '2025-03-26';
 
     const REPORT_TYPE_PLATE = 1;
 
