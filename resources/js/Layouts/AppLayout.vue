@@ -60,7 +60,8 @@ const logout = () => {
                                     Reportes y Gráficas
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-7 sm:flex"
+                                v-if="$page.props.auth.user.is_admin">
                                 <NavLink :href="route('reports.plates.index')"
                                     :active="$page.url.startsWith('/admin/plates/reports')">
                                     Reportes de placas
