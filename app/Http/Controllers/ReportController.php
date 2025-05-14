@@ -39,6 +39,9 @@ class ReportController extends Controller
     const LEGACY_PASAPORT_ID = 2;
     const LEGACY_LICENSE_ID = 4;
 
+    const LEGACY_DATE = '2025-04-01';
+
+
     const REPORT_TYPE_PLATE = 1;
 
     public function __construct(AuthApiService $authApiService)
@@ -93,7 +96,7 @@ class ReportController extends Controller
 
 
         $lost_statuses = LostStatus::whereNotIn('id', [1, 2])->get();
-        $report_types = ReportType::whereNotIn('id', [5])->get();
+        $report_types = ReportType::whereNotIn('id', [5, 6, 7, 8])->get();
         $document_types = DocumentType::all();
         return Inertia::render('Reports/CreateByYear', [
             'years' => $years,
@@ -266,7 +269,7 @@ class ReportController extends Controller
                 ->where('place_events.municipality_api_id', $filters['municipio']);
         }
 
-        if($filters['vehicle_type']) {
+        if ($filters['vehicle_type']) {
             $queryMisplacements->where('v.vehicle_type_id', $filters['vehicle_type']);
         }
 
@@ -498,6 +501,12 @@ class ReportController extends Controller
             [$start, $end] = $filters['date_range'];
             $queryExtravios->whereBetween('PGJ_EXTRAVIOS.FECHA_REGISTRO', [$start, $end]);
             $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
+        } else {
+            $queryExtravios->whereDate(
+                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_REGISTRO, 120)"),
+                '<=',
+                Carbon::parse(self::LEGACY_DATE)->format('Y-m-d')
+            );
         }
         if ($filters['municipio']) {
 
@@ -666,27 +675,36 @@ class ReportController extends Controller
             ->join('lost_documents as ld', 'misplacements.id', '=', 'ld.misplacement_id');
 
         if ($start && $end) {
-            Log::info('Applying date range filter.', ['start' => $start, 'end' => $end]);
+            $legacyEnd = min(Carbon::parse($end), Carbon::parse(self::LEGACY_DATE))->format('Y-m-d');
             $queryExtravios->whereBetween(
                 DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
-                [Carbon::parse($start)->format('Y-m-d'), Carbon::parse($end)->format('Y-m-d')]
+                [Carbon::parse($start)->format('Y-m-d'), $legacyEnd]
             );
             $queryMisplacements->whereBetween('misplacements.registration_date', [$start, $end]);
         } elseif ($start) {
-            Log::info('Applying start date filter.', ['start' => $start]);
-            $queryExtravios->whereDate(
-                DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
-                Carbon::parse($start)->format('Y-m-d')
-            );
+            if (Carbon::parse($start)->lte(Carbon::parse(self::LEGACY_DATE))) {
+                $queryExtravios->whereDate(
+                    DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
+                    Carbon::parse($start)->format('Y-m-d')
+                );
+            }
             $queryMisplacements->whereDate('misplacements.registration_date', $start);
         } elseif ($end) {
-            Log::info('Applying end date filter.', ['end' => $end]);
+            if (Carbon::parse($end)->lte(Carbon::parse(self::LEGACY_DATE))) {
+                $queryExtravios->whereDate(
+                    DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
+                    Carbon::parse($end)->format('Y-m-d')
+                );
+            }
+            $queryMisplacements->whereDate('misplacements.registration_date', $end);
+        } else {
             $queryExtravios->whereDate(
                 DB::raw("CONVERT(varchar(10), PGJ_EXTRAVIOS.FECHA_EXTRAVIO, 120)"),
-                Carbon::parse($end)->format('Y-m-d')
+                '<=',
+                Carbon::parse(self::LEGACY_DATE)->format('Y-m-d')
             );
-            $queryMisplacements->whereDate('misplacements.registration_date', $end);
         }
+
 
         if ($filters['document_type']) {
             Log::info('Applying document type filter.', ['document_type' => $filters['document_type']]);
