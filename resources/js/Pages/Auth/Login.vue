@@ -66,11 +66,6 @@ const submit = () => {
                                     </div>
 
                                     <div class="flex items-center justify-end mt-4">
-                                        <Link :href="route('password.request')"
-                                            class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        Olvidaste tú contraseña?
-                                        </Link>
-
                                         <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }"
                                             :disabled="form.processing">
                                             Iniciar sesión
@@ -88,10 +83,12 @@ const submit = () => {
                     <a href="https://www.fgjtam.gob.mx" target="_blank" class="block mb-4">
                         <AuthenticationCardLogo class="mx-auto" />
                     </a>
-                    <h2 class="text-2xl text-gray-300 dark:text-gray-100 font-semibold">Constancia de Extravío de
-                        Documentos</h2>
-                    <p class="text-sm text-gray-400 mt-2">Accede a la plataforma para gestionar tus reportes de manera
-                        rápida y segura.</p>
+                    <h2 class="text-2xl text-gray-300 dark:text-gray-100 font-semibold">
+                        Consulta Extravio de Placas
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Accede a la plataforma para gestionar tus reportes de manera rápida y segura.
+                    </p>
                 </div>
             </div>
         </div>
