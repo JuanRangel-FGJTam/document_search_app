@@ -1,6 +1,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
 import { useToast } from 'vue-toastification';
+import InputError from '@/Components/InputError.vue';
 
 const toast = useToast();
 
@@ -18,11 +19,6 @@ const searchForm = useForm({
 
 function submit(e)
 {
-    if(searchForm.search.length <= 3)
-    {
-        toast.info("Por favor, ingresa al menos 4 caracteres para realizar la búsqueda.");
-        return;
-    }
     searchForm.get(route("search"));
 }
 
@@ -41,4 +37,5 @@ function submit(e)
             </svg>
         </button>
     </form>
+    <InputError :message="searchForm.errors.search" />
 </template>

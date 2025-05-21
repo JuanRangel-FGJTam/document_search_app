@@ -19,6 +19,9 @@ const props = defineProps({
                     <h1 class="my-6 text-3xl uppercase font-semibold text-gray-700 dark:text-gray-200">Busqueda de placas</h1>
                 </div>
                 <SearchInput :initial-search="props.search" />
+                <p class="text-sm opacity-60 text-center -translate-y-3">
+                    Puedes separar las búsquedas insertando una coma (,) entre cada término.
+                </p>
             </div>
         </div>
 
@@ -34,6 +37,5 @@ const props = defineProps({
                 <div class="bg-white border shadow h-[6rem]"> </div>
             </div>
         </div>
-
     </AppLayout>
 </template>
