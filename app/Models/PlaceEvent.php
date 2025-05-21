@@ -9,6 +9,8 @@ class PlaceEvent extends Model
 {
     use HasFactory;
 
+    protected $table = 'place_events_plate';
+
     protected $fillable = [
         'misplacement_id',
         'lost_date',

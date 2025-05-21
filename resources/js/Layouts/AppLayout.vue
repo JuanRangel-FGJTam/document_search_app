@@ -47,12 +47,11 @@ const logout = () => {
                                 </Link>
                             </div>
 
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-6 sm:flex">
-                                <NavLink href="#"
-                                    :active="$page.url.startsWith('/admin/request')">
+                            <!-- <div class="hidden space-x-8 sm:-my-px sm:ms-6 sm:flex">
+                                <NavLink href="#" :active="$page.url.startsWith('/admin/request')">
                                     Solicitudes de Constancias
                                 </NavLink>
-                            </div>
+                            </div> -->
                         </div>
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">

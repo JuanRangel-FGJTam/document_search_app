@@ -13,6 +13,9 @@ class Misplacement extends Model
 {
     use HasFactory;
     use Searchable;
+
+    protected $table = 'misplacements_plate';
+
     protected $fillable = [
         'lost_status_id',
         'people_id',
@@ -75,16 +78,6 @@ class Misplacement extends Model
         $array['people_name'] = $this->people->name ?? '';
         $array['people_email'] = $this->people->email ?? '';
         return $array;
-    }
-
-    /**
-     * Get all of the synced data
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function syncedMisplacement(): HasOne
-    {
-        return $this->HasOne(SyncedMisplacement::class);
     }
 
 }

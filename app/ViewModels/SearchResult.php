@@ -6,6 +6,7 @@ class SearchResult
 {
     public int $id;
     public string $plateNumber;
+    public string $personId;
     public string $fullName;
     public string $registerDate;
     public array $person;

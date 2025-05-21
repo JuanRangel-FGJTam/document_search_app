@@ -9,6 +9,8 @@ class MisplacementIdentification extends Model
 {
     use HasFactory;
 
+    protected $table = 'misplacement_ident_plate';
+
     protected $fillable = [
         'misplacement_id',
         'identification_type_id',

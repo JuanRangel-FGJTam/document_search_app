@@ -20,17 +20,12 @@ class SearchController extends Controller
     public function search(Request $request)
     {
         $method = $request->method();
-        Log::info('SearchController@search called via', ['method' => $method]);
 
         // * validate and retrive the search parameters
         $request->validate([
             "search" => "required|string|min:3|max:120"
         ]);
         $input_search = $request->input('search');
-
-        Log::notice("Initialize searching", [
-            "search" => $input_search
-        ]);
 
         // * return the view
         return Inertia::render('Search/Index', [
@@ -52,9 +47,12 @@ class SearchController extends Controller
         foreach($array_search as $searchString)
         {
             $res = $this->searchService->search($searchString);
-            $results = array_merge($results, $res);
+            foreach ($res as $vehicle) {
+                if (!in_array($vehicle, $results, false)) {
+                    $results[] = $vehicle;
+                }
+            }
         }
-        sleep(3);
         return $results;
     }
 

@@ -38,4 +38,7 @@ function submit(e)
         </button>
     </form>
     <InputError :message="searchForm.errors.search" />
+    <p class="text-xs opacity-40 pl-[2rem] -translate-y-[2rem]">
+        *Puedes separar las búsquedas insertando una coma (,) entre cada término.
+    </p>
 </template>

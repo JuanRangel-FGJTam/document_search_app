@@ -3,7 +3,6 @@ import { onMounted, ref } from 'vue';
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchInput from '@/Components/SearchInputSm.vue';
-import CarPlate from '@/Components/CarPlate.vue';
 import ResultCardLoading from '@/Components/ResultLoadingCard.vue';
 import ResultCard from '@/Components/ResultCard.vue';
 import AnimateSpin from '@/Components/Icons/AnimateSpin.vue';
@@ -42,7 +41,7 @@ onMounted(()=>{
                 <SearchInput :initial-search="props.search" />
             </div>
 
-            <h1 class="flex items-center gap-2 my-2 text-xl uppercase font-semibold text-gray-700 dark:text-gray-200">
+            <h1 class="flex items-center border-t pt-4 gap-2 my-2 text-xl uppercase font-semibold text-gray-700 dark:text-gray-200">
                 <span>Resultados</span>
                 <AnimateSpin v-if="!results" class="w-4 h-4" />
             </h1>
