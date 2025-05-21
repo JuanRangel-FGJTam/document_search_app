@@ -39,9 +39,10 @@ class SearchService
 
         // * retrive vehicle info
         $vehicles = Vehicle::whereIn('id', $vehiclesId)
-            ->with(['misplacement', 'vehicleBrand', 'vehicleSubBrand', 'plateType', 'vehicleModel'])
+            ->with(['misplacement', 'misplacement.lostStatus', 'misplacement.placeEvent', 'vehicleBrand', 'vehicleSubBrand', 'plateType', 'vehicleModel', 'vehicleType'])
             ->get();
 
+        // * process each vehicle and adapt the info
         foreach($vehicles as $vehicle)
         {
             $model = new SearchResult();
@@ -49,12 +50,14 @@ class SearchService
             $model->plateNumber = $vehicle->plate_number;
             $model->personId = $vehicle->misplacement->people_id;
             $model->registerDate = now()->format("Y-m-d H:i:s");
-            $model->vehicle = $vehicle->toArray();
+            $model->setVehicle($vehicle);
+
+            $misplacement = $vehicle->misplacement;
+            $model->setMisplacement($misplacement);
 
             // * retrive person data from API
             $person = $this->authApiService->getPersonById($model->personId);
-            $model->person = $person;
-
+            $model->setPerson($person);
             $model->fullName = $person ? $person['fullName'] : "*No disponible";
 
             $response[] = $model;
