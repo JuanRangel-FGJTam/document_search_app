@@ -9,12 +9,16 @@ const props = defineProps({
     initialSearch: {
         type: String,
         default: ""
+    },
+    types: {
+        type: Object,
+        default: undefined
     }
 });
 
 const searchForm = useForm({
     "search": props.initialSearch ?? "",
-    "type": 1
+    "type": "plate_number"
 });
 
 function submit(e)
@@ -27,9 +31,8 @@ function submit(e)
 <template>
     <form @submit.prevent="submit" class="flex items-center p-1 border rounded-xl border-gray-400 m-4 bg-slate-100 hover:bg-white transition-colors shadow">
         <input v-model="searchForm.search" type="search" class="uppercase bg-transparent border-none w-full outline-none focus:outline-none focus:ring-0 focus:border-none text-xl"/>
-        <select v-model="searchForm.type" class="bg-transparent border-none text-end w-[10rem] focus:outline-none focus:ring-0 focus:border-none">
-            <option value="1">Placa</option>
-            <option value="2">Otros</option>
+        <select v-if="types" v-model="searchForm.type" class="bg-transparent border-none text-end w-[12rem] focus:outline-none focus:ring-0 focus:border-none">
+            <option v-for="(t,i) in Object.keys(types)" :key="i" :value="t">{{types[t]}}</option>
         </select>
         <button type="submit" class="border-none bg-[#3b4280] p-2 rounded-full text-white">
             <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24">

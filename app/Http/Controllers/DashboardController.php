@@ -13,6 +13,7 @@ class DashboardController extends Controller
         $today = new \Carbon\Carbon();
         $totalRequest = Misplacement::whereDate('registration_date', $today->toDateString())->count();
         return Inertia::render('Dashboard', [
+            'searchTypes' => \App\Helpers\SearchTypes::$types,
             'totalRequest' => $totalRequest
         ]);
     }

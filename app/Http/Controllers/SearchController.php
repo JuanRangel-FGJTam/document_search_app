@@ -19,18 +19,18 @@ class SearchController extends Controller
 
     public function search(Request $request)
     {
-        $method = $request->method();
-
         // * validate and retrive the search parameters
         $request->validate([
             "search" => "required|string|min:3|max:120"
         ]);
         $input_search = $request->input('search');
+        $serach_type = $request->input('type', 'plate_number');
 
         // * return the view
         return Inertia::render('Search/Index', [
             'search' => $request->input('search'),
-            "results" => Inertia::lazy( fn() => $this->search_plates($input_search)),
+            'searchTypes' => \App\Helpers\SearchTypes::$types,
+            "results" => Inertia::lazy( fn() => $this->searchData($input_search, $serach_type)),
         ]);
     }
 
@@ -49,13 +49,13 @@ class SearchController extends Controller
      * @param  string $searchString
      * @return array<SearchResult>
      */
-    private function search_plates($searchString)
+    private function searchData($searchString, $searchType)
     {
         $array_search = array_map('trim', explode(',', $searchString));
         $results = [];
         foreach($array_search as $searchString)
         {
-            $res = $this->searchService->search($searchString);
+            $res = $this->searchService->search($searchString, $searchType);
             foreach ($res as $vehicle) {
                 if (!in_array($vehicle, $results, false)) {
                     $results[] = $vehicle;

@@ -10,6 +10,7 @@ use App\Models\{
     Vehicle,
     SearchPermission
 };
+use App\Helpers\SearchTypes;
 
 class SearchService
 {
@@ -26,19 +27,36 @@ class SearchService
     /**
      * search
      *
-     * @param mixed $search
+     * @param string $search
+     * @param ?string $type
      * @return array<SearchResult>
      */
-    public function search(string $search)
+    public function search(string $search, $type)
     {
         Log::info("Searching plate_numbers for [{searchParam}]", [
             "searchParam" => $search
         ]);
 
-        // * search the plate_numbers
-        $vehiclesId = Vehicle::where('plate_number', 'like', '%' . $search . '%')->pluck('id');
-         Log::info("Search completed for plate_numbers", [
+        $searchType = $type ?? SearchTypes::$PLACA;
+        $vehicleId = [];
+
+        switch ($searchType) {
+            case SearchTypes::$SERIAL_NUMBER:
+                $vehiclesId = Vehicle::where('serie_number', 'like', '%' . $search . '%')->pluck('id');
+                break;
+
+            case SearchTypes::$DOCUMENT_NUMBER:
+                $vehiclesId = Vehicle::whereHas('misplacement', fn($missp) => $missp->where('document_number', 'like', '%' . $search . '%'))->pluck('id');
+                break;
+
+            default: // * search the plate_numbers
+                $vehiclesId = Vehicle::where('plate_number', 'like', '%' . $search . '%')->pluck('id');
+                break;
+        }
+
+        Log::info("Search completed for plate_numbers", [
             "searchParam" => $search,
+            "searchType" => $searchType,
             "result_count" => count($vehiclesId)
         ]);
 
