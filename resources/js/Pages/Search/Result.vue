@@ -10,7 +10,7 @@ const props = defineProps({
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleString();
+    return date.toLocaleDateString();
 }
 </script>
 

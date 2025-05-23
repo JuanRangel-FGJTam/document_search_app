@@ -8,10 +8,10 @@ use App\Models\PlaceEvent;
 class SearchResult
 {
     public string $documentNumber;
-    public int $vehicleId;
+    public string $vehicleId;
     public string $plateNumber;
     public string $serialNumber;
-    public string $personId;
+    public ?string $personId;
     public string $fullName;
     public ?string $carDescription;
     public string $registerDate;
@@ -20,7 +20,7 @@ class SearchResult
     public SearchResultMisplacement $misplacement;
     public ?SearchResultPlaceEvent $placeEvent;
 
-    public function __construct(string $documentNumber, int $vehicleId)
+    public function __construct(string $documentNumber, string $vehicleId)
     {
         $this->documentNumber = $documentNumber;
         $this->vehicleId = $vehicleId;
@@ -47,12 +47,37 @@ class SearchResult
     public function setMisplacement(Misplacement $misplacement)
     {
         $_misplacement = new SearchResultMisplacement($misplacement);
+        $_misplacement->setData($misplacement);
+        $this->misplacement = $_misplacement;
+    }
+
+    public function setLegacyMisplacement($data)
+    {
+        $_misplacement = new SearchResultMisplacement();
+        $_misplacement->documentNumber = $data->ID_EXTRAVIO;
+        $_misplacement->statusId = $data->ID_ESTADO_EXTRAVIO;
+        $_misplacement->statusName = $data->ESTADO_EXTRAVIO;
         $this->misplacement = $_misplacement;
     }
 
     public function setPlaceEvent(PlaceEvent $placeEvent, array $zipcodeData)
     {
-        $searchPlaceEvent = new SearchResultPlaceEvent($placeEvent, $zipcodeData);
+        $searchPlaceEvent = new SearchResultPlaceEvent();
+        $searchPlaceEvent->setData($placeEvent, $zipcodeData);
+        $this->placeEvent = $searchPlaceEvent;
+    }
+
+    public function setLegacyPlaceEvent($data)
+    {
+        $searchPlaceEvent = new SearchResultPlaceEvent();
+        $searchPlaceEvent->lostDate = $data->FECHA_EXTRAVIO;
+        $searchPlaceEvent->zipCode = "*No Capturado";
+        $searchPlaceEvent->municipalityId = $data->ID_MUNICIPIO;
+        $searchPlaceEvent->municipalityName = $data->MUNICIPIO;
+        $searchPlaceEvent->colonyId = $data->ID_COLONIA;
+        $searchPlaceEvent->colonyName = $data->COLONIA;
+        $searchPlaceEvent->street = $data->CALLE;
+        $searchPlaceEvent->description = $data->DESCRIPCION;
         $this->placeEvent = $searchPlaceEvent;
     }
 }
@@ -125,7 +150,7 @@ class SearchResultMisplacement
     public string $statusId;
     public string $statusName;
 
-    public function __construct(Misplacement $misplacement)
+    public function setData(Misplacement $misplacement)
     {
         $this->documentNumber = $misplacement->document_number;
         $this->statusId = $misplacement->lost_status_id;
@@ -144,7 +169,7 @@ class SearchResultPlaceEvent
     public string $street;
     public string $description;
 
-    public function __construct(PlaceEvent $placeEvent, array $zipcodeData)
+    public function setData(PlaceEvent $placeEvent, array $zipcodeData)
     {
         $this->lostDate = $placeEvent->lost_date;
         $this->zipCode = $placeEvent->zipcode;
@@ -163,4 +188,5 @@ class SearchResultPlaceEvent
         $this->street = $placeEvent->street;
         $this->description = $placeEvent->description;
     }
+
 }

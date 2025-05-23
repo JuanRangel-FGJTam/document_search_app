@@ -36,7 +36,14 @@ class SearchController extends Controller
 
     public function showResult($vehicleId)
     {
-        $searchResult = $this->searchService->finByVehicleId($vehicleId);
+        if (str_starts_with($vehicleId, 'L')) {
+            $idObjeto = ltrim($vehicleId, 'L');
+            $searchResult = $this->searchService->findLigacyByObjectoId($idObjeto);
+        }
+        else
+        {
+            $searchResult = $this->searchService->finByVehicleId($vehicleId);
+        }
 
         return Inertia::render("Search/Result", [
             "searchResult" => $searchResult
