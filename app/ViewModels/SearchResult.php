@@ -6,19 +6,34 @@ use App\Models\Misplacement;
 
 class SearchResult
 {
-    public int $id;
+    public string $documentNumber;
+    public int $vehicleId;
     public string $plateNumber;
+    public string $serialNumber;
     public string $personId;
     public string $fullName;
+    public ?string $carDescription;
     public string $registerDate;
-    public SearchResultPerson $person;
-    public SearchResultVehicle $vehicle;
+    public ?SearchResultPerson $person;
+    public ?SearchResultVehicle $vehicle;
     public SearchResultMisplacement $misplacement;
+
+    public function __construct(string $documentNumber, int $vehicleId)
+    {
+        $this->documentNumber = $documentNumber;
+        $this->vehicleId = $vehicleId;
+    }
 
     public function setVehicle(Vehicle $vehicle)
     {
         $_vehicle = new SearchResultVehicle($vehicle);
         $this->vehicle = $_vehicle;
+        $this->carDescription = implode(" ", [
+            $_vehicle->typeName,
+            $_vehicle->brandName,
+            $_vehicle->subBrandName,
+            $_vehicle->modelYear
+        ]);
     }
 
     public function setPerson($person)
@@ -45,6 +60,7 @@ class SearchResultVehicle
     public string $plateNumber;
     public string $serieNumber;
     public string $owner;
+    public ?string $modelYear;
 
     public function __construct(Vehicle $vehicle)
     {
@@ -54,10 +70,10 @@ class SearchResultVehicle
         $this->subBrandName = $vehicle->vehicleSubBrand->name;
         $this->typeId = $vehicle->vehicle_type_id;
         $this->typeName = $vehicle->vehicleType->name;
-
         $this->plateNumber = $vehicle->plate_number;
         $this->serieNumber = $vehicle->serie_number;
         $this->owner = $vehicle->owner;
+        $this->modelYear = $vehicle->vehicleModel?->name;
     }
 }
 

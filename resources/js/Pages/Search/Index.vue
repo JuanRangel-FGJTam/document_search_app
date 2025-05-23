@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { router } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchInput from '@/Components/SearchInputSm.vue';
 import ResultCardLoading from '@/Components/ResultLoadingCard.vue';
@@ -53,7 +53,9 @@ onMounted(()=>{
             </div>
 
             <div v-else class="my-2 flex flex-wrap justify-around gap-4">
-                <ResultCard v-for="(item, index) in results" :key="index" :item="item" />
+                <Link :href="route('search.result', item.vehicleId)" v-for="(item, index) in results" :key="index" >
+                    <ResultCard :item="item" />
+                </Link>
             </div>
 
         </div>

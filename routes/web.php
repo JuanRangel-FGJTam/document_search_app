@@ -26,6 +26,7 @@ Route::middleware([ 'auth:sanctum', config('jetstream.auth_session'), 'verified'
     Route::prefix('search')->group(function()
     {
         Route::get('', [SearchController::class, "search"])->name("search");
+        Route::get('{vehicleId}', [SearchController::class, "showResult"])->name("search.result");
     });
 
     Route::prefix('/admin/usuarios')->group(function () {

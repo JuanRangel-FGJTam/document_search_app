@@ -34,6 +34,15 @@ class SearchController extends Controller
         ]);
     }
 
+    public function showResult($vehicleId)
+    {
+        $searchResult = $this->searchService->finByVehicleId($vehicleId);
+
+        return Inertia::render("Search/Result", [
+            "searchResult" => $searchResult
+        ]);
+    }
+
     /**
      * search_plates
      *

@@ -6,7 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -29,7 +29,9 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
-        'is_admin'
+        'is_admin',
+        'external_user_id',
+        'updated_password'
     ];
 
     /**
@@ -76,9 +78,9 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function externalUser() : HasOne
+    public function externalUser() : BelongsTo
     {
-        return $this->hasOne(ExternalUser::class);
+        return $this->belongsTo(ExternalUser::class);
     }
 
 }

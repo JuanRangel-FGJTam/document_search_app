@@ -14,13 +14,19 @@
 <template>
     <div class="flex flex-col bg-white border shadow p-4 min-w-[320px] max-w-[350px] overflow-hidden">
         <div class="flex items-center justify-between gap-y-2 uppercase">
-            <div class="col-span-1 text-sm"> {{ item.misplacement.documentNumber }}</div>
+            <div class="col-span-1 text-sm"> {{ item.documentNumber }}</div>
             <div class="col-span-2 text-xs"> {{ item.registerDate }}</div>
         </div>
-        <CarPlate class="mx-auto" :plateNumber="item.plateNumber" />
-        <div class="rounded uppercase">{{ item.fullName }}</div>
 
-        <div class="flex flex-col text-sm text-left mt-2 pt-2 border-t">
+        <CarPlate class="mx-auto" :plateNumber="item.plateNumber" :serialNumber="item.serialNumber" />
+
+        <div class="pt-2 text-center">
+            <div class="uppercase">{{ item.fullName }}</div>
+            <div v-if="item.carDescription" class="uppercase text-sm pt-1">{{ item.carDescription }}</div>
+        </div>
+
+        <!--
+        <div v-if="item.vehicle" class="flex flex-col text-sm text-left mt-2 pt-2 border-t">
             <div><strong>Marca:</strong> {{ item.vehicle.brandName }}</div>
             <div><strong>Sub Marca:</strong> {{ item.vehicle.subBrandName }}</div>
             <div><strong>Tipo:</strong> {{ item.vehicle.typeName }}</div>
@@ -29,7 +35,7 @@
             <div><strong>Dueño:</strong> {{ item.vehicle.owner }}</div>
         </div>
 
-        <div class="flex flex-col text-sm text-left mt-2 pt-2 border-t">
+        <div v-if="item.person" class="flex flex-col text-sm text-left mt-2 pt-2 border-t">
             <div><strong>Nombre(s):</strong> {{ item.person.name }}</div>
             <div><strong>Apellido Paterno:</strong> {{ item.person.firstName }}</div>
             <div><strong>Apellido Materno:</strong> {{ item.person.lastName }}</div>
@@ -39,7 +45,7 @@
             <div><strong>Edad:</strong> {{ item.person.age }}</div>
             <div><strong>Genero:</strong> {{ item.person.genderName }}</div>
             <div><strong>Ocupacion:</strong> {{ item.person.occupationName }}</div>
-        </div>
+        </div> -->
 
     </div>
 </template>
