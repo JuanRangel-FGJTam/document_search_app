@@ -43,6 +43,39 @@ function formatDate(dateString) {
                         </div>
                     </div>
                 </div>
+
+                <div class="border-t mt-2 pt-2">
+                    <div class="">
+                        <h3 class="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-200">Lugar y Hechos</h3>
+                        <div v-if="searchResult.placeEvent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-gray-600">Fecha de Extravío:</p>
+                                <p class="font-medium">{{ formatDate(searchResult.placeEvent.lostDate) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Código Postal:</p>
+                                <p class="font-medium">{{ searchResult.placeEvent.zipCode }}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Municipio:</p>
+                                <p class="font-medium">{{ searchResult.placeEvent.municipalityName }}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Colonia:</p>
+                                <p class="font-medium">{{ searchResult.placeEvent.colonyName }}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Calle:</p>
+                                <p class="font-medium">{{ searchResult.placeEvent.street }}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <p class="text-gray-600">Descripción de los hechos:</p>
+                                <p class="font-medium">{{ searchResult.placeEvent.description }}</p>
+                            </div>
+                        </div>
+                        <div v-else class="text-gray-500 italic">*No disponible</div>
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

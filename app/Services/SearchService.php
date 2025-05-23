@@ -141,6 +141,21 @@ class SearchService
                 $model->fullName = \App\Helpers\HideText::hide($person['fullName']);
             }
 
+            // * set placeEvent
+            try {
+                $vehicle->misplacement->load('placeEvent');
+                $placeEvent = $vehicle->misplacement->placeEvent;
+                if ($placeEvent) {
+                    $zipcodeData = $this->authApiService->getZipCode($placeEvent->zipcode);
+                    $model->setPlaceEvent($placeEvent, $zipcodeData);
+                }
+            } catch (\Throwable $th) {
+                Log::error("Fail to load the place event of {folio}: {message}", [
+                    "folio" => $model->documentNumber,
+                    "message" => $th->getMessage()
+                ]);
+            }
+
             $response[] = $model;
         }
 

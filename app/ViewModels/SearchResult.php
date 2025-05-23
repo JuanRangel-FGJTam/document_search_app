@@ -3,6 +3,7 @@
 namespace App\ViewModels;
 use App\Models\Vehicle;
 use App\Models\Misplacement;
+use App\Models\PlaceEvent;
 
 class SearchResult
 {
@@ -17,6 +18,7 @@ class SearchResult
     public ?SearchResultPerson $person;
     public ?SearchResultVehicle $vehicle;
     public SearchResultMisplacement $misplacement;
+    public ?SearchResultPlaceEvent $placeEvent;
 
     public function __construct(string $documentNumber, int $vehicleId)
     {
@@ -46,6 +48,12 @@ class SearchResult
     {
         $_misplacement = new SearchResultMisplacement($misplacement);
         $this->misplacement = $_misplacement;
+    }
+
+    public function setPlaceEvent(PlaceEvent $placeEvent, array $zipcodeData)
+    {
+        $searchPlaceEvent = new SearchResultPlaceEvent($placeEvent, $zipcodeData);
+        $this->placeEvent = $searchPlaceEvent;
     }
 }
 
@@ -122,5 +130,37 @@ class SearchResultMisplacement
         $this->documentNumber = $misplacement->document_number;
         $this->statusId = $misplacement->lost_status_id;
         $this->statusName = $misplacement->lostStatus->name;
+    }
+}
+
+class SearchResultPlaceEvent
+{
+    public string $lostDate;
+    public string $zipCode;
+    public string $municipalityId;
+    public string $municipalityName;
+    public string $colonyId;
+    public string $colonyName;
+    public string $street;
+    public string $description;
+
+    public function __construct(PlaceEvent $placeEvent, array $zipcodeData)
+    {
+        $this->lostDate = $placeEvent->lost_date;
+        $this->zipCode = $placeEvent->zipcode;
+
+        $municipalities = $zipcodeData['municipalities'] ?? [];
+        $muni = collect($municipalities)->firstWhere('id', $placeEvent->municipality_api_id);
+        $this->municipalityId = $placeEvent->municipality_api_id;
+        $this->municipalityName = $muni != null ? $muni['name'] : "*No disponible";
+
+        $this->colonyId = $placeEvent->colony_api_id;
+
+        $colonies = $zipcodeData['colonies'] ?? [];
+        $colony = collect($colonies)->firstWhere('id', $placeEvent->colony_api_id);
+        $this->colonyName = $colony != null ? $colony['name'] : "*No disponible";
+
+        $this->street = $placeEvent->street;
+        $this->description = $placeEvent->description;
     }
 }
