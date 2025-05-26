@@ -70,7 +70,8 @@ function formatDate(dateString) {
                             </div>
                             <div class="md:col-span-2">
                                 <p class="text-gray-600">Descripción de los hechos:</p>
-                                <p class="font-medium">{{ searchResult.placeEvent.description }}</p>
+                                <p v-if="searchResult.placeEvent.description" class="font-medium">{{ searchResult.placeEvent.description}}</p>
+                                <p v-else class="tex-sm px-2 py-2">*No hay descripcion</p>
                             </div>
                         </div>
                         <div v-else class="text-gray-500 italic">*No disponible</div>
