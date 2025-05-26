@@ -9,6 +9,12 @@ use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\ViewModels\SearchResult;
 use App\Services\AuthApiService;
+use App\Contracts\MisplacementRepositoryInterface;
+use App\Repositories\
+{
+    LegacyMisplacementRepository,
+    LostDocumentRepository
+};
 use App\Models\{
     Vehicle,
     SearchPermission
@@ -19,12 +25,23 @@ class SearchService
 {
     protected AuthApiService $authApiService;
 
+    protected MisplacementRepositoryInterface $legacyRepo;
+    protected MisplacementRepositoryInterface $lostDocumentRepo;
+
+
     protected static $MOSTRAR_PERSONA = 1;
     protected static $MOSTRAR_VEHICULO = 2;
+
+    public static int $SOURCE_LOCAL = 1;
+    public static int $SOURCE_LEGACY = 2;
+    public static int $SOURCE_LOSDOCUMENT = 3;
+
 
     public function __construct(AuthApiService $authApiService)
     {
         $this->authApiService = $authApiService;
+        $this->legacyRepo = new LegacyMisplacementRepository();
+        $this->lostDocumentRepo = new LostDocumentRepository($this->authApiService);
     }
 
     /**
@@ -45,10 +62,22 @@ class SearchService
         // * search in local db
         $response = $this->searchLocal($search, $type);
 
-        // * search in legacy db
+        // * search from the previous app
+        $lostDocumentResponse = $this->lostDocumentRepo->search(
+            $search,
+            permissions: $this->getUserPermissions(),
+            type: $searchType
+        );
+        $response = array_merge($response, $lostDocumentResponse);
+
+        // * search from the other origins
         if($searchType == SearchTypes::$PLACA)
         {
-            $responseLegacy = $this->searchLegacy($search);
+            $responseLegacy = $this->legacyRepo->search(
+                $search,
+                permissions: $this->getUserPermissions(),
+                type: $searchType
+            );
             $response = array_merge($response, $responseLegacy);
         }
 
@@ -68,8 +97,18 @@ class SearchService
      * @return SearchResult
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException;
      */
-    public function finByVehicleId(int $vehicleId)
+    public function finByVehicleId(int $vehicleId, ?int $source = null)
     {
+        if($source == SELF::$SOURCE_LOSDOCUMENT)
+        {
+            return $this->lostDocumentRepo->findByVehicleId($vehicleId, $this->getUserPermissions());
+        }
+
+        if($source == SELF::$SOURCE_LEGACY)
+        {
+            return $this->legacyRepo->findByVehicleId($vehicleId, $this->getUserPermissions());
+        }
+
         // * retrive vehicle info
         $vehicle = Vehicle::with(['misplacement', 'misplacement.lostStatus', 'misplacement.placeEvent', 'vehicleBrand', 'vehicleSubBrand', 'plateType', 'vehicleModel', 'vehicleType'])
             ->findOrFail($vehicleId);
@@ -79,31 +118,6 @@ class SearchService
         return $response;
     }
 
-    /**
-     * finByVehicleId
-     *
-     * @param int $vehicleId
-     * @return SearchResult
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException;
-     */
-    public function findLigacyByObjectoId($idObjeto)
-    {
-        // * retrive vehicle info
-        $sql = File::get(resource_path('sql/get-plate-legacy.sql'));
-
-        // * fetch the query
-        $results = DB::connection('sqlsrv')->select($sql, ['IdObjeto' => $idObjeto]);
-        if( empty($results) )
-        {
-            abort(404, "Registro no encontrado en la base legacy");
-        }
-
-        // * get the permissions
-        $permissions = $this->getUserPermissions();
-
-        // * process the data
-        return $this->processResponseLegacy($results[0], $permissions);
-    }
 
     #region private functions
     /**
@@ -140,37 +154,6 @@ class SearchService
         // * process each vehicle and adapt the info
         $response = $this->processResponse($vehicles);
         return $response;
-    }
-
-    /**
-     * searchLegacy
-     *
-     * @param  string $searchKeyWord
-     * @return array<SearchResponse>
-     */
-    private function searchLegacy($searchKeyWord)
-    {
-        $searchResponses = [];
-
-        // * loas the custom query
-        $sql = File::get(resource_path('sql/search-plate-legacy.sql'));
-
-        // * fetch the query
-        $results = DB::connection('sqlsrv')->select($sql, ['plateNumber' => '%'. $searchKeyWord . '%']);
-        if( empty($results) )
-        {
-            return [];
-        }
-
-        // * get all the permissions
-        $permissions = $this->getUserPermissions();
-
-        foreach($results as $s)
-        {
-            $searchResponses[] = $this->processResponseLegacy($s, $permissions);
-        }
-
-        return $searchResponses;
     }
 
     /**
@@ -239,49 +222,6 @@ class SearchService
         return $response;
     }
 
-    /**
-     * processResponseLegacy
-     *
-     * @param  mixed $legacyData
-     * @param  array<SearchPermission> $permissions
-     * @return SearchResult
-     */
-    private function processResponseLegacy($legacyData, $permissions)
-    {
-        $_vehicleId = "L" . $legacyData->ID_OBJETO;
-        $_documentNumber = "L" . $legacyData->ID_EXTRAVIO;
-
-        $model = new SearchResult($_documentNumber, $_vehicleId);
-        $model->plateNumber = $legacyData->NUMERO_DOCUMENTO;
-        $model->serialNumber = "";
-        $model->registerDate = Carbon::parse($legacyData->FECHA_REGISTRO)->format("Y-m-d");
-
-        $model->setLegacyMisplacement($legacyData);
-        $model->setLegacyPlaceEvent($legacyData);
-
-        // * retrive name
-        $name = trim(implode(' ', [
-            $legacyData->NOMBRE,
-            $legacyData->PATERNO,
-            $legacyData->MATERNO,
-        ]));
-
-        // * if name is empty override with titular
-        if (empty($name))
-        {
-            $name = $legacyData->TITULAR_DOCUMENTO;
-        }
-
-        if (array_key_exists(self::$MOSTRAR_PERSONA, $permissions)) {
-            $model->fullName = $name;
-        }
-        else
-        {
-            $model->fullName = \App\Helpers\HideText::hide($name);
-        }
-
-        return $model;
-    }
 
     private function getUserPermissions()
     {

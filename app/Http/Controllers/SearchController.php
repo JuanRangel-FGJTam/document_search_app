@@ -38,7 +38,12 @@ class SearchController extends Controller
     {
         if (str_starts_with($vehicleId, 'L')) {
             $idObjeto = ltrim($vehicleId, 'L');
-            $searchResult = $this->searchService->findLigacyByObjectoId($idObjeto);
+            $searchResult = $this->searchService->finByVehicleId($idObjeto, SearchService::$SOURCE_LEGACY);
+        }
+        elseif(str_starts_with($vehicleId, 'D'))
+        {
+            $documentId = ltrim($vehicleId, 'D');
+            $searchResult = $this->searchService->finByVehicleId($documentId, SearchService::$SOURCE_LOSDOCUMENT);
         }
         else
         {
