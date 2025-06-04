@@ -40,7 +40,7 @@ onMounted(()=>{
         <div class="p-6 flex flex-col max-w-screen-xl mx-auto border-t">
 
             <div class="row">
-                <SearchInput :initial-search="props.search" :types="searchTypes" />
+                <SearchInput :initial-search="props.search" :types="searchTypes" :searchType="searchType"/>
             </div>
 
             <h1 class="flex items-center border-t pt-4 gap-2 my-2 text-xl uppercase font-semibold text-gray-700 dark:text-gray-200">

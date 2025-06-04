@@ -31,6 +31,7 @@ class SearchController extends Controller
             'search' => $request->input('search'),
             'searchTypes' => \App\Helpers\SearchTypes::$types,
             "results" => Inertia::lazy( fn() => $this->searchData($input_search, $serach_type)),
+            "searchType" => $serach_type
         ]);
     }
 
