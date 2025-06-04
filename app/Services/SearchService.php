@@ -63,23 +63,23 @@ class SearchService
         $response = $this->searchLocal($search, $type);
 
         // * search from the previous app
-        $lostDocumentResponse = $this->lostDocumentRepo->search(
-            $search,
-            permissions: $this->getUserPermissions(),
-            type: $searchType
-        );
-        $response = array_merge($response, $lostDocumentResponse);
+        // $lostDocumentResponse = $this->lostDocumentRepo->search(
+        //     $search,
+        //     permissions: $this->getUserPermissions(),
+        //     type: $searchType
+        // );
+        // $response = array_merge($response, $lostDocumentResponse);
 
         // * search from the other origins
-        if($searchType == SearchTypes::$PLACA)
-        {
-            $responseLegacy = $this->legacyRepo->search(
-                $search,
-                permissions: $this->getUserPermissions(),
-                type: $searchType
-            );
-            $response = array_merge($response, $responseLegacy);
-        }
+        // if($searchType == SearchTypes::$PLACA)
+        // {
+        //     $responseLegacy = $this->legacyRepo->search(
+        //         $search,
+        //         permissions: $this->getUserPermissions(),
+        //         type: $searchType
+        //     );
+        //     $response = array_merge($response, $responseLegacy);
+        // }
 
         Log::info("Search completed for plate_numbers", [
             "searchParam" => $search,
@@ -99,15 +99,15 @@ class SearchService
      */
     public function finByVehicleId(int $vehicleId, ?int $source = null)
     {
-        if($source == SELF::$SOURCE_LOSDOCUMENT)
-        {
-            return $this->lostDocumentRepo->findByVehicleId($vehicleId, $this->getUserPermissions());
-        }
+        // if($source == SELF::$SOURCE_LOSDOCUMENT)
+        // {
+        //     return $this->lostDocumentRepo->findByVehicleId($vehicleId, $this->getUserPermissions());
+        // }
 
-        if($source == SELF::$SOURCE_LEGACY)
-        {
-            return $this->legacyRepo->findByVehicleId($vehicleId, $this->getUserPermissions());
-        }
+        // if($source == SELF::$SOURCE_LEGACY)
+        // {
+        //     return $this->legacyRepo->findByVehicleId($vehicleId, $this->getUserPermissions());
+        // }
 
         // * retrive vehicle info
         $vehicle = Vehicle::with(['misplacement', 'misplacement.lostStatus', 'misplacement.placeEvent', 'vehicleBrand', 'vehicleSubBrand', 'plateType', 'vehicleModel', 'vehicleType'])
