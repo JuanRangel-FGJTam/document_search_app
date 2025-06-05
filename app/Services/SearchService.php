@@ -38,6 +38,7 @@ class SearchService
 
     public static int $DOCUMENT_STATUS_VALIDATED = 3;
 
+    public static int $CHUNK_SIZE= 50;
 
     public function __construct(AuthApiService $authApiService)
     {
@@ -91,6 +92,44 @@ class SearchService
 
         return $response;
     }
+
+    /**
+     * search
+     *
+     * @param string $search
+     * @param ?string $type
+     * @return array<SearchResult>
+     */
+    public function getData($hasCredential, $vehicleType, $month, $year, $page = 0 )
+    {
+        Log::info("Searching plate_numbers for [{searchParam}] with filters", [
+            "hasCredential" => $hasCredential,
+            "vehicleType" => $vehicleType,
+            "month" => $month,
+            "year" => $year
+        ]);
+
+        // * retrive vehicle info
+        $vehicles = Vehicle::with(['misplacement', 'misplacement.lostStatus', 'misplacement.placeEvent', 'vehicleBrand', 'vehicleSubBrand', 'plateType', 'vehicleModel', 'vehicleType'])
+            ->whereHas('misplacement', fn($m) => $m->where('lost_status_id',self::$DOCUMENT_STATUS_VALIDATED))
+            // ->when(($hasCredential ?? 0) > 0, function($query) use($hasCredential){
+            //     return $query->when($hasCredential == 1, fn()'vehicle_type_id', $vehicleType);
+            // })
+            ->when(($vehicleType ?? 0) > 0, fn($query) => $query->where('vehicle_type_id', $vehicleType) )
+            ->whereHas('misplacement', function($mis) use($year, $month){
+                return $mis->whereYear('registration_date', $year)->whereMonth('registration_date', $month);
+            })
+            ->orderBy('created_at', 'desc')
+            ->skip($page * self::$CHUNK_SIZE)
+            ->take(self::$CHUNK_SIZE)
+            ->get();
+
+        // * process each vehicle and adapt the info
+        $response = $this->processResponse($vehicles);
+
+        return $response;
+    }
+
 
     /**
      * finByVehicleId

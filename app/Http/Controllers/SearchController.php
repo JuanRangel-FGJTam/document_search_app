@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Services\SearchService;
 use App\ViewModels\SearchResult;
+use App\Models\VehicleType;
 
 class SearchController extends Controller
 {
@@ -26,12 +27,73 @@ class SearchController extends Controller
         $input_search = $request->input('search');
         $serach_type = $request->input('type', 'plate_number');
 
+        $months = [
+            1 => "Ene",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Abr",
+            5 => "May",
+            6 => "Jun",
+            7 => "Jul",
+            8 => "Ago",
+            9 => "Sep",
+            10 => "Oct",
+            11 => "Nov",
+            12 => "Dic"
+        ];
+
+        $vehicleTypes = VehicleType::orderBy('name')->select(['id', 'name'])->get()->all();
+
         // * return the view
         return Inertia::render('Search/Index', [
             'search' => $request->input('search'),
             'searchTypes' => \App\Helpers\SearchTypes::$types,
             "results" => Inertia::lazy( fn() => $this->searchData($input_search, $serach_type)),
-            "searchType" => $serach_type
+            "searchType" => $serach_type,
+            "months" => $months,
+            "vehicleTypes" => $vehicleTypes
+        ]);
+    }
+
+    public function searchFilters(Request $request)
+    {
+        // * validate and retrive the search parameters
+        $request->validate([
+            "credential" => "nullable|integer",
+            "type" => "nullable|integer",
+            "month" => "nullable|integer",
+            "year" => "nullable|integer",
+        ]);
+        $hasCredential = $request->input('credential', 0);
+        $vehicleType = $request->input('type', 0);
+        $month = $request->input('month', now()->month);
+        $yaer = $request->input('year', now()->year);
+
+
+        $months = [
+            1 => "Ene",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Abr",
+            5 => "May",
+            6 => "Jun",
+            7 => "Jul",
+            8 => "Ago",
+            9 => "Sep",
+            10 => "Oct",
+            11 => "Nov",
+            12 => "Dic"
+        ];
+
+        $vehicleTypes = VehicleType::orderBy('name')->select(['id', 'name'])->get()->all();
+
+        // * return the view
+        return Inertia::render('Search/Index', [
+            'search' => $request->input('search'),
+            'searchTypes' => \App\Helpers\SearchTypes::$types,
+            "results" => Inertia::lazy( fn() => $this->searchDataByFilters($hasCredential, $vehicleType, $month, $yaer)),
+            "months" => $months,
+            "vehicleTypes" => $vehicleTypes
         ]);
     }
 
@@ -76,6 +138,17 @@ class SearchController extends Controller
             }
         }
         return $results;
+    }
+
+    /**
+     * search_plates
+     *
+     * @param  string $searchString
+     * @return array<SearchResult>
+     */
+    private function searchDataByFilters($hasCredential, $vehicleType, $month, $year)
+    {
+        return $this->searchService->getData($hasCredential, $vehicleType, $month, $year);
     }
 
 }

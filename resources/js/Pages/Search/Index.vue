@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3'
+import { useForm, Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchInput from '@/Components/SearchInputSm.vue';
 import ResultCardLoading from '@/Components/ResultLoadingCard.vue';
@@ -17,10 +17,19 @@ const props = defineProps({
         default: undefined
     },
     searchTypes: Object,
-    searchType: String
+    searchType: String,
+    months: Array,
+    vehicleTypes: Array
 });
 
 const proccessing = ref(true);
+
+const filtersForm = useForm({
+    "credential": 0,
+    "type": 0,
+    "month": 6,
+    "year" : 2025
+});
 
 onMounted(()=>{
     proccessing.value = true;
@@ -33,19 +42,78 @@ onMounted(()=>{
     });
 });
 
+function submitFilters(e)
+{
+    filtersForm.get(route("filters"));
+}
+
 </script>
 
 <template>
     <AppLayout title="Dashboard">
         <div class="p-6 flex flex-col max-w-screen-xl mx-auto border-t">
 
-            <div class="row">
-                <SearchInput :initial-search="props.search" :types="searchTypes" :searchType="searchType"/>
+            <div class="row flex items-center justify-between bg-white pl-2 pr-4 shadow-sm rounded border">
+                <div class="item mb-0">
+                    <SearchInput :initial-search="props.search" :types="searchTypes" :searchType="searchType"/>
+                </div>
+
+                <div class="item -translate-y-2">
+                    <form @submit.prevent="submitFilters" class="flex flex-wrap items-center justify-center gap-1 border rounded-xl border-gray-400 m-4 bg-slate-100 hover:bg-white transition-colors shadow px-1.5 pt-3 pb-0">
+                        <div class="relative inline-block mb-0 pb-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewbox="0 0 20 20" fill="currentColor" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path></svg>
+                            <select v-model="filtersForm.credential" class="appearance-none w-full max-w-[15rem] text-gray-900 dark:text-white pl-10 py-2 pr-4 rounded-lg text-sm bg-transparent border-none focus:outline-none focus:ring-0 focus:border-none">
+                                <option value="0">TODOS</option>
+                                <option value="2">Con tarjeta de circulación proporcionada</option>
+                                <option value="1">Sin tarjeta de circulación (extravío)</option>
+                            </select>
+                            <span class="absolute z-10 left-2.5 top-0 text-xs -translate-y-1.5 text-gray-800 dark:text-white text-opacity-60">
+                                Cuenta con tarjeta de circulacion
+                            </span>
+                        </div>
+
+                        <div class="relative inline-block mb-0 pb-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewbox="0 0 20 20" fill="currentColor" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path></svg>
+                            <select v-model="filtersForm.type" class="appearance-none w-full max-w-[12rem] text-gray-900 dark:text-white py-2 pl-10 pr-4 rounded-lg text-sm bg-transparent border-none focus:outline-none focus:ring-0 focus:border-none">
+                                <option :value="0">TODOS</option>
+                                <option v-for="(t, index) in vehicleTypes" :key="index" :value="t.id">{{t.name}}</option>
+                            </select>
+                            <span class="absolute z-10 left-2.5 top-0 text-xs hover:bg-white transition-colors -translate-y-1.5 text-gray-800 dark:text-white text-opacity-60">Tipo de vehiculo</span>
+                        </div>
+
+                        <div class="relative inline-block mb-0 pb-0">
+                            <select v-model="filtersForm.month" name="month" id="month" class="appearance-none w-full max-w-[8rem] text-gray-900 py-2 rounded-lg bg-transparent border-none focus:outline-none focus:ring-0 focus:border-none text-sm">
+                                <option v-for="m in Object.keys(months)" :key="m" :value="m"> {{ months[m]}}</option>
+                            </select>
+                            <span class="absolute z-10 left-2.5 top-0 text-xs hover:bg-white transition-colors -translate-y-1.5 text-gray-800 dark:text-white text-opacity-60">
+                                Mes
+                            </span>
+                        </div>
+
+                        <div class="relative inline-block mb-0 pb-0">
+                            <select v-model="filtersForm.year" name="year" id="year" class="appearance-none w-full max-w-[14rem] text-gray-900 py-2 rounded-lg bg-transparent border-none focus:outline-none focus:ring-0 focus:border-none text-sm">
+                                <option :value="2025">2025</option>
+                            </select>
+                            <span class="absolute z-10 left-2.5 top-0 text-xs -translate-y-1.5 text-gray-800 dark:text-white text-opacity-60">
+                                Año
+                            </span>
+                        </div>
+
+                        <button type="submit" class="border-none bg-[#3b4280] p-2 rounded-full text-white -translate-y-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24">
+                                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0-14 0m18 11l-6-6"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            <h1 class="flex items-center border-t pt-4 gap-2 my-2 text-xl uppercase font-semibold text-gray-700 dark:text-gray-200">
+            <h1 class="flex items-center pt-4 gap-2 my-2 text-xl uppercase font-semibold text-gray-700 dark:text-gray-200">
                 <span>Resultados</span>
                 <AnimateSpin v-if="!results" class="w-4 h-4" />
+                <span v-else class="font-normal">
+                    : {{ results.length }} resultados
+                </span>
             </h1>
             
             <div v-if="!results" class="my-2 grid grid-cols-4 gap-4">
