@@ -36,6 +36,8 @@ class SearchService
     public static int $SOURCE_LEGACY = 2;
     public static int $SOURCE_LOSDOCUMENT = 3;
 
+    public static int $DOCUMENT_STATUS_VALIDATED = 3;
+
 
     public function __construct(AuthApiService $authApiService)
     {
@@ -127,9 +129,9 @@ class SearchService
      * @param  string $type
      * @return array<SearchResponse>
      */
-    private function searchLocal($searchKeyWord, $type)
+    private function searchLocal($searchKeyWord, $searchType)
     {
-        $searchType = $type ?? SearchTypes::$PLACA;
+        $searchType = $searchType ?? SearchTypes::$PLACA;
         $vehiclesId = [];
 
         switch ($searchType) {
@@ -149,6 +151,7 @@ class SearchService
         // * retrive vehicle info
         $vehicles = Vehicle::whereIn('id', $vehiclesId)
             ->with(['misplacement', 'misplacement.lostStatus', 'misplacement.placeEvent', 'vehicleBrand', 'vehicleSubBrand', 'plateType', 'vehicleModel', 'vehicleType'])
+            ->whereHas('misplacement', fn($m) => $m->where('lost_status_id',self::$DOCUMENT_STATUS_VALIDATED))
             ->get();
 
         // * process each vehicle and adapt the info
